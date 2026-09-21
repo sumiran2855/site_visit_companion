@@ -1,3 +1,6 @@
+import React from "react";
+import { ChecklistClient } from "./ChecklistClient";
+
 interface VisitDetailsPageProps {
   params: Promise<{
     id: string;
@@ -9,10 +12,5 @@ export default async function VisitDetailsPage({
 }: VisitDetailsPageProps) {
   const { id } = await params;
 
-  return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <h1 className="text-2xl font-semibold">Visit Details: {id}</h1>
-    </div>
-  );
+  return <ChecklistClient visitId={id} />;
 }
-

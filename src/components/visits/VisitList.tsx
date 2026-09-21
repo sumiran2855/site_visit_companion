@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Search, Filter, FolderX } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, FolderX } from "lucide-react";
 import { VisitCard, type VisitItem } from "./VisitCard";
 
 interface VisitListProps {
@@ -28,15 +28,12 @@ export function VisitList({
 
   const filteredVisits = useMemo(() => {
     return visits.filter((v) => {
-      // Company filter
       if (selectedCompany !== "all" && v.companyName !== selectedCompany) {
         return false;
       }
-      // Status filter
       if (statusFilter !== "all" && v.status !== statusFilter) {
         return false;
       }
-      // Search query
       if (
         searchQuery.trim() &&
         !v.siteName.toLowerCase().includes(searchQuery.toLowerCase().trim())
@@ -49,9 +46,7 @@ export function VisitList({
 
   return (
     <div className="space-y-6">
-      {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search Input */}
         <div className="relative flex-1 max-w-md">
           <input
             type="text"
@@ -64,10 +59,8 @@ export function VisitList({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Company Filter (Administrators can filter visits by company) */}
           {isAdmin && (
             <div className="flex items-center gap-1.5">
-              <Filter className="size-4 text-slate-400 dark:text-zinc-500 shrink-0" />
               <select
                 value={selectedCompany}
                 onChange={(e) => onCompanyChange(e.target.value)}
@@ -83,7 +76,6 @@ export function VisitList({
             </div>
           )}
 
-          {/* Status Tabs */}
           <div className="flex items-center rounded-xl bg-slate-100 dark:bg-zinc-800/80 p-1 border border-slate-200/80 dark:border-zinc-700/80 text-xs font-medium">
             <button
               type="button"
@@ -122,7 +114,6 @@ export function VisitList({
         </div>
       </div>
 
-      {/* Grid of Visits */}
       {filteredVisits.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredVisits.map((visit) => (
@@ -135,7 +126,6 @@ export function VisitList({
           ))}
         </div>
       ) : (
-        /* Empty State */
         <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-800 p-12 text-center bg-white/50 dark:bg-zinc-900/50">
           <div className="size-12 mx-auto flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 mb-3">
             <FolderX className="size-6" />

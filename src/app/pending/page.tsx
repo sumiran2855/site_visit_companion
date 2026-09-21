@@ -3,7 +3,7 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Loader2, RefreshCw, Zap } from "lucide-react";
+import { Loader2, RefreshCw, Zap } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 
 function PendingContent() {

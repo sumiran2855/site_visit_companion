@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
+  ArrowLeft,
   Building2,
   Check,
   ChevronDown,
@@ -14,7 +16,6 @@ import {
   Users,
   Zap,
   X,
-  AlertTriangle,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { CreateVisitForm } from "@/components/visits/CreateVisitForm";
@@ -94,6 +95,37 @@ export default function MySiteVisitsPage() {
   const [newMiddleName, setNewMiddleName] = useState(middleName);
   const [deleteTarget, setDeleteTarget] = useState<VisitItem | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown when clicking anywhere outside or pressing Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowUserMenu(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowUserMenu(false);
+      }
+    }
+
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showUserMenu]);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -245,7 +277,7 @@ export default function MySiteVisitsPage() {
             </div>
 
             {/* User Profile Dropdown / Actions */}
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -268,12 +300,7 @@ export default function MySiteVisitsPage() {
 
               {/* User Dropdown Menu */}
               {showUserMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-20"
-                    onClick={() => setShowUserMenu(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl p-1.5 z-30 text-xs space-y-1">
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl p-1.5 z-30 text-xs space-y-1 animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3 py-2 border-b border-slate-100 dark:border-zinc-800">
                       <p className="font-semibold text-slate-900 dark:text-zinc-100">
                         {fullName}
@@ -333,7 +360,6 @@ export default function MySiteVisitsPage() {
                       </Link>
                     </div>
                   </div>
-                </>
               )}
             </div>
           </div>
