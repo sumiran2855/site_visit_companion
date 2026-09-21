@@ -1,4 +1,11 @@
-export type UserRole = "admin" | "inspector" | "manager" | "client";
+export type UserRole =
+  | "standard"
+  | "company_admin"
+  | "super_admin"
+  | "admin"
+  | "inspector"
+  | "manager"
+  | "client";
 
 export type UserStatus = "active" | "inactive" | "pending";
 

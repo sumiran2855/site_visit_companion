@@ -59,7 +59,6 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/80 text-xs font-medium text-slate-600 dark:text-zinc-300 shadow-sm">
               <span className="font-semibold text-slate-900 dark:text-white">EC POWER</span>
               <span className="text-slate-400 dark:text-zinc-500">•</span>
-              <span>Project Intake — Part 1 of 3</span>
             </div>
 
             {/* Main Title */}
@@ -84,6 +83,7 @@ export default function HomePage() {
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 text-base font-semibold text-white shadow-md hover:bg-slate-800 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 active:scale-[0.99] transition-all dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
               >
                 <span>Sign in to start</span>
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Link>
 
               <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-slate-500 dark:text-zinc-400 px-2">
