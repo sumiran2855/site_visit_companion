@@ -8,6 +8,11 @@ export interface Company {
   city?: string;
   country?: string;
   isActive: boolean;
+  parentId?: string | null;
+  allowedEmailDomains?: string[];
+  memberCount?: number;
+  visitCount?: number;
+  children?: Company[];
   createdAt: string;
   updatedAt: string;
 }

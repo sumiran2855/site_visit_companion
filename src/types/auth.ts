@@ -16,9 +16,21 @@ export interface User {
   role: UserRole;
   status: UserStatus;
   companyId?: string;
+  companyName?: string;
   avatarUrl?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PendingAccessRequest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email: string;
+  requestedCompany: string;
+  note?: string;
+  createdAt: string;
 }
 
 export interface AuthSession {
