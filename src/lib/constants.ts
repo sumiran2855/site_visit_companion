@@ -4,6 +4,7 @@ export const APP_DESCRIPTION = "Manage site inspections, audit visits, and check
 export const ROUTES = {
   HOME: "/",
   AUTH: "/auth",
+  AUTH_CALLBACK: "/auth/callback",
   PENDING: "/pending",
   VISITS: "/visits",
   VISIT_DETAILS: (id: string) => `/visits/${id}`,

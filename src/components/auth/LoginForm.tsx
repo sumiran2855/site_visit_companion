@@ -1,48 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Mail } from "lucide-react";
-import { ROUTES } from "@/lib/constants";
+import { useLoginForm } from "@/hooks/useLoginForm";
 
 interface LoginFormProps {
   onSwitchToSignup?: () => void;
 }
 
 export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!email.trim() || !password) {
-      setError("Please enter both email and password.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Simulate authentication process
-    setTimeout(() => {
-      setIsLoading(false);
-      // Navigate to visits page
-      router.push(ROUTES.VISITS);
-    }, 800);
-  };
-
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push(ROUTES.VISITS);
-    }, 800);
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    showPassword,
+    toggleShowPassword,
+    isLoading,
+    error,
+    handleSubmit,
+    handleGoogleLogin,
+  } = useLoginForm();
 
   return (
     <div className="w-full space-y-6">
@@ -55,7 +32,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           EC POWER Site Visit Checklist
         </p>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed pt-1">
-          Use Google or an account created for this checklist. Your Lovable editor login is separate.
+          Sign in with your company Google account or credentials registered for site inspections.
         </p>
       </div>
 
@@ -64,7 +41,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         type="button"
         onClick={handleGoogleLogin}
         disabled={isLoading}
-        className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-zinc-200 shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-zinc-200 shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         <svg className="size-4 shrink-0" viewBox="0 0 24 24">
           <path
@@ -97,7 +74,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
 
       {/* Form Error Banner */}
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-3 text-xs sm:text-sm text-red-700 dark:text-red-400">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-3 text-xs sm:text-sm text-red-700 dark:text-red-400 animate-in fade-in">
           {error}
         </div>
       )}
@@ -150,8 +127,8 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+              onClick={toggleShowPassword}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -168,7 +145,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -188,7 +165,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         <button
           type="button"
           onClick={onSwitchToSignup}
-          className="font-semibold text-slate-900 dark:text-zinc-200 underline underline-offset-4 hover:text-slate-700 dark:hover:text-white transition-colors"
+          className="font-semibold text-slate-900 dark:text-zinc-200 underline underline-offset-4 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
         >
           Create an account
         </button>

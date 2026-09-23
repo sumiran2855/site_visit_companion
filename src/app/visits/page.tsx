@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
 import { CreateVisitForm } from "@/components/visits/CreateVisitForm";
 import { VisitList } from "@/components/visits/VisitList";
 import type { VisitItem } from "@/components/visits/VisitCard";
@@ -73,13 +74,23 @@ const INITIAL_VISITS: VisitItem[] = [
 
 export default function MySiteVisitsPage() {
   const router = useRouter();
+  const { user: authUser, logout } = useAuth();
 
   // User Profile State
   const [userRole, setUserRole] = useState<UserRole>("standard");
   const [firstName, setFirstName] = useState("Alex");
   const [lastName, setLastName] = useState("Jensen");
   const [middleName, setMiddleName] = useState("");
-  const [userCompany] = useState("TEST POWER INC");
+  const [userCompany, setUserCompany] = useState("TEST POWER INC");
+
+  useEffect(() => {
+    if (authUser) {
+      if (authUser.firstName) setFirstName(authUser.firstName);
+      if (authUser.lastName) setLastName(authUser.lastName);
+      if (authUser.middleName) setMiddleName(authUser.middleName);
+      if (authUser.role) setUserRole(authUser.role);
+    }
+  }, [authUser]);
 
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(" ");
 
@@ -262,20 +273,6 @@ export default function MySiteVisitsPage() {
               </div>
             )}
 
-            {/* Role Demo Switcher (Simulates Role Perspectives) */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100/80 dark:bg-zinc-800/80 text-[11px] font-medium text-slate-500 dark:text-zinc-400">
-              <Shield className="size-3 text-slate-400" />
-              <select
-                value={userRole}
-                onChange={(e) => setUserRole(e.target.value as UserRole)}
-                className="bg-transparent border-0 text-slate-700 dark:text-zinc-300 font-semibold cursor-pointer outline-none focus:ring-0"
-              >
-                <option value="standard">Standard User</option>
-                <option value="company_admin">Company Admin</option>
-                <option value="super_admin">Super Admin</option>
-              </select>
-            </div>
-
             {/* User Profile Dropdown / Actions */}
             <div className="relative" ref={userMenuRef}>
               <button
@@ -350,14 +347,18 @@ export default function MySiteVisitsPage() {
 
                     {/* Sign Out Action */}
                     <div className="border-t border-slate-100 dark:border-zinc-800 pt-1">
-                      <Link
-                        href={ROUTES.AUTH}
-                        onClick={() => setShowUserMenu(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setShowUserMenu(false);
+                          await logout();
+                          router.push(ROUTES.AUTH);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left cursor-pointer"
                       >
                         <LogOut className="size-3.5" />
                         <span>Sign out</span>
-                      </Link>
+                      </button>
                     </div>
                   </div>
               )}

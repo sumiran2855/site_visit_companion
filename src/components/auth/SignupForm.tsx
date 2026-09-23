@@ -1,70 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Mail } from "lucide-react";
-import { ROUTES } from "@/lib/constants";
+import { useSignupForm } from "@/hooks/useSignupForm";
 
 interface SignupFormProps {
   onSwitchToSignin?: () => void;
 }
 
 export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
-  const router = useRouter();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [middleName, setMiddleName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [company, setCompany] = useState("");
-  const [step, setStep] = useState<"account" | "company">("account");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleAccountSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password should be at least 6 characters.");
-      return;
-    }
-
-    // Move to company intake step as specified in project spec
-    setStep("company");
-  };
-
-  const handleFinalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!company.trim()) {
-      setError("Please specify the company or organization you work for.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    // Simulate account registration & route to pending approval screen
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push(`${ROUTES.PENDING}?company=${encodeURIComponent(company)}`);
-    }, 800);
-  };
-
-  const handleGoogleSignup = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep("company");
-    }, 800);
-  };
+  const {
+    step,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    middleName,
+    setMiddleName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    company,
+    setCompany,
+    showPassword,
+    toggleShowPassword,
+    isLoading,
+    error,
+    handleAccountSubmit,
+    handleFinalSubmit,
+    handleGoogleSignup,
+    goToAccountStep,
+  } = useSignupForm();
 
   return (
     <div className="w-full space-y-6">
@@ -78,7 +44,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
         </p>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed pt-1">
           {step === "account"
-            ? "Use Google or an account created for this checklist. Your Lovable editor login is separate."
+            ? "Use your Google account or register with your company email to request checklist access."
             : "Enter the customer or service company you are assigned to. Administrators will verify your access request."}
         </p>
       </div>
@@ -90,7 +56,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
             type="button"
             onClick={handleGoogleSignup}
             disabled={isLoading}
-            className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-zinc-200 shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-zinc-200 shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <svg className="size-4 shrink-0" viewBox="0 0 24 24">
               <path
@@ -123,9 +89,9 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
         </>
       )}
 
-      {/* Error Message */}
+      {/* Error Message Banner */}
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-3 text-xs sm:text-sm text-red-700 dark:text-red-400">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-3 text-xs sm:text-sm text-red-700 dark:text-red-400 animate-in fade-in">
           {error}
         </div>
       )}
@@ -230,15 +196,15 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
                 type={showPassword ? "text" : "password"}
                 required
                 autoComplete="new-password"
-                placeholder="••••••••••••"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors pr-10"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+                onClick={toggleShowPassword}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -255,9 +221,9 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] cursor-pointer"
             >
-              Create account
+              Continue to Company
             </button>
           </div>
         </form>
@@ -289,15 +255,15 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
           <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setStep("account")}
-              className="w-1/3 rounded-xl border border-slate-300 dark:border-zinc-700 px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+              onClick={goToAccountStep}
+              className="w-1/3 rounded-xl border border-slate-300 dark:border-zinc-700 px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               Back
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-2/3 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white transition-all disabled:opacity-60"
+              className="w-2/3 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white transition-all disabled:opacity-60 cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -318,7 +284,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
         <button
           type="button"
           onClick={onSwitchToSignin}
-          className="font-semibold text-slate-900 dark:text-zinc-200 underline underline-offset-4 hover:text-slate-700 dark:hover:text-white transition-colors"
+          className="font-semibold text-slate-900 dark:text-zinc-200 underline underline-offset-4 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
         >
           Sign in instead
         </button>
