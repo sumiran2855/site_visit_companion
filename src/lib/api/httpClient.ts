@@ -42,7 +42,10 @@ export class HttpClient {
     // Attach Bearer token if required
     if (requiresAuth) {
       const token = TokenHelper.getToken();
-      if (token && !headers.has("Authorization")) {
+      if (!token) {
+        throw new ApiError("No authentication token found", 401);
+      }
+      if (!headers.has("Authorization")) {
         headers.set("Authorization", `Bearer ${token}`);
       }
     }

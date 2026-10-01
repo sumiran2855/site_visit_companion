@@ -500,8 +500,7 @@ export default function AdminTemplatePage() {
       {/* Top Main Navigation Header */}
       <AdminHeader
         title="PDF Template Editor"
-        subtitle="Visual layout designer for client-facing field inspection reports"
-        backHref={ROUTES.VISITS}
+        subtitle="SITE VISIT COMPANION"
         backLabel="Visits"
       />
 

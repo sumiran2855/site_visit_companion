@@ -23,7 +23,6 @@ import {
   FileSpreadsheet,
   ArrowLeft,
 } from "lucide-react";
-import { ROUTES } from "@/lib/constants";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import type { Company } from "@/types/company";
 
@@ -252,38 +251,12 @@ export default function AdminCompaniesPage() {
       {/* Admin Header */}
       <AdminHeader
         title="Companies"
-        subtitle="Manage company hierarchy, subsidiaries, and email domain scopes"
-        backHref={ROUTES.ADMIN_USERS}
+        subtitle="SITE VISIT COMPANION"
         backLabel="Accounts"
-        actions={
-          <button
-            onClick={() => {
-              setNewCompanyParentId("");
-              setIsCreateModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-950 hover:bg-slate-800 dark:hover:bg-zinc-200 transition-all font-semibold text-xs shadow-xs"
-          >
-            <Plus className="size-3.5" />
-            <span>Create company</span>
-          </button>
-        }
       />
 
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Back to Accounts Button */}
-        <div>
-          <Link
-            href={ROUTES.VISITS}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all text-xs font-semibold shadow-xs group"
-            title="Go back to Accounts"
-            aria-label="Go back to Accounts"
-          >
-            <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" />
-            <span>Back to visits</span>
-          </Link>
-        </div>
-
         {/* Page Top Heading */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -301,12 +274,17 @@ export default function AdminCompaniesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={ROUTES.VISITS}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs"
+            <button
+              type="button"
+              onClick={() => {
+                setNewCompanyParentId("");
+                setIsCreateModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-950 hover:bg-slate-800 dark:hover:bg-zinc-200 transition-all font-semibold text-xs sm:text-sm shadow-xs cursor-pointer"
             >
-              <span>Visits</span>
-            </Link>
+              <Plus className="size-4" />
+              <span>Create company</span>
+            </button>
           </div>
         </div>
 

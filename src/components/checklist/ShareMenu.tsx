@@ -26,8 +26,30 @@ export function ShareMenu({
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const shareUrl = `${origin}${ROUTES.SHARED_VISIT(shareToken)}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl).catch(() => {});
+  const handleCopy = async () => {
+    let success = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        success = true;
+      }
+    } catch {}
+
+    if (!success) {
+      try {
+        const el = document.createElement("textarea");
+        el.value = shareUrl;
+        el.setAttribute("readonly", "");
+        el.style.position = "fixed";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      } catch {}
+    }
+
     setCopied(true);
     onToast("Shareable link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
@@ -116,4 +138,3 @@ export function ShareMenu({
     </div>
   );
 }
-

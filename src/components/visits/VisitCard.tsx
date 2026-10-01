@@ -72,9 +72,13 @@ export function VisitCard({ visit, onCopyLink, onDelete }: VisitCardProps) {
       {/* Top Header */}
       <div>
         <div className="flex items-start justify-between gap-3 mb-2">
-          <span className="text-[11px] font-semibold tracking-wider text-slate-500 dark:text-zinc-400 uppercase">
-            {visit.companyName}
-          </span>
+          {visit.companyName ? (
+            <span className="text-[11px] font-semibold tracking-wider text-slate-500 dark:text-zinc-400 uppercase">
+              {visit.companyName}
+            </span>
+          ) : (
+            <span />
+          )}
           {getStatusBadge()}
         </div>
 

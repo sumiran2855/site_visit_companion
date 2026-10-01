@@ -21,6 +21,7 @@ export interface AuthContextType {
   signup: (input: SignupRequestInput) => Promise<ControllerResult<SignupResponsePayload>>;
   loginWithGoogle: (redirectTo?: string) => void;
   setSession: (token: string, user: UserProfile) => void;
+  updateUser: (updates: Partial<UserProfile>) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -83,6 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(newUser);
   };
 
+  const updateUser = (updates: Partial<UserProfile>): void => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated: UserProfile = { ...prev, ...updates };
+      TokenHelper.setUser(updated);
+      return updated;
+    });
+  };
+
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     await controller.handleLogout();
@@ -100,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signup,
     loginWithGoogle,
     setSession,
+    updateUser,
     logout,
     refreshUser,
   };

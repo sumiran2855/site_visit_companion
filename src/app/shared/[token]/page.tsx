@@ -1,18 +1,28 @@
+import { Metadata } from "next";
+import { SharedVisitView } from "@/components/visits/SharedVisitView";
+
 interface SharedVisitPageProps {
   params: Promise<{
     token: string;
   }>;
 }
 
+export async function generateMetadata({
+  params,
+}: SharedVisitPageProps): Promise<Metadata> {
+  const { token } = await params;
+  return {
+    title: `Shared Site Visit — EC POWER`,
+    description: `Read-only technical site inspection report (${token}).`,
+    other: {
+      "apple-itunes-app": `app-id=com.sumiran.b.sitevisitcompanionmobile, app-argument=sitevisitcompanionmobile://shared/${token}`,
+    },
+  };
+}
+
 export default async function SharedVisitPage({
   params,
 }: SharedVisitPageProps) {
   const { token } = await params;
-
-  return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <h1 className="text-2xl font-semibold">Shared Visit: {token}</h1>
-    </div>
-  );
+  return <SharedVisitView tokenOrId={token} />;
 }
-

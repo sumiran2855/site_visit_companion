@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.sumiran.b.sitevisitcompanionmobile",
+        "paths": [
+          "/shared/*",
+          "/visit/*",
+          "/visits/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAMID.com.sumiran.b.sitevisitcompanionmobile"
+    ]
+  }
+}

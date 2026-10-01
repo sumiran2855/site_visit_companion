@@ -1,22 +1,15 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState, useMemo } from "react";
 import {
   AlertTriangle,
-  ArrowLeft,
   Building2,
   Check,
-  CheckCircle2,
   Clock,
-  Filter,
-  MoreVertical,
-  Plus,
   Search,
   Shield,
   Trash2,
   UserCheck,
-  UserPlus,
   Users,
   UserX,
   X,
@@ -294,34 +287,12 @@ export default function AdminUsersPage() {
       {/* Top Header */}
       <AdminHeader
         title="Accounts"
-        subtitle="Manage access requests, members, and roles"
-        backHref={ROUTES.VISITS}
+        subtitle="SITE VISIT COMPANION"
         backLabel="Visits"
-        actions={
-          <Link
-            href={ROUTES.ADMIN_COMPANIES}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shadow-xs"
-          >
-            <Building2 className="size-3.5" />
-            <span className="hidden sm:inline">Companies</span>
-          </Link>
-        }
       />
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Back to Visits Button */}
-        <div>
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all text-xs font-semibold shadow-xs group"
-            title={`Go back to ${backLabel}`}
-            aria-label={`Go back to ${backLabel}`}
-          >
-            <ArrowLeft className="size-3.5 group-hover:-translate-x-0.5 transition-transform" />
-            <span>Back to {backLabel.toLowerCase()}</span>
-          </Link>
-        </div>
         {/* Page Title & Super Admin Context */}
         <div className="space-y-1">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
@@ -499,11 +470,15 @@ export default function AdminUsersPage() {
                         <span className="font-mono text-slate-700 dark:text-zinc-300">
                           {member.email}
                         </span>
-                        <span>&bull;</span>
-                        <span className="inline-flex items-center gap-1 font-medium text-slate-800 dark:text-zinc-200">
-                          <Building2 className="size-3 text-slate-400" />
-                          <span>{member.companyName}</span>
-                        </span>
+                        {member.companyName ? (
+                          <>
+                            <span>&bull;</span>
+                            <span className="inline-flex items-center gap-1 font-medium text-slate-800 dark:text-zinc-200">
+                              <Building2 className="size-3 text-slate-400" />
+                              <span>{member.companyName}</span>
+                            </span>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   </div>

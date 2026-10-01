@@ -20,7 +20,9 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   middleName?: string | null;
+  requestedCompany?: string | null;
   companyId: string | null;
+  companyName?: string | null;
   role: UserRole;
   approvalStatus: ApprovalStatus;
   createdAt: string;
@@ -33,11 +35,15 @@ export interface UserProfile {
 export interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string | null;
   email: string;
   role: UserRole;
   status: UserStatus;
-  companyId?: string;
-  companyName?: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  requestedCompany?: string | null;
   avatarUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -106,14 +112,20 @@ export function mapProfileToUser(profile: UserProfile, companyName?: string): Us
     .filter(Boolean)
     .join(" ");
 
+  const resolvedCompany = profile.requestedCompany || profile.companyName || companyName || null;
+
   return {
     id: profile.id,
     name: fullName || profile.email,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    middleName: profile.middleName,
     email: profile.email,
     role: profile.role,
     status: profile.approvalStatus === "approved" ? "active" : "pending",
-    companyId: profile.companyId || undefined,
-    companyName: companyName,
+    companyId: profile.companyId || null,
+    companyName: resolvedCompany,
+    requestedCompany: profile.requestedCompany || null,
     createdAt: typeof profile.createdAt === "string" ? profile.createdAt : new Date(profile.createdAt).toISOString(),
     updatedAt: typeof profile.updatedAt === "string" ? profile.updatedAt : new Date(profile.updatedAt).toISOString(),
   };

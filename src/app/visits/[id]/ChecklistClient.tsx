@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { Navbar } from "@/components/layout/Navbar";
 import {
   CHECKLIST_SECTIONS_CONFIG,
 } from "@/config/checklist";
@@ -30,75 +31,76 @@ interface ChecklistClientProps {
 export function ChecklistClient({ visitId }: ChecklistClientProps) {
   const router = useRouter();
 
-  // Site Visit Info
-  const [siteName, setSiteName] = useState(
-    visitId === "v-001"
-      ? "Benbow Inn - Main Facility"
-      : visitId === "v-002"
-        ? "Harbor View Hotel - XRGI Survey"
-        : "New Site Visit Survey"
-  );
+  // Site Visit Info - loaded from storage or visit context
+  const [siteName, setSiteName] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("ec_user_visits");
+        if (stored) {
+          const visits = JSON.parse(stored);
+          const found = visits.find((v: { id: string; siteName: string }) => v.id === visitId);
+          if (found?.siteName) return found.siteName;
+        }
+      } catch {}
+    }
+    return "Site Visit Inspection Survey";
+  });
   const [isEditingSiteName, setIsEditingSiteName] = useState(false);
   const [tempSiteName, setTempSiteName] = useState(siteName);
-  const companyName = "TEST POWER INC";
-  const [shareToken] = useState(() => `token_${visitId}_demo`);
+  const [shareToken] = useState(() => `token_${visitId}`);
 
-  // Form State: Field Values, Notes, Photos, Videos
-  const [formValues, setFormValues] = useState<Record<string, string>>({
-    mc_contact_person: "John Miller, Facilities Director",
-    mc_phone_number: "+1 (555) 019-2834",
-    mc_building_type: "Historic Hotel & Resort",
-    bm_ceiling_height: "11.2 ft (3.4 m)",
-    bm_existing_boilers: "2x Viessmann 500k BTU, Natural Gas",
-    em_voltage_service: "480V 3-Phase, 800A Main Service",
-    gm_pipe_size: "2-inch pipe, 2 PSI gas line",
+  // Form State: Field Values, Notes, Photos, Videos - dynamically loaded, no hardcoded mock entries
+  const [formValues, setFormValues] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`ec_visit_${visitId}_values`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
   });
 
-  const [formNotes, setFormNotes] = useState<Record<string, string>>({
-    mc_meeting_notes: "Survey conducted with chief building engineer.",
-    bm_ceiling_height: "Clear pathway above existing piping for XRGI exhaust.",
+  const [formNotes, setFormNotes] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`ec_visit_${visitId}_notes`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
   });
 
-  const [formPhotos, setFormPhotos] = useState<Record<string, PhotoMediaItem[]>>({
-    bm_wall1_photos: [
-      {
-        id: "p1",
-        fileName: "Wall1_ServiceEntryDoor.jpg",
-        fileSize: "2.4 MB",
-      },
-    ],
-    bm_wall2_photos: [
-      {
-        id: "p2",
-        fileName: "Wall2_PipingClearance.jpg",
-        fileSize: "3.1 MB",
-      },
-    ],
-    em_main_panel_photos: [
-      {
-        id: "p3",
-        fileName: "Electrical_MainPanel_480V.jpg",
-        fileSize: "1.8 MB",
-      },
-    ],
-    gm_meter_photos: [
-      {
-        id: "p4",
-        fileName: "GasMeter_SupplyRegulator.jpg",
-        fileSize: "2.2 MB",
-      },
-    ],
+  const [formPhotos, setFormPhotos] = useState<Record<string, PhotoMediaItem[]>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`ec_visit_${visitId}_photos`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
   });
 
-  const [formVideos, setFormVideos] = useState<Record<string, VideoMediaItem[]>>({
-    bm_room_360_video: [
-      {
-        id: "v1",
-        fileName: "MechanicalRoom_360_Panoramic.mp4",
-        fileSize: "48.2 MB",
-      },
-    ],
+  const [formVideos, setFormVideos] = useState<Record<string, VideoMediaItem[]>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`ec_visit_${visitId}_videos`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
   });
+
+  // Persist form changes locally for this visit
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`ec_visit_${visitId}_values`, JSON.stringify(formValues));
+        localStorage.setItem(`ec_visit_${visitId}_notes`, JSON.stringify(formNotes));
+        localStorage.setItem(`ec_visit_${visitId}_photos`, JSON.stringify(formPhotos));
+        localStorage.setItem(`ec_visit_${visitId}_videos`, JSON.stringify(formVideos));
+      } catch {}
+    }
+  }, [visitId, formValues, formNotes, formPhotos, formVideos]);
 
   // Accordion Sections State
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -260,24 +262,9 @@ export function ChecklistClient({ visitId }: ChecklistClientProps) {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-sky-100/30 dark:bg-sky-950/20 blur-[120px] rounded-full pointer-events-none print:hidden" />
 
       {/* Top Sticky Header */}
-      <header className="relative z-20 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md sticky top-0 print:hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-          {/* Back to Visits + Brand */}
-          <div className="flex items-center gap-2.5 select-none">
-            <div className="flex items-center justify-center size-8 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm">
-              <Zap className="size-4 fill-current" />
-            </div>
-            <div className="hidden sm:flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-none">
-                EC POWER
-              </span>
-              <span className="text-[10px] tracking-wider font-medium text-slate-500 dark:text-zinc-400 uppercase">
-                Site Visit Companion
-              </span>
-            </div>
-          </div>
-
-          {/* Header Actions: Share, Downloads, Save */}
+      <Navbar
+        className="print:hidden"
+        actions={
           <div className="flex items-center gap-2">
             {/* Share Button (Section 9 & 13) */}
             <button
@@ -321,8 +308,8 @@ export function ChecklistClient({ visitId }: ChecklistClientProps) {
               <span>Save</span>
             </button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {/* Main Checklist Body */}
       <main className="relative z-10 flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">

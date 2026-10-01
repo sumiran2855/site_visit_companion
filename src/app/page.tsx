@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants";
+import { Navbar } from "@/components/layout/Navbar";
 import {
   ArrowRight,
   CheckCircle2,
@@ -19,36 +20,15 @@ export default function HomePage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-sky-100/40 dark:bg-sky-950/20 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Top Navigation Bar */}
-      <header className="relative z-10 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center size-8 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm">
-              <Zap className="size-4 fill-current" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-none">
-                EC POWER
-              </span>
-              <span className="text-[10px] tracking-wider font-medium text-slate-500 dark:text-zinc-400 uppercase">
-                Field Operations
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Cloud Sync Active
-            </span>
-            <Link
-              href={ROUTES.AUTH}
-              className="inline-flex items-center justify-center text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 transition-colors"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar
+        subtitle="Field Operations"
+        actions={
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Cloud Sync Active
+          </span>
+        }
+      />
 
       {/* Hero Section */}
       <main className="relative z-10 flex-1 flex flex-col justify-center max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">

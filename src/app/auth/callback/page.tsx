@@ -40,8 +40,8 @@ function AuthCallbackContent() {
     (typeof window !== "undefined"
       ? localStorage.getItem("ec_pending_company") ||
         sessionStorage.getItem("ec_pending_company") ||
-        "EC POWER"
-      : "EC POWER");
+        ""
+      : "");
 
   useEffect(() => {
     if (status === "pending") {
@@ -312,27 +312,31 @@ function AuthCallbackContent() {
                   </div>
                 )}
 
-                {/* Requested Company & Email Info Badge */}
-                <div className="rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/80 p-4 text-left space-y-2">
-                  <div>
-                    <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                      Requested Company
-                    </span>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                      {targetCompany}
-                    </p>
+                {/* Requested Company & Email Info Badge - only show company if present */}
+                {(targetCompany || targetEmail) && (
+                  <div className="rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/80 p-4 text-left space-y-2">
+                    {targetCompany ? (
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
+                          Requested Company
+                        </span>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                          {targetCompany}
+                        </p>
+                      </div>
+                    ) : null}
+                    {targetEmail && (
+                      <div className={targetCompany ? "pt-1 border-t border-slate-200/60 dark:border-zinc-700/60" : ""}>
+                        <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
+                          Account Email
+                        </span>
+                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                          {targetEmail}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {targetEmail && (
-                    <div className="pt-1 border-t border-slate-200/60 dark:border-zinc-700/60">
-                      <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                        Account Email
-                      </span>
-                      <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
-                        {targetEmail}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Status Message */}
                 {statusMessage && (

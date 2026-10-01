@@ -24,6 +24,9 @@ export const API_CONFIG = {
       LIST: "/visits",
       DETAILS: (id: string) => `/visits/${id}`,
     },
+    SHARED: {
+      GET: (token: string) => `/public/shared/${token}`,
+      VISIT: (id: string) => `/public/visits/${id}`,
+    },
   },
 } as const;
-

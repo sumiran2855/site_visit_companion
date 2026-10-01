@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Loader2, LogIn, RefreshCw, Zap } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { Navbar } from "@/components/layout/Navbar";
 import { AuthController } from "@/controllers/auth.controller";
 
 function PendingContent() {
@@ -25,7 +26,7 @@ function PendingContent() {
   });
 
   const [requestedCompany, setRequestedCompany] = useState<string>(() => {
-    return searchParams.get("company") || "EC POWER";
+    return searchParams.get("company") || "";
   });
 
   const [isChecking, setIsChecking] = useState(false);
@@ -99,24 +100,8 @@ function PendingContent() {
         }`}
       />
 
-      {/* Header */}
-      <header className="relative z-10 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 select-none">
-            <div className="flex items-center justify-center size-8 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm">
-              <Zap className="size-4 fill-current" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-none">
-                EC POWER
-              </span>
-              <span className="text-[10px] tracking-wider font-medium text-slate-500 dark:text-zinc-400 uppercase">
-                Field Operations
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Top Navbar */}
+      <Navbar subtitle="Field Operations" />
 
       {/* Main Card */}
       <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -161,27 +146,31 @@ function PendingContent() {
               </div>
             )}
 
-            {/* Requested Company & Email Info Badge */}
-            <div className="rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/80 p-4 text-left space-y-2">
-              <div>
-                <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                  Requested Company
-                </span>
-                <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                  {requestedCompany}
-                </p>
+            {/* Requested Company & Email Info Badge - only show company if present */}
+            {(requestedCompany || email) && (
+              <div className="rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/80 p-4 text-left space-y-2">
+                {requestedCompany ? (
+                  <div>
+                    <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
+                      Requested Company
+                    </span>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                      {requestedCompany}
+                    </p>
+                  </div>
+                ) : null}
+                {email && (
+                  <div className={requestedCompany ? "pt-1 border-t border-slate-200/60 dark:border-zinc-700/60" : ""}>
+                    <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
+                      Account Email
+                    </span>
+                    <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                      {email}
+                    </p>
+                  </div>
+                )}
               </div>
-              {email && (
-                <div className="pt-1 border-t border-slate-200/60 dark:border-zinc-700/60">
-                  <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                    Account Email
-                  </span>
-                  <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
-                    {email}
-                  </p>
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Status Message */}
             {statusMessage && (

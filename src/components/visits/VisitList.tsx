@@ -114,7 +114,19 @@ export function VisitList({
         </div>
       </div>
 
-      {filteredVisits.length > 0 ? (
+      {visits.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-800 p-12 sm:p-16 text-center bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm">
+          <div className="size-14 mx-auto flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 mb-4 shadow-xs">
+            <FolderX className="size-7" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-zinc-100">
+            No site visits yet
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-md mx-auto mt-1.5 leading-relaxed">
+            There are no site inspection visits recorded for your account yet. Use the form above to start your first site visit and document your field survey.
+          </p>
+        </div>
+      ) : filteredVisits.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredVisits.map((visit) => (
             <VisitCard
@@ -131,13 +143,24 @@ export function VisitList({
             <FolderX className="size-6" />
           </div>
           <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">
-            No site visits found
+            No matching site visits
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-sm mx-auto mt-1">
             {searchQuery
               ? `No site visits matched "${searchQuery}". Try adjusting your search query.`
-              : "You haven't recorded any visits under this selection yet. Start a new visit above to get started."}
+              : "No site visits match the active filters."}
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setStatusFilter("all");
+              onCompanyChange("all");
+            }}
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-zinc-200 hover:underline cursor-pointer"
+          >
+            Clear filters and search
+          </button>
         </div>
       )}
     </div>
