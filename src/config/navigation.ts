@@ -9,22 +9,19 @@ export interface NavItem {
   badge?: string;
 }
 
-export const MAIN_NAV_ITEMS: NavItem[] = [
-  {
-    title: "Visits",
-    href: ROUTES.VISITS,
-    roles: ["admin", "inspector", "manager", "client"],
-  },
-  {
-    title: "Pending",
-    href: ROUTES.PENDING,
-    roles: ["admin", "inspector", "manager"],
-  },
-];
-
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
-    title: "Users",
+    title: "Dashboard",
+    href: ROUTES.ADMIN,
+    roles: ["admin"],
+  },
+  {
+    title: "Submissions",
+    href: ROUTES.ADMIN_SUBMISSIONS,
+    roles: ["admin"],
+  },
+  {
+    title: "Accounts",
     href: ROUTES.ADMIN_USERS,
     roles: ["admin"],
   },
@@ -34,9 +31,13 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "Templates",
+    title: "PDF Template",
     href: ROUTES.ADMIN_TEMPLATES,
     roles: ["admin"],
   },
+  {
+    title: "Retention",
+    href: ROUTES.ADMIN_RETENTION,
+    roles: ["admin"],
+  },
 ];
-

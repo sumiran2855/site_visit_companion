@@ -1,7 +1,14 @@
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api",
-  SUPABASE_URL: (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sstbiqlmaghpjezclafs.supabase.co").replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, ""),
-  SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzdGJpcWxtYWdocGplemNsYWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNjA0MzUsImV4cCI6MjEwNTYzNjQzNX0.-HdAxG2BYO5L_WbPqtYB4Mfw29K1xIJN23Eef84q46Y",
+  SUPABASE_URL: (
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "https://sstbiqlmaghpjezclafs.supabase.co"
+  )
+    .replace(/\/rest\/v1\/?$/, "")
+    .replace(/\/+$/, ""),
+  SUPABASE_ANON_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzdGJpcWxtYWdocGplemNsYWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNjA0MzUsImV4cCI6MjEwNTYzNjQzNX0.-HdAxG2BYO5L_WbPqtYB4Mfw29K1xIJN23Eef84q46Y",
   TIMEOUT_MS: 15000,
   STORAGE_KEYS: {
     AUTH_TOKEN: "ec_auth_token",
@@ -16,13 +23,43 @@ export const API_CONFIG = {
       LOGOUT: "/auth/logout",
       PROFILE: "/auth/profile",
     },
+    ADMIN: {
+      REQUESTS: "/admin/requests",
+      APPROVE_REQUEST: (id: string) => `/admin/requests/${id}/approve`,
+      REJECT_REQUEST: (id: string) => `/admin/requests/${id}/reject`,
+      MEMBERS: "/admin/members",
+      UPDATE_ROLE: (id: string) => `/admin/members/${id}/role`,
+      MOVE_COMPANY: (id: string) => `/admin/members/${id}/company`,
+      PURGE_USER: (id: string) => `/admin/members/${id}`,
+      RETENTION_CLEANUP: "/admin/retention/cleanup",
+    },
     COMPANIES: {
       LIST: "/companies",
+      TREE: "/companies/tree",
       DETAILS: (id: string) => `/companies/${id}`,
+      CREATE: "/companies",
+      UPDATE: (id: string) => `/companies/${id}`,
+      DELETE: (id: string) => `/companies/${id}`,
+    },
+    TEMPLATES: {
+      LIST: "/pdf-templates",
+      DEFAULT: "/pdf-templates/default",
+      ACTIVE: "/pdf-templates/active",
+      DETAILS: (id: string) => `/pdf-templates/${id}`,
+      SAVE: "/pdf-templates",
+      PREVIEW: "/pdf-templates/preview",
+      SET_DEFAULT: (id: string) => `/pdf-templates/${id}/default`,
+      FALLBACK_DEFAULT: "/templates/default",
+      FALLBACK_ACTIVE: "/templates/active",
+      FALLBACK_SAVE: "/templates",
+      FALLBACK_PREVIEW: "/templates/preview",
     },
     VISITS: {
       LIST: "/visits",
       DETAILS: (id: string) => `/visits/${id}`,
+    },
+    MEDIA: {
+      LIST: (visitId: string) => `/visits/${visitId}/media`,
     },
     SHARED: {
       GET: (token: string) => `/public/shared/${token}`,

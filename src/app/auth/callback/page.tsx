@@ -76,7 +76,7 @@ function AuthCallbackContent() {
 
       if (result.isApproved) {
         if (result.hasActiveSession) {
-          router.replace(ROUTES.VISITS);
+          router.replace(ROUTES.ADMIN);
           return;
         }
         setApprovalState("approved");

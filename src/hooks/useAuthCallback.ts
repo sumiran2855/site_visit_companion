@@ -130,7 +130,9 @@ export function useAuthCallback(): UseAuthCallbackReturn {
         if (storedUser.approvalStatus === "pending") {
           router.replace(ROUTES.PENDING);
         } else {
-          router.replace(ROUTES.VISITS);
+          const role = storedUser.role;
+          const isAdmin = role === "super_admin" || role === "company_admin" || role === "admin";
+          router.replace(isAdmin ? ROUTES.ADMIN : ROUTES.HOME);
         }
         return;
       }
@@ -166,7 +168,9 @@ export function useAuthCallback(): UseAuthCallbackReturn {
         if (result.data.approvalStatus === "pending") {
           setTimeout(() => router.replace(ROUTES.PENDING), 500);
         } else {
-          setTimeout(() => router.replace(ROUTES.VISITS), 500);
+          const role = result.data.role;
+          const isAdmin = role === "super_admin" || role === "company_admin" || role === "admin";
+          setTimeout(() => router.replace(isAdmin ? ROUTES.ADMIN : ROUTES.HOME), 500);
         }
         return;
       }

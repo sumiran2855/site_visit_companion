@@ -1,738 +1,750 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
-  AlertTriangle,
-  Building2,
-  Check,
-  Clock,
-  Search,
-  Shield,
-  Trash2,
-  UserCheck,
   Users,
-  UserX,
+  Search,
+  Filter,
+  Check,
   X,
+  AlertTriangle,
+  UserCheck,
+  UserX,
+  Building2,
+  Mail,
+  Shield,
+  RotateCw,
+  Trash2,
+  ArrowRightLeft,
+  ShieldAlert,
 } from "lucide-react";
-import { ROUTES } from "@/lib/constants";
-import { AdminHeader } from "@/components/admin/AdminHeader";
-import type { User, UserRole, PendingAccessRequest } from "@/types/auth";
-
-// Initial realistic mock data for members
-const INITIAL_MEMBERS: User[] = [
-  {
-    id: "usr-001",
-    name: "Alex Jensen",
-    email: "alex.jensen@testpower.com",
-    role: "super_admin",
-    status: "active",
-    companyId: "comp-001",
-    companyName: "TEST POWER INC",
-    createdAt: "2026-08-15",
-    updatedAt: "2026-09-20",
-  },
-  {
-    id: "usr-002",
-    name: "Sarah Lindqvist",
-    email: "sarah.l@ecpower.dk",
-    role: "company_admin",
-    status: "active",
-    companyId: "comp-002",
-    companyName: "EC POWER Inc.",
-    createdAt: "2026-08-20",
-    updatedAt: "2026-09-18",
-  },
-  {
-    id: "usr-003",
-    name: "Michael Brandt",
-    email: "m.brandt@testpower.com",
-    role: "standard",
-    status: "active",
-    companyId: "comp-001",
-    companyName: "TEST POWER INC",
-    createdAt: "2026-09-02",
-    updatedAt: "2026-09-19",
-  },
-  {
-    id: "usr-004",
-    name: "Klaus Nørgaard",
-    email: "klaus@nordicenergy.se",
-    role: "standard",
-    status: "active",
-    companyId: "comp-003",
-    companyName: "Nordic Energy Solutions",
-    createdAt: "2026-09-05",
-    updatedAt: "2026-09-15",
-  },
-  {
-    id: "usr-005",
-    name: "Elena Rostova",
-    email: "e.rostova@ecpower.dk",
-    role: "company_admin",
-    status: "active",
-    companyId: "comp-002",
-    companyName: "EC POWER Inc.",
-    createdAt: "2026-09-10",
-    updatedAt: "2026-09-17",
-  },
-  {
-    id: "usr-006",
-    name: "Tobias Møller",
-    email: "tobias.m@testpower.com",
-    role: "standard",
-    status: "active",
-    companyId: "comp-001",
-    companyName: "TEST POWER INC",
-    createdAt: "2026-09-12",
-    updatedAt: "2026-09-16",
-  },
-];
-
-// Initial realistic mock data for pending requests
-const INITIAL_PENDING_REQUESTS: PendingAccessRequest[] = [
-  {
-    id: "req-001",
-    firstName: "Martin",
-    lastName: "Hansen",
-    email: "it@ecpower.dk",
-    requestedCompany: "EC POWER Inc.",
-    note: "Requested via technician invitation portal for field audit team",
-    createdAt: "Today, 09:30 AM",
-  },
-  {
-    id: "req-002",
-    firstName: "Freja",
-    lastName: "Poulsen",
-    email: "freja.p@energymaintain.com",
-    requestedCompany: "TEST POWER INC",
-    note: "Contractor surveyor for hotel boiler room assessments",
-    createdAt: "Yesterday, 04:15 PM",
-  },
-];
-
-const AVAILABLE_COMPANIES = [
-  "EC POWER Inc.",
-  "TEST POWER INC",
-  "Nordic Energy Solutions",
-  "Alpine Power Systems",
-];
+import { useAdminUsers } from "@/hooks/useAdminUsers";
+import type { PendingAccessRequest } from "@/types/admin";
+import type { User, UserRole } from "@/types/auth";
 
 export default function AdminUsersPage() {
-  const backHref = ROUTES.VISITS;
-  const backLabel = "Visits";
+  const {
+    user,
+    isSuperAdmin,
+    isCompanyAdmin,
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    selectedCompanyFilter,
+    setSelectedCompanyFilter,
+    isLoading,
+    isRefreshing,
+    onRefresh,
+    companies,
+    filteredMembers,
+    filteredRequests,
+    companyPills,
+    processingRequestId,
+    processingAction,
+    approveTarget,
+    setApproveTarget,
+    rejectTarget,
+    setRejectTarget,
+    roleTarget,
+    setRoleTarget,
+    moveTarget,
+    setMoveTarget,
+    purgeTarget,
+    setPurgeTarget,
+    toastMessage,
+    handleApproveConfirm,
+    handleRejectConfirm,
+    handleRoleConfirm,
+    handleMoveConfirm,
+    handlePurgeConfirm,
+  } = useAdminUsers();
 
-  const [members, setMembers] = useState<User[]>(INITIAL_MEMBERS);
-  const [pendingRequests, setPendingRequests] = useState<PendingAccessRequest[]>(
-    INITIAL_PENDING_REQUESTS
-  );
-  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  // Approve modal local form state
+  const [assignedCompanyId, setAssignedCompanyId] = useState("");
+  const [assignedRole, setAssignedRole] = useState<UserRole>("user");
 
-  // Modals state
-  const [approveTarget, setApproveTarget] = useState<PendingAccessRequest | null>(null);
-  const [assignedCompany, setAssignedCompany] = useState("");
-  const [assignedRole, setAssignedRole] = useState<UserRole>("standard");
+  // Change Role modal local state
+  const [newRole, setNewRole] = useState<UserRole>("user");
 
-  const [rejectTarget, setRejectTarget] = useState<PendingAccessRequest | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
-  const [moveTarget, setMoveTarget] = useState<User | null>(null);
-  const [moveToCompany, setMoveToCompany] = useState("");
+  // Move Company modal local state
+  const [newCompanyId, setNewCompanyId] = useState("");
 
-  // Toast state
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
-  };
-
-  // Filtered members list
-  const filteredMembers = useMemo(() => {
-    return members.filter((member) => {
-      if (selectedCompanyFilter !== "all" && member.companyName !== selectedCompanyFilter) {
-        return false;
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchesName = member.name.toLowerCase().includes(q);
-        const matchesEmail = member.email.toLowerCase().includes(q);
-        const matchesCompany = member.companyName?.toLowerCase().includes(q);
-        return matchesName || matchesEmail || matchesCompany;
-      }
-      return true;
-    });
-  }, [members, selectedCompanyFilter, searchQuery]);
-
-  // Filtered pending requests
-  const filteredPending = useMemo(() => {
-    return pendingRequests.filter((req) => {
-      if (selectedCompanyFilter !== "all" && req.requestedCompany !== selectedCompanyFilter) {
-        return false;
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const fullName = `${req.firstName} ${req.lastName}`.toLowerCase();
-        return fullName.includes(q) || req.email.toLowerCase().includes(q);
-      }
-      return true;
-    });
-  }, [pendingRequests, selectedCompanyFilter, searchQuery]);
-
-  // Actions: Approve
-  const handleOpenApprove = (req: PendingAccessRequest) => {
+  const openApprove = (req: PendingAccessRequest) => {
     setApproveTarget(req);
-    setAssignedCompany(req.requestedCompany || AVAILABLE_COMPANIES[0]);
-    setAssignedRole("standard");
+    const matched = companies.find(
+      (c) =>
+        c.name.trim().toLowerCase() === req.requestedCompany.trim().toLowerCase() ||
+        c.id === user?.companyId
+    );
+    setAssignedCompanyId(matched?.id || user?.companyId || companies[0]?.id || "");
+    setAssignedRole("user");
   };
 
-  const confirmApprove = () => {
+  const openChangeRole = (m: User) => {
+    setRoleTarget(m);
+    setNewRole(m.role);
+  };
+
+  const openMoveCompany = (m: User) => {
+    setMoveTarget(m);
+    setNewCompanyId(m.companyId || companies[0]?.id || "");
+  };
+
+  const confirmApprove = async () => {
     if (!approveTarget) return;
-
-    const newMember: User = {
-      id: `usr-${Date.now()}`,
-      name: [approveTarget.firstName, approveTarget.middleName, approveTarget.lastName]
-        .filter(Boolean)
-        .join(" "),
-      email: approveTarget.email,
-      role: assignedRole,
-      status: "active",
-      companyName: assignedCompany,
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-
-    setMembers([newMember, ...members]);
-    setPendingRequests(pendingRequests.filter((r) => r.id !== approveTarget.id));
-    showToast(`Approved ${newMember.name} and assigned to ${assignedCompany}`);
+    const selected = companies.find((c) => c.id === assignedCompanyId);
+    await handleApproveConfirm(
+      approveTarget.id,
+      assignedCompanyId,
+      selected?.name || approveTarget.requestedCompany,
+      assignedRole
+    );
     setApproveTarget(null);
   };
 
-  // Actions: Reject
-  const confirmReject = () => {
+  const confirmReject = async () => {
     if (!rejectTarget) return;
-    setPendingRequests(pendingRequests.filter((r) => r.id !== rejectTarget.id));
-    showToast(`Access request from ${rejectTarget.email} was rejected and purged`);
+    await handleRejectConfirm(rejectTarget.id);
     setRejectTarget(null);
   };
 
-  // Actions: Delete member
-  const confirmDeleteMember = () => {
-    if (!deleteTarget) return;
-    setMembers(members.filter((m) => m.id !== deleteTarget.id));
-    showToast(`Removed member ${deleteTarget.name}. All data has been purged.`);
-    setDeleteTarget(null);
+  const confirmRole = async () => {
+    if (!roleTarget) return;
+    await handleRoleConfirm(roleTarget.id, newRole);
+    setRoleTarget(null);
   };
 
-  // Actions: Move member company
-  const handleOpenMove = (user: User) => {
-    setMoveTarget(user);
-    setMoveToCompany(user.companyName || AVAILABLE_COMPANIES[0]);
-  };
-
-  const confirmMoveCompany = () => {
-    if (!moveTarget || !moveToCompany) return;
-    setMembers(
-      members.map((m) =>
-        m.id === moveTarget.id ? { ...m, companyName: moveToCompany } : m
-      )
-    );
-    showToast(`Moved ${moveTarget.name} to ${moveToCompany}`);
+  const confirmMove = async () => {
+    if (!moveTarget) return;
+    const selected = companies.find((c) => c.id === newCompanyId);
+    await handleMoveConfirm(moveTarget.id, newCompanyId, selected?.name || "Company");
     setMoveTarget(null);
   };
 
-  // Actions: Change user role
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
-    setMembers(
-      members.map((m) => (m.id === userId ? { ...m, role: newRole } : m))
-    );
-    const roleLabels: Record<string, string> = {
-      standard: "Standard User",
-      company_admin: "CO. ADMIN",
-      super_admin: "SUPER",
-    };
-    showToast(`Updated user role to ${roleLabels[newRole] || newRole}`);
-  };
-
-  const getRoleBadge = (role: UserRole) => {
-    switch (role) {
-      case "super_admin":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/70 dark:border-amber-700/60">
-            <Shield className="size-3 fill-amber-500 text-amber-600" />
-            <span>SUPER</span>
-          </span>
-        );
-      case "company_admin":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-900 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300/70 dark:border-sky-700/60">
-            <span>CO. ADMIN</span>
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
-            <span>Standard User</span>
-          </span>
-        );
-    }
+  const confirmPurge = async () => {
+    if (!purgeTarget) return;
+    await handlePurgeConfirm(purgeTarget.id);
+    setPurgeTarget(null);
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between bg-gradient-to-b from-slate-50 via-white to-slate-50/50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 text-foreground overflow-x-hidden selection:bg-slate-900 selection:text-white dark:selection:bg-white dark:selection:text-black">
-      {/* Background Decorative Grid and Glow */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-sky-100/30 dark:bg-sky-950/20 blur-[120px] rounded-full pointer-events-none" />
-      {/* Top Header */}
-      <AdminHeader
-        title="Accounts"
-        subtitle="SITE VISIT COMPANION"
-        backLabel="Visits"
-      />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Toast */}
+      {toastMessage && (
+        <div className="bg-emerald-600 text-white px-4 py-3 rounded-2xl flex items-center gap-2 text-sm font-semibold shadow-md animate-in fade-in">
+          <Check className="size-4 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
-      {/* Main Content */}
-      <main className="relative z-10 flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Page Title & Super Admin Context */}
-        <div className="space-y-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-            EC POWER &bull; Access & Security
-          </span>
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50">
-              Accounts
-            </h1>
-            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-zinc-400">
-              You&apos;re a super admin &mdash; you see everyone.
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
+            Accounts Management
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
+            Manage pending technician signups, role permissions, and company assignments
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isRefreshing || isLoading}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-300 shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+        >
+          <RotateCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      {/* Sub-tabs & Search/Filter Toolbar */}
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Sub-tab Navigation */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-200/60 dark:bg-zinc-900/90 max-w-fit">
+            <button
+              type="button"
+              onClick={() => setActiveTab("requests")}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "requests"
+                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900"
+              }`}
+            >
+              <span>Pending Requests</span>
+              {filteredRequests.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-500 text-white">
+                  {filteredRequests.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("members")}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "members"
+                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900"
+              }`}
+            >
+              <span>Approved Members</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300">
+                {filteredMembers.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Company Filter Pills */}
+        {companyPills.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Org:</span>
+            <button
+              type="button"
+              onClick={() => setSelectedCompanyFilter("all")}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
+                selectedCompanyFilter === "all"
+                  ? "bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold"
+                  : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50"
+              }`}
+            >
+              All Organizations
+            </button>
+            {companyPills.map((cp) => (
+              <button
+                key={cp}
+                type="button"
+                onClick={() => setSelectedCompanyFilter(cp)}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
+                  selectedCompanyFilter === cp
+                    ? "bg-sky-600 text-white font-bold"
+                    : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50"
+                }`}
+              >
+                {cp}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Area */}
+      {activeTab === "requests" ? (
+        /* Pending Requests List */
+        filteredRequests.length === 0 ? (
+          <div className="p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-center space-y-3">
+            <div className="size-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto text-emerald-600">
+              <Check className="size-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800 dark:text-zinc-200">
+              No Pending Requests
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-sm mx-auto">
+              There are currently no technician signups awaiting verification.
             </p>
           </div>
-        </div>
-
-        {/* Filter and Search Bar */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-4 sm:p-5 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-4 py-2 pl-9 text-xs sm:text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors"
-              />
-              <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Filter by Company */}
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="companyFilter"
-                className="text-xs font-semibold text-slate-500 dark:text-zinc-400 whitespace-nowrap"
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredRequests.map((req) => (
+              <div
+                key={req.id}
+                className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-col justify-between space-y-4"
               >
-                Filter by company:
-              </label>
-              <select
-                id="companyFilter"
-                value={selectedCompanyFilter}
-                onChange={(e) => setSelectedCompanyFilter(e.target.value)}
-                className="rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 px-3 py-2 text-xs sm:text-sm font-medium text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900 cursor-pointer shadow-xs"
-              >
-                <option value="all">All companies</option>
-                {AVAILABLE_COMPANIES.map((company) => (
-                  <option key={company} value={company}>
-                    {company}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 1: PENDING REQUESTS (Section 19 requirement) */}
-        <section className="space-y-3.5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-300 flex items-center gap-2">
-              <Clock className="size-4 text-amber-500" />
-              <span>Pending Requests ({filteredPending.length})</span>
-            </h2>
-            <span className="text-[11px] text-slate-400 dark:text-zinc-500">
-              New accounts awaiting administrator approval
-            </span>
-          </div>
-
-          {filteredPending.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/40 p-6 text-center text-xs sm:text-sm text-slate-500 dark:text-zinc-400">
-              No pending access requests matching active filters.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredPending.map((req) => (
-                <div
-                  key={req.id}
-                  className="rounded-2xl border border-amber-200/90 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 backdrop-blur-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-amber-300 dark:hover:border-amber-800"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300/80 dark:border-amber-700/80">
-                        PENDING
-                      </span>
-                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-zinc-50 truncate">
-                        {req.firstName} {req.middleName ? `${req.middleName} ` : ""}{req.lastName}
-                      </h3>
-                      <span className="text-xs text-slate-400 dark:text-zinc-500">
-                        &bull; {req.createdAt}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-slate-600 dark:text-zinc-300 flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-slate-700 dark:text-zinc-200">
-                        {req.email}
-                      </span>
-                      <span className="text-slate-300 dark:text-zinc-700">|</span>
-                      <span>
-                        Requested: <strong className="font-semibold">{req.requestedCompany}</strong>
-                      </span>
-                    </div>
-
-                    {req.note && (
-                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 pt-0.5 italic">
-                        &ldquo;{req.note}&rdquo;
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                        {req.firstName} {req.lastName}
+                      </h4>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Mail className="size-3" />
+                        <span>{req.email}</span>
                       </p>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenApprove(req)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                    >
-                      <UserCheck className="size-3.5" />
-                      <span>Approve &amp; assign...</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRejectTarget(req)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 text-xs font-semibold transition-colors cursor-pointer"
-                    >
-                      <UserX className="size-3.5" />
-                      <span>Reject</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Section 2: MEMBERS (Section 19 requirement) */}
-        <section className="space-y-3.5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-300 flex items-center gap-2">
-              <Users className="size-4 text-slate-500" />
-              <span>Members ({filteredMembers.length})</span>
-            </h2>
-            <span className="text-[11px] text-slate-400 dark:text-zinc-500">
-              Active technician &amp; administrator directory
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200/90 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl shadow-sm overflow-hidden">
-            <div className="divide-y divide-slate-100 dark:divide-zinc-800">
-              {filteredMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/60 dark:hover:bg-zinc-800/40 transition-colors"
-                >
-                  {/* Member info */}
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="size-10 rounded-full bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold text-sm flex items-center justify-center shrink-0">
-                      {member.name.charAt(0)}
                     </div>
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-zinc-50 truncate">
+                    <span className="text-[10px] text-slate-400">{req.createdAt}</span>
+                  </div>
+
+                  <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                    <Building2 className="size-3.5 text-slate-400" />
+                    <span>Requested: <strong>{req.requestedCompany}</strong></span>
+                  </div>
+
+                  {req.note && (
+                    <p className="text-xs text-slate-600 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-800/60 p-3 rounded-xl italic">
+                      "{req.note}"
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    disabled={processingRequestId === req.id}
+                    onClick={() => setRejectTarget(req)}
+                    className="flex-1 py-2 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    type="button"
+                    disabled={processingRequestId === req.id}
+                    onClick={() => openApprove(req)}
+                    className="flex-1 py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
+                  >
+                    Approve
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        /* Approved Members Table */
+        <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-zinc-800">
+                <tr>
+                  <th className="py-3 px-4">Member</th>
+                  <th className="py-3 px-4">Organization</th>
+                  <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Status</th>
+                  {isSuperAdmin && <th className="py-3 px-4 text-right">Actions</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                {filteredMembers.map((member) => {
+                  const isSuper = member.role === "super_admin";
+                  const isCoAdmin = member.role === "company_admin";
+
+                  return (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900 dark:text-zinc-100 text-sm">
                           {member.name}
+                        </div>
+                        <div className="text-slate-500 text-[11px] flex items-center gap-1 mt-0.5">
+                          <Mail className="size-3" />
+                          <span>{member.email}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
+                          <Building2 className="size-3.5 text-slate-400" />
+                          <span>
+                            {member.companyName || member.requestedCompany || "Unassigned"}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            member.role === "admin" || isSuper || isCoAdmin
+                              ? "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                              : "bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800"
+                          }`}
+                        >
+                          <Shield className="size-3" />
+                          <span>
+                            {member.role === "admin" || isSuper || isCoAdmin
+                              ? "Administrator"
+                              : "Normal User"}
+                          </span>
                         </span>
-                        {getRoleBadge(member.role)}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 flex-wrap">
-                        <span className="font-mono text-slate-700 dark:text-zinc-300">
-                          {member.email}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                          <span className="size-1.5 rounded-full bg-emerald-500" />
+                          <span>Active</span>
                         </span>
-                        {member.companyName ? (
-                          <>
-                            <span>&bull;</span>
-                            <span className="inline-flex items-center gap-1 font-medium text-slate-800 dark:text-zinc-200">
-                              <Building2 className="size-3 text-slate-400" />
-                              <span>{member.companyName}</span>
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
+                      </td>
 
-                  {/* Actions & Role Selector */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    {/* Role Selector */}
-                    <div className="flex items-center gap-1">
-                      <select
-                        value={member.role}
-                        onChange={(e) => handleRoleChange(member.id, e.target.value as UserRole)}
-                        className="rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300 cursor-pointer shadow-xs focus:outline-none focus:border-slate-900"
-                        title="Change user role"
-                      >
-                        <option value="standard">Standard User</option>
-                        <option value="company_admin">CO. ADMIN</option>
-                        <option value="super_admin">SUPER</option>
-                      </select>
-                    </div>
-
-                    {/* Move Company Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenMove(member)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-xs font-medium text-slate-700 dark:text-zinc-300 transition-colors shadow-xs"
-                      title="Move to another company"
-                    >
-                      Move...
-                    </button>
-
-                    {/* Delete User Button */}
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(member)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors"
-                      title="Delete member"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      {isSuperAdmin && (
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openChangeRole(member)}
+                              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
+                              title="Change Role"
+                            >
+                              Role
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openMoveCompany(member)}
+                              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
+                              title="Move Organization"
+                            >
+                              Move
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPurgeTarget(member)}
+                              className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-colors cursor-pointer"
+                              title="Purge User"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </section>
-      </main>
+        </div>
+      )}
 
-      {/* Modal 1: Approve & Assign Modal (Section 19 requirement) */}
+      {/* Approve Modal */}
       {approveTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-zinc-50 flex items-center gap-2">
-                <UserCheck className="size-5 text-emerald-600" />
-                <span>Approve &amp; Assign Account</span>
-              </h3>
+              <div className="flex items-center gap-2">
+                <UserCheck className="size-5 text-sky-600" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                  Approve Applicant
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setApproveTarget(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400"
               >
                 <X className="size-4" />
               </button>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700 text-xs space-y-1">
-              <p className="font-semibold text-slate-900 dark:text-zinc-100">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 text-xs space-y-1">
+              <p className="font-bold text-slate-900 dark:text-zinc-100">
                 {approveTarget.firstName} {approveTarget.lastName}
               </p>
-              <p className="text-slate-500 dark:text-zinc-400 font-mono">
-                {approveTarget.email}
+              <p className="text-slate-500">{approveTarget.email}</p>
+              <p className="text-slate-500">
+                Requested Org: <strong>{approveTarget.requestedCompany}</strong>
               </p>
             </div>
 
-            <div className="space-y-4 text-xs sm:text-sm">
-              <div className="space-y-1.5 text-left">
-                <label className="block font-semibold text-slate-700 dark:text-zinc-300">
-                  Assign Company:
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  Assign Organization Unit
                 </label>
                 <select
-                  value={assignedCompany}
-                  onChange={(e) => setAssignedCompany(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2.5 font-medium text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900"
+                  value={assignedCompanyId}
+                  onChange={(e) => setAssignedCompanyId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
                 >
-                  {AVAILABLE_COMPANIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id} className="dark:bg-zinc-900">
+                      {c.name}
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-                  Technician will strictly see visits scoped to this company.
-                </p>
               </div>
 
-              <div className="space-y-1.5 text-left">
-                <label className="block font-semibold text-slate-700 dark:text-zinc-300">
-                  Initial Role:
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                  Assign User Role
                 </label>
                 <select
                   value={assignedRole}
                   onChange={(e) => setAssignedRole(e.target.value as UserRole)}
-                  className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2.5 font-medium text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
                 >
-                  <option value="standard">Standard User (Field Technician)</option>
-                  <option value="company_admin">CO. ADMIN (Company Administrator)</option>
-                  <option value="super_admin">SUPER (Global Super Administrator)</option>
+                  <option value="user" className="dark:bg-zinc-900">
+                    Normal User
+                  </option>
+                  <option value="admin" className="dark:bg-zinc-900">
+                    Administrator
+                  </option>
                 </select>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setApproveTarget(null)}
-                className="px-4 py-2 text-xs sm:text-sm font-medium rounded-xl border border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={processingAction === "approving"}
                 onClick={confirmApprove}
-                className="px-5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-slate-800 dark:hover:bg-white shadow-xs"
+                className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 disabled:opacity-60"
               >
-                Approve &amp; Grant Access
+                {processingAction === "approving" ? "Approving..." : "Confirm & Approve"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal 2: Reject Access Confirmation */}
+      {/* Reject Modal */}
       {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/60">
-                <AlertTriangle className="size-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="size-5 text-rose-600" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                  Reject Request?
+                </h3>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                Reject Access Request?
-              </h3>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
-              Are you sure you want to reject the request from <strong>{rejectTarget.email}</strong>? The request will be fully purged, allowing the user to submit a new application later if appropriate.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setRejectTarget(null)}
-                className="px-4 py-2 text-xs sm:text-sm font-medium rounded-xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300"
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+              Are you sure you want to reject the access request for{" "}
+              <strong>
+                {rejectTarget.firstName} {rejectTarget.lastName}
+              </strong>{" "}
+              ({rejectTarget.email})?
+            </p>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejectTarget(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={processingAction === "rejecting"}
                 onClick={confirmReject}
-                className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700"
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 disabled:opacity-60"
               >
-                Reject Request
+                {processingAction === "rejecting" ? "Rejecting..." : "Reject & Purge"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal 3: Move Company Modal */}
-      {moveTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-zinc-50">
-              Move User to Company
-            </h3>
+      {/* Change Role Modal (Super Admin) */}
+      {roleTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="size-5 text-sky-600" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                  Change Role
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRoleTarget(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
             <p className="text-xs text-slate-600 dark:text-zinc-400">
-              Select a new company for <strong>{moveTarget.name}</strong>. Their survey view will update to visits belonging to the selected company.
+              Update authorization tier for <strong>{roleTarget.name}</strong> ({roleTarget.email}):
             </p>
 
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                Target Company:
+            <div className="space-y-2">
+              {(["user", "admin"] as UserRole[]).map((r) => (
+                <label
+                  key={r}
+                  className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    newRole === r
+                      ? "border-sky-600 bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 font-bold"
+                      : "border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={r}
+                    checked={newRole === r}
+                    onChange={() => setNewRole(r)}
+                    className="accent-sky-600 mt-0.5"
+                  />
+                  <div>
+                    <span className="text-xs font-bold block">
+                      {r === "user" ? "Normal User" : "Administrator"}
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 block font-normal mt-0.5">
+                      {r === "user"
+                        ? "Can perform field inspections, capture site media and submit visits"
+                        : "Full access to web admin portal, companies, template and reviews"}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRoleTarget(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRole}
+                className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700"
+              >
+                Save Role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Move Company Modal (Super Admin) */}
+      {moveTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ArrowRightLeft className="size-5 text-sky-600" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                  Move Organization
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMoveTarget(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-zinc-400">
+              Transfer <strong>{moveTarget.name}</strong> to a different company branch:
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                Target Organization
               </label>
               <select
-                value={moveToCompany}
-                onChange={(e) => setMoveToCompany(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 dark:text-zinc-100 focus:outline-none focus:border-slate-900"
+                value={newCompanyId}
+                onChange={(e) => setNewCompanyId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
               >
-                {AVAILABLE_COMPANIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id} className="dark:bg-zinc-900">
+                    {c.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setMoveTarget(null)}
-                className="px-4 py-2 text-xs sm:text-sm font-medium rounded-xl border border-slate-300 dark:border-zinc-700 text-slate-700 dark:text-zinc-300"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={confirmMoveCompany}
-                className="px-5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-slate-800 dark:hover:bg-white"
+                onClick={confirmMove}
+                className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700"
               >
-                Save Assignment
+                Confirm Move
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal 4: Delete Member Confirmation */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/60">
-                <AlertTriangle className="size-6" />
+      {/* Purge User Modal (Super Admin) */}
+      {purgeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trash2 className="size-5 text-rose-600" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+                  Purge User Account?
+                </h3>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                Delete Member Account?
-              </h3>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
-              Are you sure you want to delete <strong>{deleteTarget.name}</strong> ({deleteTarget.email})? As specified in Section 19, deleting a member permanently removes their account association so they can sign up again cleanly if needed.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-xs sm:text-sm font-medium rounded-xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300"
+                onClick={() => setPurgeTarget(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
+              Are you sure you want to permanently delete the account for{" "}
+              <strong>{purgeTarget.name}</strong> ({purgeTarget.email})? This action cannot be undone.
+            </p>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setPurgeTarget(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={confirmDeleteMember}
-                className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700"
+                onClick={confirmPurge}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700"
               >
-                Delete Member
+                Purge Account
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-xs sm:text-sm font-medium text-white dark:text-zinc-900 shadow-xl border border-slate-800 dark:border-zinc-200 animate-in slide-in-from-bottom-5 duration-200">
-          <Check className="size-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
-          <span>{toastMessage}</span>
         </div>
       )}
     </div>

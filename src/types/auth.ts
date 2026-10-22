@@ -1,11 +1,14 @@
 export type UserRole =
+  | "user"
+  | "admin"
   | "standard"
   | "company_admin"
   | "super_admin"
-  | "admin"
   | "inspector"
   | "manager"
   | "client";
+
+export type PrimaryUserRole = "user" | "admin";
 
 export type UserStatus = "active" | "inactive" | "pending";
 
@@ -121,7 +124,12 @@ export function mapProfileToUser(profile: UserProfile, companyName?: string): Us
     lastName: profile.lastName,
     middleName: profile.middleName,
     email: profile.email,
-    role: profile.role,
+    role:
+      profile.role === "admin" ||
+      profile.role === "super_admin" ||
+      profile.role === "company_admin"
+        ? "admin"
+        : "user",
     status: profile.approvalStatus === "approved" ? "active" : "pending",
     companyId: profile.companyId || null,
     companyName: resolvedCompany,

@@ -1,0 +1,906 @@
+import { API_CONFIG } from "@/config/api.config";
+import { HttpClient } from "@/lib/api/httpClient";
+import { DEFAULT_EC_POWER_PDF_TEMPLATE } from "@/config/default-template.config";
+import type { User, UserRole, UserProfile } from "@/types/auth";
+import type {
+  PendingAccessRequest,
+  Company,
+  CreateCompanyInput,
+  UpdateCompanyInput,
+  PDFTemplate,
+  AdminDashboardMetrics,
+  RetentionStorageMetrics,
+  RetentionCleanupResult,
+  ExpiringVisitItem,
+} from "@/types/admin";
+
+const CACHE_KEY_REQUESTS = "ecpower_cached_pending_requests";
+const CACHE_KEY_MEMBERS = "ecpower_cached_members";
+const CACHE_KEY_COMPANIES = "ecpower_cached_companies";
+const CACHE_KEY_TEMPLATE = "ecpower_cached_pdf_template";
+const CACHE_KEY_RETENTION_RUN = "ecpower_last_retention_run";
+
+function getStorageItem(key: string): string | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function setStorageItem(key: string, val: string): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(key, val);
+  } catch {}
+}
+
+const isMockId = (id?: string | null): boolean => {
+  if (!id) return false;
+  return id.startsWith("req-00") || id.startsWith("usr-00") || id.startsWith("comp-00");
+};
+
+export function mapProfileToUser(profile: UserProfile | any, companyName?: string): User {
+  const p = profile as any;
+  const firstName = p.firstName ?? p.first_name ?? "";
+  const middleName = p.middleName ?? p.middle_name ?? null;
+  const lastName = p.lastName ?? p.last_name ?? "";
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+
+  const companyId = p.companyId ?? p.company_id ?? null;
+  const requestedCompany = p.requestedCompany ?? p.requested_company ?? null;
+  const resolvedCompany = p.companyName ?? p.company_name ?? companyName ?? requestedCompany ?? null;
+  const approvalStatus = p.approvalStatus ?? p.approval_status ?? "pending";
+
+  return {
+    id: p.id,
+    name: fullName || p.email,
+    firstName: firstName || undefined,
+    lastName: lastName || undefined,
+    middleName: middleName || undefined,
+    email: p.email,
+    role:
+      p.role === "admin" ||
+      p.role === "super_admin" ||
+      p.role === "company_admin"
+        ? "admin"
+        : "user",
+    status: approvalStatus === "approved" ? "active" : "pending",
+    companyId: companyId || null,
+    companyName: resolvedCompany,
+    requestedCompany: requestedCompany || null,
+    createdAt: typeof p.createdAt === "string" ? p.createdAt : p.created_at ? String(p.created_at) : new Date().toISOString(),
+    updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : p.updated_at ? String(p.updated_at) : new Date().toISOString(),
+  };
+}
+
+export class AdminService {
+  /**
+   * Helper to check if a request's requestedCompany matches a target company (name or ID)
+   */
+  static matchesCompany(
+    requestedCompany?: string | null,
+    targetCompany?: string | null,
+    targetCompanyId?: string | null,
+    companiesList?: Company[]
+  ): boolean {
+    if (!requestedCompany) return false;
+    if (!targetCompany && !targetCompanyId) return true;
+
+    const req = requestedCompany.trim().toLowerCase();
+    const target = targetCompany?.trim().toLowerCase();
+    const targetId = targetCompanyId?.trim().toLowerCase();
+
+    if (target && req === target) return true;
+    if (targetId && req === targetId) return true;
+
+    if (target) {
+      const cleanReq = req.replace(/[^a-z0-9]/g, "");
+      const cleanTarget = target.replace(/[^a-z0-9]/g, "");
+      if (cleanReq && cleanTarget && cleanReq === cleanTarget) {
+        return true;
+      }
+      const reqWords = req.split(/[\s,.-]+/);
+      const targetWords = target.split(/[\s,.-]+/);
+      if (reqWords.includes(target) || targetWords.includes(req)) {
+        return true;
+      }
+    }
+
+    if (companiesList && companiesList.length > 0) {
+      const targetObj = companiesList.find(
+        (c) =>
+          (targetId && c.id.toLowerCase() === targetId) ||
+          (target && c.name.trim().toLowerCase() === target)
+      );
+      if (targetObj) {
+        const tName = targetObj.name.trim().toLowerCase();
+        if (req === tName) return true;
+        const cleanT = tName.replace(/[^a-z0-9]/g, "");
+        const cleanR = req.replace(/[^a-z0-9]/g, "");
+        if (cleanT && cleanR && cleanT === cleanR) return true;
+        const tWords = tName.split(/[\s,.-]+/);
+        const rWords = req.split(/[\s,.-]+/);
+        if (tWords.includes(req) || rWords.includes(tName)) return true;
+      }
+
+      const reqObj = companiesList.find(
+        (c) => c.id.toLowerCase() === req || c.name.trim().toLowerCase() === req
+      );
+      if (reqObj && targetObj && reqObj.id === targetObj.id) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Pending Access Requests
+   */
+  static async listPendingRequests(
+    filterCompanyName?: string,
+    filterCompanyId?: string,
+    companiesList?: Company[]
+  ): Promise<PendingAccessRequest[]> {
+    let requests: PendingAccessRequest[] = [];
+    const http = HttpClient.getInstance();
+
+    try {
+      const res = await http.get<any>(API_CONFIG.ENDPOINTS.ADMIN.REQUESTS);
+      const data = res?.data || (Array.isArray(res) ? res : null);
+      if (Array.isArray(data)) {
+        const cleanData = data.filter((r) => !isMockId(r.id));
+        setStorageItem(CACHE_KEY_REQUESTS, JSON.stringify(cleanData));
+        requests = cleanData;
+      }
+    } catch {
+      console.log("[AdminService] Failed to fetch requests from server, checking cache.");
+    }
+
+    if (requests.length === 0) {
+      const cached = getStorageItem(CACHE_KEY_REQUESTS);
+      const list: PendingAccessRequest[] = cached ? JSON.parse(cached) : [];
+      requests = list.filter((r) => !isMockId(r.id));
+    }
+
+    if (filterCompanyName && filterCompanyName !== "all") {
+      return requests.filter((r) =>
+        this.matchesCompany(r.requestedCompany, filterCompanyName, filterCompanyId, companiesList)
+      );
+    }
+
+    return requests;
+  }
+
+  static async approveRequest(
+    requestId: string,
+    companyId: string,
+    companyName: string,
+    role: UserRole
+  ): Promise<{ success: boolean; user?: User }> {
+    let approvedUser: User | undefined;
+    const http = HttpClient.getInstance();
+
+    try {
+      let resolvedCompanyId = companyId;
+      if (companyId.startsWith("pending-") || companyId.startsWith("comp-")) {
+        const companies = await this.listCompanies();
+        const existing = companies.find(
+          (c) => c.name.trim().toLowerCase() === companyName.trim().toLowerCase()
+        );
+        if (existing) {
+          resolvedCompanyId = existing.id;
+        } else {
+          try {
+            const created = await this.createCompany({ name: companyName.trim() });
+            if (created?.id) resolvedCompanyId = created.id;
+          } catch {
+            const fresh = await this.listCompanies();
+            const found = fresh.find(
+              (c) => c.name.trim().toLowerCase() === companyName.trim().toLowerCase()
+            );
+            if (found) resolvedCompanyId = found.id;
+          }
+        }
+      }
+
+      const res = await http.post<any>(
+        API_CONFIG.ENDPOINTS.ADMIN.APPROVE_REQUEST(requestId),
+        {
+          companyId: resolvedCompanyId,
+          role,
+        }
+      );
+      const data = res?.data || res;
+      if (data && (data.id || data.email)) {
+        approvedUser = mapProfileToUser(data, companyName);
+      }
+    } catch (err) {
+      console.warn("[AdminService] approveRequest network call failed:", err);
+    }
+
+    // Update local cache
+    const cachedRequestsStr = getStorageItem(CACHE_KEY_REQUESTS);
+    if (cachedRequestsStr) {
+      const requests: PendingAccessRequest[] = JSON.parse(cachedRequestsStr);
+      const updatedRequests = requests.filter((r) => r.id !== requestId);
+      setStorageItem(CACHE_KEY_REQUESTS, JSON.stringify(updatedRequests));
+    }
+
+    if (approvedUser) {
+      const cachedMembersStr = getStorageItem(CACHE_KEY_MEMBERS);
+      if (cachedMembersStr) {
+        const members: User[] = JSON.parse(cachedMembersStr);
+        const withoutUser = members.filter((m) => m.id !== approvedUser!.id);
+        withoutUser.unshift(approvedUser);
+        setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(withoutUser));
+      }
+
+      return { success: true, user: approvedUser };
+    }
+
+    return { success: false, user: approvedUser };
+  }
+
+  static async rejectRequest(requestId: string): Promise<boolean> {
+    const http = HttpClient.getInstance();
+    try {
+      await http.post(API_CONFIG.ENDPOINTS.ADMIN.REJECT_REQUEST(requestId));
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_REQUESTS);
+    if (cached) {
+      const requests: PendingAccessRequest[] = JSON.parse(cached);
+      const filtered = requests.filter((r) => r.id !== requestId);
+      setStorageItem(CACHE_KEY_REQUESTS, JSON.stringify(filtered));
+    }
+    return true;
+  }
+
+  /**
+   * Accounts & Members
+   */
+  static async listMembers(filterCompanyName?: string, filterCompanyId?: string): Promise<User[]> {
+    let membersList: User[] = [];
+    const http = HttpClient.getInstance();
+
+    try {
+      const companies = await this.listCompanies();
+      const res = await http.get<any>(API_CONFIG.ENDPOINTS.ADMIN.MEMBERS);
+      const data = res?.data || (Array.isArray(res) ? res : null);
+      if (Array.isArray(data)) {
+        const cleanData = data.filter((m) => !isMockId(m.id));
+        const mappedUsers: User[] = cleanData.map((p) => {
+          const compId = p.companyId || p.company_id;
+          const comp = compId
+            ? companies.find((c) => c.id.toLowerCase() === compId.toLowerCase())
+            : null;
+          const compName =
+            comp?.name ||
+            p.companyName ||
+            p.company_name ||
+            p.requestedCompany ||
+            p.requested_company ||
+            null;
+          return mapProfileToUser(p, compName || undefined);
+        });
+        setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(mappedUsers));
+        membersList = mappedUsers;
+      }
+    } catch {
+      console.log("[AdminService] Failed to fetch members, falling back to cache.");
+    }
+
+    if (membersList.length === 0) {
+      const cached = getStorageItem(CACHE_KEY_MEMBERS);
+      const list: any[] = cached ? JSON.parse(cached) : [];
+      const filtered = list.filter((m) => !isMockId(m.id));
+      const companies = await this.listCompanies();
+      membersList = filtered.map((p) => {
+        const compId = p.companyId || p.company_id;
+        const comp = compId
+          ? companies.find((c) => c.id.toLowerCase() === compId.toLowerCase())
+          : null;
+        const compName =
+          comp?.name ||
+          p.companyName ||
+          p.company_name ||
+          p.requestedCompany ||
+          p.requested_company ||
+          null;
+        return mapProfileToUser(p, compName || undefined);
+      });
+    }
+
+    if (filterCompanyName && filterCompanyName !== "all") {
+      const companies = await this.listCompanies();
+      return membersList.filter((m) => {
+        const compId = m.companyId?.toLowerCase();
+        const mCompName =
+          m.companyName ||
+          (compId ? companies.find((c) => c.id.toLowerCase() === compId)?.name : null) ||
+          m.requestedCompany;
+        return this.matchesCompany(
+          mCompName,
+          filterCompanyName,
+          filterCompanyId || m.companyId || undefined,
+          companies
+        );
+      });
+    }
+
+    return membersList;
+  }
+
+  static async updateUserRole(userId: string, newRole: UserRole): Promise<boolean> {
+    const http = HttpClient.getInstance();
+    try {
+      await http.patch(API_CONFIG.ENDPOINTS.ADMIN.UPDATE_ROLE(userId), { role: newRole });
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_MEMBERS);
+    if (cached) {
+      const members: User[] = JSON.parse(cached);
+      const updated = members.map((m) => (m.id === userId ? { ...m, role: newRole } : m));
+      setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(updated));
+    }
+    return true;
+  }
+
+  static async moveUserCompany(
+    userId: string,
+    companyId: string,
+    companyName: string
+  ): Promise<boolean> {
+    const http = HttpClient.getInstance();
+    try {
+      await http.patch(API_CONFIG.ENDPOINTS.ADMIN.MOVE_COMPANY(userId), { companyId });
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_MEMBERS);
+    if (cached) {
+      const members: User[] = JSON.parse(cached);
+      const updated = members.map((m) =>
+        m.id === userId ? { ...m, companyId, companyName } : m
+      );
+      setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(updated));
+    }
+    return true;
+  }
+
+  static async purgeUser(userId: string): Promise<boolean> {
+    const http = HttpClient.getInstance();
+    try {
+      await http.delete(API_CONFIG.ENDPOINTS.ADMIN.PURGE_USER(userId));
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_MEMBERS);
+    if (cached) {
+      const members: User[] = JSON.parse(cached);
+      const updated = members.filter((m) => m.id !== userId);
+      setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(updated));
+    }
+    return true;
+  }
+
+  /**
+   * Companies Management & Tree
+   */
+  static async listCompanies(): Promise<Company[]> {
+    const http = HttpClient.getInstance();
+    try {
+      const res = await http.get<any>(API_CONFIG.ENDPOINTS.COMPANIES.LIST);
+      const data = res?.data || (Array.isArray(res) ? res : null);
+      if (Array.isArray(data)) {
+        const cleanData = data.filter((c) => !isMockId(c.id));
+        const cached = getStorageItem(CACHE_KEY_COMPANIES);
+        if (cached) {
+          try {
+            const cachedList: Company[] = JSON.parse(cached);
+            const cachedMap = new Map(cachedList.map((c) => [c.id.toLowerCase(), c]));
+            const merged = cleanData.map((c) => {
+              const prev = cachedMap.get(c.id.toLowerCase());
+              return {
+                ...c,
+                memberCount: c.memberCount ?? prev?.memberCount ?? 0,
+                visitCount: c.visitCount ?? prev?.visitCount ?? 0,
+              };
+            });
+            setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(merged));
+            return merged;
+          } catch {}
+        }
+        setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(cleanData));
+        return cleanData;
+      }
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_COMPANIES);
+    if (cached) {
+      const list: Company[] = JSON.parse(cached);
+      return list.filter((c) => !isMockId(c.id));
+    }
+    return [];
+  }
+
+  static async listCompaniesWithCounts(): Promise<Company[]> {
+    const http = HttpClient.getInstance();
+    const [companies, members, visitsRes] = await Promise.all([
+      this.listCompanies(),
+      this.listMembers().catch(() => []),
+      http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST).catch(() => ({ data: [] })),
+    ]);
+
+    const visits = Array.isArray(visitsRes?.data)
+      ? visitsRes.data
+      : Array.isArray(visitsRes)
+      ? visitsRes
+      : [];
+
+    const enriched = companies.map((comp) => {
+      const compId = comp.id.toLowerCase();
+      const compName = comp.name.trim().toLowerCase();
+
+      const memberCount = members.filter((m) => {
+        if (m.companyId && m.companyId.toLowerCase() === compId) return true;
+        if (m.companyName && m.companyName.trim().toLowerCase() === compName) return true;
+        if (m.requestedCompany && m.requestedCompany.trim().toLowerCase() === compName) return true;
+        return this.matchesCompany(m.companyName || m.requestedCompany, comp.name, comp.id, companies);
+      }).length;
+
+      const visitCount = visits.filter((v: any) => {
+        if (v.companyId && v.companyId.toLowerCase() === compId) return true;
+        if (v.companyName && v.companyName.trim().toLowerCase() === compName) return true;
+        return this.matchesCompany(v.companyName, comp.name, comp.id, companies);
+      }).length;
+
+      return {
+        ...comp,
+        memberCount,
+        visitCount,
+      };
+    });
+
+    setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(enriched));
+    return enriched;
+  }
+
+  static async createCompany(input: CreateCompanyInput): Promise<Company> {
+    const http = HttpClient.getInstance();
+    const res = await http.post<any>(API_CONFIG.ENDPOINTS.COMPANIES.CREATE, input);
+    const created: Company = res?.data || res;
+
+    const cached = getStorageItem(CACHE_KEY_COMPANIES);
+    if (cached) {
+      const list: Company[] = JSON.parse(cached);
+      list.push(created);
+      setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(list));
+    }
+    return created;
+  }
+
+  static async updateCompany(id: string, input: UpdateCompanyInput): Promise<Company | null> {
+    const http = HttpClient.getInstance();
+    let updated: Company | null = null;
+    try {
+      const res = await http.patch<any>(API_CONFIG.ENDPOINTS.COMPANIES.UPDATE(id), input);
+      if (res?.data) updated = res.data;
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_COMPANIES);
+    if (cached) {
+      const list: Company[] = JSON.parse(cached);
+      const index = list.findIndex((c) => c.id === id);
+      if (index >= 0) {
+        list[index] = updated || {
+          ...list[index],
+          ...input,
+          updatedAt: new Date().toISOString().split("T")[0],
+        };
+        setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(list));
+        return list[index];
+      }
+    }
+    return updated;
+  }
+
+  static async deleteCompany(id: string): Promise<boolean> {
+    const http = HttpClient.getInstance();
+    try {
+      await http.delete(API_CONFIG.ENDPOINTS.COMPANIES.DELETE(id));
+    } catch {}
+
+    const cached = getStorageItem(CACHE_KEY_COMPANIES);
+    if (cached) {
+      const list: Company[] = JSON.parse(cached);
+      const filtered = list.filter((c) => c.id !== id && c.parentId !== id);
+      setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(filtered));
+    }
+    return true;
+  }
+
+  /**
+   * PDF Template Sanitizer: removes section symbols only
+   */
+  public static sanitizeTemplate(template: PDFTemplate): PDFTemplate {
+    if (!template || !Array.isArray(template.pages)) return template;
+
+    const stripSection = (s?: string) => (s ? s.replace(/§\s*/g, "").trim() : "");
+
+    const sanitizedPages = template.pages
+      .map((p) => {
+        const title = stripSection(p.title);
+        const elements = p.elements || [];
+
+        const sanitizedElements = elements.map((el) => ({
+          ...el,
+          label: stripSection(el.label),
+          content: stripSection(el.content),
+          placeholder: stripSection(el.placeholder),
+        }));
+
+        return {
+          ...p,
+          title,
+          elements: sanitizedElements,
+        };
+      })
+      .filter((p) => p.elements && p.elements.length > 0);
+
+    return {
+      ...template,
+      pages: sanitizedPages,
+    };
+  }
+
+  /**
+   * PDF Template Fetching & Editing
+   */
+  static async getTemplate(): Promise<PDFTemplate> {
+    return (await this.getTemplateForEditing()).template;
+  }
+
+  static async getTemplateForEditing(): Promise<{ template: PDFTemplate; unpublishedDraft: boolean }> {
+    const cached = getStorageItem(CACHE_KEY_TEMPLATE);
+    let local: PDFTemplate | null = null;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+          local = this.sanitizeTemplate(parsed);
+        }
+      } catch {}
+    }
+
+    const http = HttpClient.getInstance();
+    const endpointsToTry = [
+      API_CONFIG.ENDPOINTS.TEMPLATES.DEFAULT,
+      API_CONFIG.ENDPOINTS.TEMPLATES.FALLBACK_DEFAULT,
+      API_CONFIG.ENDPOINTS.TEMPLATES.FALLBACK_ACTIVE,
+      API_CONFIG.ENDPOINTS.TEMPLATES.ACTIVE,
+    ];
+
+    let serverData: any = null;
+    for (const ep of endpointsToTry) {
+      try {
+        const res = await http.get<any>(ep, { requiresAuth: false });
+        const resAny = res as any;
+        const candidate = resAny?.data || (resAny?.pages ? resAny : null);
+        if (candidate && Array.isArray(candidate.pages) && candidate.pages.length > 0) {
+          serverData = candidate;
+          break;
+        }
+      } catch {}
+    }
+
+    if (serverData) {
+      const server = this.sanitizeTemplate(serverData);
+      if (serverData.isCustom || !local) {
+        setStorageItem(CACHE_KEY_TEMPLATE, JSON.stringify(server));
+        return { template: server, unpublishedDraft: false };
+      }
+      const differs = JSON.stringify(local.pages) !== JSON.stringify(server.pages);
+      return differs
+        ? { template: local, unpublishedDraft: true }
+        : { template: server, unpublishedDraft: false };
+    }
+
+    if (local) {
+      return { template: local, unpublishedDraft: false };
+    }
+
+    setStorageItem(CACHE_KEY_TEMPLATE, JSON.stringify(DEFAULT_EC_POWER_PDF_TEMPLATE));
+    return { template: DEFAULT_EC_POWER_PDF_TEMPLATE, unpublishedDraft: false };
+  }
+
+  static async saveTemplate(template: PDFTemplate): Promise<PDFTemplate> {
+    const sanitized = this.sanitizeTemplate(template);
+    const toSave: PDFTemplate = {
+      ...sanitized,
+      updatedAt: new Date().toISOString().split("T")[0],
+      isDefault: true,
+    };
+
+    setStorageItem(CACHE_KEY_TEMPLATE, JSON.stringify(toSave));
+
+    const http = HttpClient.getInstance();
+    const endpointsToTry = [
+      API_CONFIG.ENDPOINTS.TEMPLATES.SAVE,
+      API_CONFIG.ENDPOINTS.TEMPLATES.FALLBACK_SAVE,
+    ];
+
+    for (const ep of endpointsToTry) {
+      try {
+        const res = await http.post<any>(ep, {
+          ...toSave,
+          isDefault: true,
+        });
+        const resAny = res as any;
+        if (resAny?.data?.id || resAny?.id) {
+          const finalSaved: PDFTemplate = {
+            ...toSave,
+            id: resAny?.data?.id ?? resAny?.id ?? toSave.id,
+            name: resAny?.data?.name ?? resAny?.name ?? toSave.name,
+          };
+          setStorageItem(CACHE_KEY_TEMPLATE, JSON.stringify(finalSaved));
+          return finalSaved;
+        }
+      } catch {}
+    }
+
+    return toSave;
+  }
+
+  static async previewTemplateHtml(template: PDFTemplate): Promise<string> {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const query = tz ? `?tz=${encodeURIComponent(tz)}` : "";
+
+    const endpointsToTry = [
+      `${API_CONFIG.ENDPOINTS.TEMPLATES.PREVIEW}${query}`,
+      `${API_CONFIG.ENDPOINTS.TEMPLATES.FALLBACK_PREVIEW}${query}`,
+    ];
+
+    const http = HttpClient.getInstance();
+    for (const ep of endpointsToTry) {
+      try {
+        const res = await http.post<any>(ep, template);
+        const resAny = res as any;
+        const html = resAny?.data?.html || resAny?.html;
+        if (html) return html;
+      } catch {}
+    }
+
+    return "";
+  }
+
+  static async resetTemplate(): Promise<PDFTemplate> {
+    const endpointsToTry = [
+      API_CONFIG.ENDPOINTS.TEMPLATES.DEFAULT,
+      API_CONFIG.ENDPOINTS.TEMPLATES.FALLBACK_DEFAULT,
+      API_CONFIG.ENDPOINTS.TEMPLATES.FALLBACK_ACTIVE,
+    ];
+
+    const http = HttpClient.getInstance();
+    for (const ep of endpointsToTry) {
+      try {
+        const res = await http.get<any>(ep, { requiresAuth: false });
+        const resAny = res as any;
+        const serverData = resAny?.data || (resAny?.pages ? resAny : null);
+        if (serverData && Array.isArray(serverData.pages) && serverData.pages.length > 0) {
+          const server = this.sanitizeTemplate(serverData);
+          setStorageItem(CACHE_KEY_TEMPLATE, JSON.stringify(server));
+          return server;
+        }
+      } catch {}
+    }
+
+    setStorageItem(CACHE_KEY_TEMPLATE, JSON.stringify(DEFAULT_EC_POWER_PDF_TEMPLATE));
+    return DEFAULT_EC_POWER_PDF_TEMPLATE;
+  }
+
+  /**
+   * Metrics and Summary
+   */
+  static async getDashboardMetrics(
+    userCompany?: string | null,
+    userCompanyId?: string | null,
+    isSuper = false,
+    companiesList?: Company[]
+  ): Promise<AdminDashboardMetrics> {
+    const http = HttpClient.getInstance();
+    const [requests, members, companies, visitsRes] = await Promise.all([
+      this.listPendingRequests(
+        isSuper ? undefined : userCompany || undefined,
+        isSuper ? undefined : userCompanyId || undefined,
+        companiesList
+      ),
+      this.listMembers(
+        isSuper ? undefined : userCompany || undefined,
+        isSuper ? undefined : userCompanyId || undefined
+      ),
+      this.listCompaniesWithCounts(),
+      http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST).catch(() => ({ data: [] })),
+    ]);
+
+    const totalVisitsCount = companies.reduce((acc, c) => acc + (c.visitCount || 0), 0);
+    const now = Date.now();
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const visits: any[] = Array.isArray(visitsRes?.data) ? visitsRes.data : [];
+
+    const retentionWarningCount = visits.filter((v) => {
+      const created = new Date(v.createdAt);
+      if (isNaN(created.getTime())) return false;
+      const ageInDays = Math.floor((now - created.getTime()) / MS_PER_DAY);
+      return ageInDays >= 335;
+    }).length;
+
+    return {
+      pendingRequestsCount: requests.length,
+      totalMembersCount: members.length,
+      totalCompaniesCount: isSuper ? companies.length : (userCompany ? 1 : companies.length),
+      totalVisitsCount: totalVisitsCount > 0 ? totalVisitsCount : visits.length,
+      retentionWarningCount,
+    };
+  }
+
+  /**
+   * Retention & Storage Health Metrics
+   */
+  static async getRetentionStorageMetrics(olderThanDays = 365): Promise<RetentionStorageMetrics> {
+    const http = HttpClient.getInstance();
+    const [visitsRes, companies] = await Promise.all([
+      http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST).catch(() => ({ data: [] })),
+      this.listCompanies().catch(() => []),
+    ]);
+
+    const visits: any[] = (Array.isArray(visitsRes?.data) ? visitsRes.data : []).filter(
+      (v) => !isMockId(v.id)
+    );
+    const companyMap = new Map(companies.map((c) => [c.id.toLowerCase(), c.name]));
+
+    const now = Date.now();
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+    let expiringIn30Days = 0;
+    let pastRetentionDays = 0;
+    let activeVisits = 0;
+    let oldestDate: Date | null = null;
+    let newestDate: Date | null = null;
+    const expiringVisits: ExpiringVisitItem[] = [];
+
+    for (const v of visits) {
+      const created = new Date(v.createdAt);
+      if (!isNaN(created.getTime())) {
+        if (!oldestDate || created < oldestDate) oldestDate = created;
+        if (!newestDate || created > newestDate) newestDate = created;
+
+        const ageInDays = Math.max(0, Math.floor((now - created.getTime()) / MS_PER_DAY));
+        const daysRemaining = olderThanDays - ageInDays;
+        const isExpired = ageInDays >= olderThanDays;
+        const isExpiringSoon = !isExpired && daysRemaining <= 30;
+
+        if (isExpired) {
+          pastRetentionDays++;
+        } else if (isExpiringSoon) {
+          expiringIn30Days++;
+        } else {
+          activeVisits++;
+        }
+
+        if (isExpired || isExpiringSoon) {
+          expiringVisits.push({
+            id: v.id,
+            siteName: v.siteName || "Unnamed Inspection",
+            companyId: v.companyId,
+            companyName:
+              v.companyName ||
+              (v.companyId ? companyMap.get(v.companyId.toLowerCase()) : null) ||
+              "Unassigned",
+            createdAt: v.createdAt,
+            ageInDays,
+            daysRemaining: Math.max(0, daysRemaining),
+            isExpired,
+            status: v.status || "completed",
+          });
+        }
+      } else {
+        activeVisits++;
+      }
+    }
+
+    expiringVisits.sort((a, b) => {
+      if (a.isExpired && !b.isExpired) return -1;
+      if (!a.isExpired && b.isExpired) return 1;
+      return a.daysRemaining - b.daysRemaining;
+    });
+
+    let totalMediaCount = 0;
+    let totalPhotosCount = 0;
+    let totalVideosCount = 0;
+    let totalBytes = 0;
+
+    const mediaPromises = visits.slice(0, 50).map(async (v) => {
+      try {
+        const res = await http.get<any>(API_CONFIG.ENDPOINTS.MEDIA.LIST(v.id));
+        const list = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(list)) {
+          return { visitId: v.id, media: list };
+        }
+      } catch {}
+      return { visitId: v.id, media: [] };
+    });
+
+    const mediaResults = await Promise.all(mediaPromises);
+    const mediaCountByVisit = new Map<string, number>();
+
+    for (const item of mediaResults) {
+      mediaCountByVisit.set(item.visitId, item.media.length);
+      totalMediaCount += item.media.length;
+      for (const m of item.media) {
+        if (m.type === "video") totalVideosCount++;
+        else totalPhotosCount++;
+        if (m.fileSize) totalBytes += Number(m.fileSize);
+        else totalBytes += m.type === "video" ? 15 * 1024 * 1024 : 2 * 1024 * 1024;
+      }
+    }
+
+    for (const ev of expiringVisits) {
+      ev.mediaCount = mediaCountByVisit.get(ev.id) ?? 0;
+    }
+
+    const estimatedStorageMB = Number((totalBytes / (1024 * 1024)).toFixed(1));
+
+    let lastCleanup: RetentionCleanupResult | null = null;
+    const cachedRun = getStorageItem(CACHE_KEY_RETENTION_RUN);
+    if (cachedRun) {
+      try {
+        lastCleanup = JSON.parse(cachedRun);
+      } catch {}
+    }
+
+    return {
+      totalVisits: visits.length,
+      expiringIn30Days,
+      pastRetentionDays,
+      activeVisits,
+      retentionPeriodDays: olderThanDays,
+      totalMediaCount,
+      totalPhotosCount,
+      totalVideosCount,
+      estimatedStorageMB,
+      oldestVisitDate: oldestDate ? oldestDate.toISOString() : null,
+      newestVisitDate: newestDate ? newestDate.toISOString() : null,
+      expiringVisits,
+      lastCleanup,
+    };
+  }
+
+  static async runRetentionCleanup(olderThanDays = 365): Promise<RetentionCleanupResult> {
+    const http = HttpClient.getInstance();
+    let purgedVisits = 0;
+    let deletedFilesCount = 0;
+    let freedSpaceMB = 0;
+
+    try {
+      const res = await http.post<any>(
+        `${API_CONFIG.ENDPOINTS.ADMIN.RETENTION_CLEANUP}?olderThanDays=${olderThanDays}`
+      );
+      const data = res?.data || res || {};
+      purgedVisits = Number(data.deletedVisitsCount ?? data.purgedVisitsCount ?? data.purgedVisits ?? 0);
+      deletedFilesCount = Number(data.deletedFilesCount ?? data.deletedFiles ?? 0);
+      freedSpaceMB = Number(data.freedSpaceMB ?? (deletedFilesCount * 2.5).toFixed(1));
+    } catch (err: any) {
+      console.warn("[AdminService] Retention cleanup call failed:", err);
+    }
+
+    const runResult: RetentionCleanupResult = {
+      purgedVisits,
+      deletedFilesCount,
+      freedSpaceMB,
+      timestamp: new Date().toISOString(),
+    };
+
+    setStorageItem(CACHE_KEY_RETENTION_RUN, JSON.stringify(runResult));
+    return runResult;
+  }
+}

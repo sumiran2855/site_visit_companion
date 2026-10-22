@@ -537,13 +537,6 @@ export default function AdminTemplatePage() {
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 flex flex-col select-none">
-      {/* Top Main Navigation Header */}
-      <AdminHeader
-        title="PDF Template Editor"
-        subtitle="SITE VISIT COMPANION"
-        backLabel="Visits"
-      />
-
       {/* Secondary Template Studio Toolbar (Matches Walkthrough Page 8) */}
       <div className="w-full bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 sticky top-16 z-10 shadow-2xs">
         {/* Left: Quick status and title */}
