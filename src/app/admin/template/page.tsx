@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -41,6 +41,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { PdfService } from "@/services/pdf.service";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import type {
   PDFTemplate,
@@ -203,8 +204,20 @@ const INITIAL_PAGES: TemplatePage[] = [
   },
 ];
 
+const DEFAULT_TEMPLATE_META: PDFTemplate = {
+  id: "",
+  name: "Standard EC POWER Field Report",
+  version: "1.2.0",
+  pageSize: "A4",
+  orientation: "portrait",
+  margins: "normal",
+  pages: [],
+  updatedAt: "",
+};
+
 export default function AdminTemplatePage() {
   const [pages, setPages] = useState<TemplatePage[]>(INITIAL_PAGES);
+  const [templateMeta, setTemplateMeta] = useState<PDFTemplate>(DEFAULT_TEMPLATE_META);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
     "el-field-site"
@@ -238,6 +251,24 @@ export default function AdminTemplatePage() {
       setToastMessage(null);
     }, 4000);
   };
+
+  // Load the active template (Admin-saved, else built-in default) from the backend
+  useEffect(() => {
+    let cancelled = false;
+    PdfService.getActiveTemplate()
+      .then((active) => {
+        if (cancelled || !active?.pages?.length) return;
+        setTemplateMeta({ ...active, pages: [] });
+        setPages(active.pages);
+        setHistory([active.pages]);
+        setHistoryIndex(0);
+        setSelectedElementId(null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activePage = pages[activePageIndex] || pages[0];
   const selectedElement = activePage.elements.find(
@@ -475,12 +506,21 @@ export default function AdminTemplatePage() {
   };
 
   // Save template action
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     setSaveStatus("saving");
-    setTimeout(() => {
+    try {
+      const saved = await PdfService.saveTemplate({
+        ...templateMeta,
+        pages,
+        updatedAt: new Date().toISOString(),
+      });
+      setTemplateMeta({ ...saved, pages: [] });
       setSaveStatus("saved");
-      showToast("Template layout successfully saved to cloud.");
-    }, 600);
+      showToast("Template saved. It is now the active template for all PDFs.");
+    } catch {
+      setSaveStatus("unsaved");
+      showToast("Failed to save template. Please try again.");
+    }
   };
 
   // Reset to default
@@ -490,9 +530,9 @@ export default function AdminTemplatePage() {
     setSelectedElementId("el-field-site");
     setHistory([INITIAL_PAGES]);
     setHistoryIndex(0);
-    setSaveStatus("saved");
+    setSaveStatus("unsaved");
     setIsResetConfirmOpen(false);
-    showToast("Template reset to factory default.");
+    showToast("Factory layout loaded. Save to make it the active template.");
   };
 
   return (

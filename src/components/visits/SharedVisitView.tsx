@@ -28,6 +28,7 @@ import {
 import { CHECKLIST_SECTIONS_CONFIG } from "@/config/checklist";
 import { API_CONFIG } from "@/config/api.config";
 import { ROUTES } from "@/lib/constants";
+import { PdfService } from "@/services/pdf.service";
 
 interface SharedVisitPayload {
   visit: {
@@ -182,8 +183,15 @@ export function SharedVisitView({ tokenOrId }: SharedVisitViewProps) {
     }
   };
 
-  const handlePrint = () => {
-    // Open all sections before printing
+  const handlePrint = async () => {
+    const downloaded = await PdfService.downloadReport({
+      visitId: data?.visit?.id ?? tokenOrId,
+      shareToken: tokenOrId,
+      siteName: data?.visit?.siteName || "SiteVisit",
+    });
+    if (downloaded) return;
+
+    // Backend unavailable: fall back to browser print. Open all sections before printing
     handleExpandAll();
     setTimeout(() => {
       window.print();

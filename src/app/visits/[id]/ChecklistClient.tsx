@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { Navbar } from "@/components/layout/Navbar";
+import { PdfService } from "@/services/pdf.service";
 import {
   CHECKLIST_SECTIONS_CONFIG,
 } from "@/config/checklist";
@@ -251,8 +252,9 @@ export function ChecklistClient({ visitId }: ChecklistClientProps) {
   };
 
   // Print Friendly PDF Action (Section 16 requirement)
-  const handlePrintPdf = () => {
-    window.print();
+  const handlePrintPdf = async () => {
+    const downloaded = await PdfService.downloadReport({ visitId, siteName });
+    if (!downloaded) window.print();
   };
 
   return (
