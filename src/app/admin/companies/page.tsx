@@ -21,6 +21,7 @@ import {
   Check,
 } from "lucide-react";
 import { useAdminCompanies } from "@/hooks/useAdminCompanies";
+import { CompaniesTreeSkeleton } from "@/components/admin/AdminDashboardSkeleton";
 import type { Company, CreateCompanyInput, UpdateCompanyInput } from "@/types/admin";
 
 export default function AdminCompaniesPage() {
@@ -309,7 +310,9 @@ export default function AdminCompaniesPage() {
       </div>
 
       {/* Companies List */}
-      {roots.length === 0 ? (
+      {isLoading ? (
+        <CompaniesTreeSkeleton count={4} />
+      ) : roots.length === 0 ? (
         <div className="p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-center space-y-3">
           <div className="size-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mx-auto text-slate-500">
             <Building2 className="size-6" />

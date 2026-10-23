@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState } from "react";
 import {
   Trash2,
   RotateCw,
@@ -8,9 +7,7 @@ import {
   CheckCircle2,
   HardHat,
   Image as ImageIcon,
-  Video,
   Database,
-  Calendar,
   Clock,
   ShieldAlert,
   Play,
@@ -19,11 +16,15 @@ import {
   Check,
 } from "lucide-react";
 import { useAdminRetention } from "@/hooks/useAdminRetention";
+import {
+  RetentionTableSkeleton,
+  RetentionLastCleanupSkeleton,
+  RetentionMetricsRowSkeleton,
+} from "@/components/admin/AdminDashboardSkeleton";
 
 export default function AdminRetentionPage() {
   const {
     isSuperAdmin,
-    isCompanyAdmin,
     metrics,
     isLoading,
     isRefreshing,
@@ -40,7 +41,6 @@ export default function AdminRetentionPage() {
   } = useAdminRetention();
 
   const pastRetentionDays = metrics?.pastRetentionDays ?? 0;
-  const expiringIn30Days = metrics?.expiringIn30Days ?? 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -153,14 +153,18 @@ export default function AdminRetentionPage() {
               <CheckCircle2 className="size-4 text-emerald-600" />
               <h3>Last Cleanup Execution</h3>
             </div>
-            {lastRunResult && (
+            {isLoading ? (
+              <span className="inline-block w-24 h-3 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+            ) : lastRunResult ? (
               <span className="text-[10px] text-slate-400">
                 {new Date(lastRunResult.timestamp).toLocaleString()}
               </span>
-            )}
+            ) : null}
           </div>
 
-          {lastRunResult ? (
+          {isLoading ? (
+            <RetentionLastCleanupSkeleton />
+          ) : lastRunResult ? (
             <div className="grid grid-cols-3 gap-2 pt-1 text-center">
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60">
                 <div className="text-base font-extrabold text-slate-900 dark:text-zinc-100">
@@ -190,87 +194,91 @@ export default function AdminRetentionPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Past Retention Period */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Past 365 Days
-            </span>
-            <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600">
-              <Trash2 className="size-4" />
+      {isLoading ? (
+        <RetentionMetricsRowSkeleton />
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Past Retention Period */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Past 365 Days
+              </span>
+              <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600">
+                <Trash2 className="size-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl sm:text-3xl font-black text-rose-600">
+                {metrics?.pastRetentionDays ?? 0}
+              </div>
+              <p className="text-xs font-semibold text-rose-600 mt-0.5">
+                Due for immediate purge
+              </p>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-rose-600">
-              {metrics?.pastRetentionDays ?? 0}
-            </div>
-            <p className="text-xs font-semibold text-rose-600 mt-0.5">
-              Due for immediate purge
-            </p>
-          </div>
-        </div>
 
-        {/* Expiring Soon */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Expiring &lt;30d
-            </span>
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600">
-              <Clock className="size-4" />
+          {/* Expiring Soon */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Expiring &lt;30d
+              </span>
+              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600">
+                <Clock className="size-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl sm:text-3xl font-black text-amber-600">
+                {metrics?.expiringIn30Days ?? 0}
+              </div>
+              <p className="text-xs font-semibold text-amber-600 mt-0.5">
+                Approaching retention cutoff
+              </p>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-amber-600">
-              {metrics?.expiringIn30Days ?? 0}
-            </div>
-            <p className="text-xs font-semibold text-amber-600 mt-0.5">
-              Approaching retention cutoff
-            </p>
-          </div>
-        </div>
 
-        {/* Active Inspections */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Active Visits
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600">
-              <HardHat className="size-4" />
+          {/* Active Inspections */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Active Visits
+              </span>
+              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600">
+                <HardHat className="size-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-zinc-100">
+                {metrics?.activeVisits ?? 0}
+              </div>
+              <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                Within compliance window
+              </p>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-zinc-100">
-              {metrics?.activeVisits ?? 0}
-            </div>
-            <p className="text-xs font-semibold text-emerald-600 mt-0.5">
-              Within compliance window
-            </p>
-          </div>
-        </div>
 
-        {/* Storage Volume */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Estimated Storage
-            </span>
-            <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600">
-              <Database className="size-4" />
+          {/* Storage Volume */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Estimated Storage
+              </span>
+              <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600">
+                <Database className="size-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-zinc-100">
-              {metrics?.estimatedStorageMB ?? 0} MB
+            <div className="mt-3">
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-zinc-100">
+                {metrics?.estimatedStorageMB ?? 0} MB
+              </div>
+              <p className="text-xs font-semibold text-sky-600 mt-0.5">
+                {metrics?.totalPhotosCount ?? 0} photos, {metrics?.totalVideosCount ?? 0} videos
+              </p>
             </div>
-            <p className="text-xs font-semibold text-sky-600 mt-0.5">
-              {metrics?.totalPhotosCount ?? 0} photos, {metrics?.totalVideosCount ?? 0} videos
-            </p>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Expiring Visits Table */}
       <div className="space-y-3">
@@ -278,12 +286,34 @@ export default function AdminRetentionPage() {
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
             Visits Approaching or Past 365-Day Retention
           </h2>
-          <span className="text-xs text-slate-400 font-semibold">
-            {metrics?.expiringVisits.length ?? 0} visits queued
-          </span>
+          {isLoading ? (
+            <span className="inline-block w-24 h-4 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
+          ) : (
+            <span className="text-xs text-slate-400 font-semibold">
+              {metrics?.expiringVisits.length ?? 0} visits queued
+            </span>
+          )}
         </div>
 
-        {metrics?.expiringVisits.length === 0 ? (
+        {isLoading ? (
+          <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-zinc-800">
+                  <tr>
+                    <th className="py-3 px-4">Site Name</th>
+                    <th className="py-3 px-4">Organization</th>
+                    <th className="py-3 px-4">Inspection Date</th>
+                    <th className="py-3 px-4">Age (Days)</th>
+                    <th className="py-3 px-4">Media Items</th>
+                    <th className="py-3 px-4 text-right">Retention Status</th>
+                  </tr>
+                </thead>
+                <RetentionTableSkeleton rows={5} />
+              </table>
+            </div>
+          </div>
+        ) : (metrics?.expiringVisits.length ?? 0) === 0 ? (
           <div className="p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-center space-y-3">
             <div className="size-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto text-emerald-600">
               <Check className="size-6" />

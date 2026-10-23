@@ -1,25 +1,25 @@
 "use client";
 
-import React, { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
   Download,
   FileText,
   CheckCircle2,
-  AlertCircle,
   Video,
   Image as ImageIcon,
   Check,
   X,
   Send,
-  Building,
+  Loader2,
 } from "lucide-react";
 import { useSubmissionDetail } from "@/hooks/useSubmissionDetail";
 import { MediaViewerModal } from "@/components/submissions/MediaViewerModal";
 import { RequestMoreModal } from "@/components/submissions/RequestMoreModal";
 import { RejectSubmissionModal } from "@/components/submissions/RejectSubmissionModal";
 import { ApproveSiteModal } from "@/components/submissions/ApproveSiteModal";
+import { PdfReportPreviewModal } from "@/components/submissions/PdfReportPreviewModal";
 import { PdfService } from "@/services/pdf.service";
 
 interface PageProps {
@@ -65,6 +65,16 @@ export default function SubmissionDetailPage({ params }: PageProps) {
     handleNextMedia,
     handlePrevMedia,
   } = useSubmissionDetail(id);
+
+  const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
+  const [localToast, setLocalToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setLocalToast(msg);
+    setTimeout(() => {
+      setLocalToast(null);
+    }, 4500);
+  };
 
   if (isLoading) {
     return (
@@ -136,15 +146,9 @@ export default function SubmissionDetailPage({ params }: PageProps) {
     }
   };
 
-  const handleOpenPdfReport = async () => {
-    const success = await PdfService.downloadReport({
-      visitId: submission.id,
-      siteName: submission.siteName,
-    });
-    if (!success) {
-      // Direct printable HTML fallback in new tab
-      window.print();
-    }
+  const handleOpenPdfReport = () => {
+    if (!submission) return;
+    setIsPdfPreviewOpen(true);
   };
 
   const queuedRequestsCount = submission.customerRequests.length;
@@ -152,10 +156,10 @@ export default function SubmissionDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-4 max-w-7xl mx-auto p-4">
       {/* Toast Notification Banner */}
-      {toastMessage && (
+      {(toastMessage || localToast) && (
         <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-slate-900 text-white shadow-xl text-xs font-medium flex items-center gap-2.5 border border-slate-700 animate-in fade-in slide-in-from-bottom-2">
           <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
+          <span>{localToast || toastMessage}</span>
         </div>
       )}
 
@@ -202,7 +206,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
           >
             <FileText size={14} className="text-slate-500 dark:text-zinc-400" />
-            PDF report
+            <span>PDF report</span>
           </button>
         </div>
       </div>
@@ -321,12 +325,29 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                           onClick={() => handleOpenMedia(item)}
                           className="group relative rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-800/80 overflow-hidden cursor-pointer hover:shadow-md transition-all aspect-4/3 flex flex-col justify-between"
                         >
-                          {/* Image / Thumbnail Preview */}
-                          <img
-                            src={item.url}
-                            alt={item.title}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
+                          {/* Image / Video Preview */}
+                          {item.type === "video" ? (
+                            <div className="absolute inset-0 bg-slate-950 flex items-center justify-center">
+                              <video
+                                src={item.url}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                  <Video size={18} />
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <img
+                              src={item.url}
+                              alt={item.title}
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          )}
 
                           {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/40 pointer-events-none"></div>
@@ -598,6 +619,14 @@ export default function SubmissionDetailPage({ params }: PageProps) {
         onClose={() => setIsApproveConfirmOpen(false)}
         onConfirm={handleApproveSite}
       />
+
+      {submission && (
+        <PdfReportPreviewModal
+          isOpen={isPdfPreviewOpen}
+          submission={submission}
+          onClose={() => setIsPdfPreviewOpen(false)}
+        />
+      )}
     </div>
   );
 }

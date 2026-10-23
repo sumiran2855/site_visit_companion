@@ -1,24 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  Users,
   Search,
-  Filter,
   Check,
   X,
   AlertTriangle,
   UserCheck,
-  UserX,
   Building2,
   Mail,
   Shield,
   RotateCw,
   Trash2,
   ArrowRightLeft,
-  ShieldAlert,
 } from "lucide-react";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
+import {
+  AccountsRequestsSkeleton,
+  AccountsMembersTableSkeleton,
+} from "@/components/admin/AdminDashboardSkeleton";
 import type { PendingAccessRequest } from "@/types/admin";
 import type { User, UserRole } from "@/types/auth";
 
@@ -26,7 +26,6 @@ export default function AdminUsersPage() {
   const {
     user,
     isSuperAdmin,
-    isCompanyAdmin,
     activeTab,
     setActiveTab,
     searchQuery,
@@ -175,11 +174,13 @@ export default function AdminUsersPage() {
               }`}
             >
               <span>Pending Requests</span>
-              {filteredRequests.length > 0 && (
+              {isLoading ? (
+                <span className="inline-block w-4 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 animate-pulse" />
+              ) : filteredRequests.length > 0 ? (
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-500 text-white">
                   {filteredRequests.length}
                 </span>
-              )}
+              ) : null}
             </button>
 
             <button
@@ -192,9 +193,13 @@ export default function AdminUsersPage() {
               }`}
             >
               <span>Approved Members</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300">
-                {filteredMembers.length}
-              </span>
+              {isLoading ? (
+                <span className="inline-block w-4 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 animate-pulse" />
+              ) : (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300">
+                  {filteredMembers.length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -221,7 +226,14 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Company Filter Pills */}
-        {companyPills.length > 1 && (
+        {isLoading ? (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Org:</span>
+            <div className="h-6 w-24 bg-slate-200 dark:bg-zinc-800 rounded-xl animate-pulse" />
+            <div className="h-6 w-28 bg-slate-100 dark:bg-zinc-800/60 rounded-xl animate-pulse" />
+            <div className="h-6 w-20 bg-slate-100 dark:bg-zinc-800/60 rounded-xl animate-pulse" />
+          </div>
+        ) : companyPills.length > 1 ? (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
             <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Org:</span>
             <button
@@ -250,13 +262,15 @@ export default function AdminUsersPage() {
               </button>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Main Content Area */}
       {activeTab === "requests" ? (
         /* Pending Requests List */
-        filteredRequests.length === 0 ? (
+        isLoading ? (
+          <AccountsRequestsSkeleton count={4} />
+        ) : filteredRequests.length === 0 ? (
           <div className="p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-center space-y-3">
             <div className="size-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto text-emerald-600">
               <Check className="size-6" />
@@ -337,93 +351,110 @@ export default function AdminUsersPage() {
                   {isSuperAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-                {filteredMembers.map((member) => {
-                  const isSuper = member.role === "super_admin";
-                  const isCoAdmin = member.role === "company_admin";
-
-                  return (
-                    <tr
-                      key={member.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 transition-colors"
-                    >
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900 dark:text-zinc-100 text-sm">
-                          {member.name}
-                        </div>
-                        <div className="text-slate-500 text-[11px] flex items-center gap-1 mt-0.5">
-                          <Mail className="size-3" />
-                          <span>{member.email}</span>
-                        </div>
+              {isLoading ? (
+                <AccountsMembersTableSkeleton rows={5} isSuperAdmin={isSuperAdmin} />
+              ) : (
+                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                  {filteredMembers.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={isSuperAdmin ? 5 : 4}
+                        className="py-12 text-center text-slate-400 dark:text-zinc-500"
+                      >
+                        {searchQuery || selectedCompanyFilter !== "all"
+                          ? "No members match the current search or filter criteria."
+                          : "No approved members found."}
                       </td>
-
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
-                          <Building2 className="size-3.5 text-slate-400" />
-                          <span>
-                            {member.companyName || member.requestedCompany || "Unassigned"}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                            member.role === "admin" || isSuper || isCoAdmin
-                              ? "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
-                              : "bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800"
-                          }`}
-                        >
-                          <Shield className="size-3" />
-                          <span>
-                            {member.role === "admin" || isSuper || isCoAdmin
-                              ? "Administrator"
-                              : "Normal User"}
-                          </span>
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                          <span className="size-1.5 rounded-full bg-emerald-500" />
-                          <span>Active</span>
-                        </span>
-                      </td>
-
-                      {isSuperAdmin && (
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => openChangeRole(member)}
-                              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
-                              title="Change Role"
-                            >
-                              Role
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openMoveCompany(member)}
-                              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
-                              title="Move Organization"
-                            >
-                              Move
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPurgeTarget(member)}
-                              className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-colors cursor-pointer"
-                              title="Purge User"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      )}
                     </tr>
-                  );
-                })}
-              </tbody>
+                  ) : (
+                    filteredMembers.map((member) => {
+                      const isSuper = member.role === "super_admin";
+                      const isCoAdmin = member.role === "company_admin";
+
+                      return (
+                        <tr
+                          key={member.id}
+                          className="hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 transition-colors"
+                        >
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900 dark:text-zinc-100 text-sm">
+                              {member.name}
+                            </div>
+                            <div className="text-slate-500 text-[11px] flex items-center gap-1 mt-0.5">
+                              <Mail className="size-3" />
+                              <span>{member.email}</span>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
+                              <Building2 className="size-3.5 text-slate-400" />
+                              <span>
+                                {member.companyName || member.requestedCompany || "Unassigned"}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                member.role === "admin" || isSuper || isCoAdmin
+                                  ? "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                                  : "bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800"
+                              }`}
+                            >
+                              <Shield className="size-3" />
+                              <span>
+                                {member.role === "admin" || isSuper || isCoAdmin
+                                  ? "Administrator"
+                                  : "Normal User"}
+                              </span>
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                              <span className="size-1.5 rounded-full bg-emerald-500" />
+                              <span>Active</span>
+                            </span>
+                          </td>
+
+                          {isSuperAdmin && (
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => openChangeRole(member)}
+                                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
+                                  title="Change Role"
+                                >
+                                  Role
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openMoveCompany(member)}
+                                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
+                                  title="Move Organization"
+                                >
+                                  Move
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPurgeTarget(member)}
+                                  className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-colors cursor-pointer"
+                                  title="Purge User"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              )}
             </table>
           </div>
         </div>

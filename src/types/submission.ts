@@ -30,6 +30,7 @@ export interface SubmissionArea {
   media: SubmissionMedia[];
   specs: Record<string, string>;
   customerNote?: string;
+  rawFields?: Record<string, any>;
 }
 
 export interface ApprovalChecklistItem {
@@ -72,6 +73,8 @@ export interface SiteSubmission {
   internalNotes: string;
   rejectionReason?: string;
   closedAt?: string;
+  rawSections?: any[];
+  checklistValues?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }

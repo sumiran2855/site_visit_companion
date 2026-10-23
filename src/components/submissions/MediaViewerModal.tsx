@@ -8,7 +8,6 @@ import {
   Download,
   Video,
   Image as ImageIcon,
-  Maximize2,
 } from "lucide-react";
 import { SubmissionMedia } from "@/types/submission";
 
@@ -121,20 +120,16 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
           )}
 
           {media.type === "video" ? (
-            <div className="w-full max-w-3xl aspect-video rounded-lg overflow-hidden bg-slate-950 flex flex-col items-center justify-center relative">
-              <img
+            <div className="w-full max-w-4xl aspect-video rounded-xl overflow-hidden bg-black flex flex-col items-center justify-center relative shadow-2xl">
+              <video
                 src={media.url}
-                alt={media.title}
-                className="w-full h-full object-cover opacity-80"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                <div className="w-16 h-16 rounded-full bg-sky-600/90 text-white flex items-center justify-center shadow-lg">
-                  <Video size={30} />
-                </div>
-                <span className="mt-3 text-xs font-medium text-slate-200 bg-slate-900/80 px-3 py-1 rounded-full">
-                  360° Video Recording ({media.duration || "0:45"})
-                </span>
-              </div>
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full max-h-[70vh] object-contain rounded-xl"
+              >
+                Your browser does not support HTML5 video.
+              </video>
             </div>
           ) : (
             <div className="relative max-h-[65vh] flex items-center justify-center">
