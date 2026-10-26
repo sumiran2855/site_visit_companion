@@ -151,7 +151,9 @@ export default function SubmissionDetailPage({ params }: PageProps) {
     setIsPdfPreviewOpen(true);
   };
 
-  const queuedRequestsCount = submission.customerRequests.length;
+  const pendingRequestsCount = submission.customerRequests.filter((r) => !r.resolved).length;
+  const resolvedRequestsCount = submission.customerRequests.filter((r) => r.resolved).length;
+  const totalRequestsCount = submission.customerRequests.length;
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto p-4">
@@ -475,31 +477,107 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               Message to customer
             </h3>
             <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5 mb-2.5">
-              Sent with &ldquo;Request more&rdquo;. {queuedRequestsCount}{" "}
-              request(s) queued.
+              {pendingRequestsCount > 0
+                ? `${pendingRequestsCount} pending request(s) queued.`
+                : totalRequestsCount > 0
+                ? `All ${resolvedRequestsCount} request(s) resolved.`
+                : "No customer requests queued."}
             </p>
 
-            {queuedRequestsCount > 0 ? (
+            {totalRequestsCount > 0 ? (
               <div className="space-y-2">
-                {submission.customerRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 text-[11px] text-amber-900 dark:text-amber-200 flex items-start justify-between gap-2"
-                  >
-                    <p className="leading-snug">
-                      <span className="font-bold">{req.areaName}:</span>{" "}
-                      {req.text}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRequest(req.id)}
-                      className="text-amber-500 hover:text-amber-800 dark:hover:text-amber-100 p-0.5 rounded cursor-pointer"
-                      title="Remove from queue"
+                {submission.customerRequests.map((req) => {
+                  const isResolved = Boolean(req.resolved);
+                  return (
+                    <div
+                      key={req.id}
+                      className={`p-3 rounded-lg border text-[11px] ${
+                        isResolved
+                          ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
+                          : "bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/80 text-amber-900 dark:text-amber-200"
+                      }`}
                     >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            {isResolved ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                                <Check size={10} />
+                                Resolved
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                                Pending
+                              </span>
+                            )}
+                            <span className="font-bold text-slate-900 dark:text-white">
+                              {req.areaName}
+                            </span>
+                          </div>
+                          <p className="leading-snug text-slate-700 dark:text-zinc-300">
+                            {req.text}
+                          </p>
+
+                          {/* Technician Response if resolved */}
+                          {isResolved && req.technicianResponse && (
+                            <div className="mt-1.5 pt-1.5 border-t border-emerald-200 dark:border-emerald-800/60">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                                Technician Response:
+                              </p>
+                              <p className="text-emerald-950 dark:text-emerald-100 font-medium leading-snug">
+                                &ldquo;{req.technicianResponse}&rdquo;
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Attached Response Photos */}
+                          {isResolved && Array.isArray(req.responsePhotos) && req.responsePhotos.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {req.responsePhotos.map((photo: any, idx: number) => {
+                                const photoUri = photo.remoteUrl || photo.uri;
+                                return (
+                                  <button
+                                    key={photo.id || idx}
+                                    type="button"
+                                    onClick={() =>
+                                      handleOpenMedia({
+                                        id: photo.id || `resp-photo-${idx}`,
+                                        type: "photo",
+                                        title: photo.fileName || `Response Photo #${idx + 1}`,
+                                        url: photoUri,
+                                        fieldId: photo.fieldId || "",
+                                        takenAt: photo.createdAt || new Date().toISOString(),
+                                      })
+                                    }
+                                    className="relative w-14 h-14 rounded-md overflow-hidden border border-emerald-300 dark:border-emerald-700 group hover:opacity-90 transition-opacity cursor-pointer"
+                                    title="View response photo"
+                                  >
+                                    <img
+                                      src={photoUri}
+                                      alt="Technician response"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {!isResolved && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRequest(req.id)}
+                            className="text-amber-500 hover:text-amber-800 dark:hover:text-amber-100 p-0.5 rounded cursor-pointer"
+                            title="Remove from queue"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-[11px] text-slate-400 dark:text-zinc-500 italic">
@@ -541,13 +619,13 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             <button
               type="button"
               onClick={handleSendRequestsToCustomer}
-              disabled={queuedRequestsCount === 0}
+              disabled={pendingRequestsCount === 0}
               className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500 transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5"
             >
               <Send size={13} />
-              {queuedRequestsCount > 0
-                ? `Send ${queuedRequestsCount} request${
-                    queuedRequestsCount > 1 ? "s" : ""
+              {pendingRequestsCount > 0
+                ? `Send ${pendingRequestsCount} request${
+                    pendingRequestsCount > 1 ? "s" : ""
                   } to customer`
                 : "Send requests to customer"}
             </button>

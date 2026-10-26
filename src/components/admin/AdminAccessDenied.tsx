@@ -70,20 +70,6 @@ export function AdminAccessDenied() {
             <LogOut className="size-4" />
             <span>Sign out of Account</span>
           </button>
-
-          {/* Role testing shortcuts for convenience */}
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">Switch Role (Testing Environment):</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => switchRole("admin")}
-                className="flex-1 py-2 px-2 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-800 text-[11px] font-bold transition-colors cursor-pointer"
-              >
-                Switch to Admin
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

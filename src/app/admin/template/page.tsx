@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -43,6 +43,16 @@ import {
 import { ROUTES } from "@/lib/constants";
 import { PdfService } from "@/services/pdf.service";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { TemplateFieldAutocomplete } from "@/components/admin/TemplateFieldAutocomplete";
+import { TemplatePreviewModal } from "@/components/admin/TemplatePreviewModal";
+import {
+  BrowseChecklistFieldsModal,
+  SelectedFieldPayload,
+} from "@/components/admin/BrowseChecklistFieldsModal";
+import {
+  buildTemplateSuggestions,
+  TemplateSuggestion,
+} from "@/utils/template-suggestions";
 import type {
   PDFTemplate,
   TemplateElement,
@@ -78,7 +88,7 @@ const DEFAULT_PAGE_1_ELEMENTS: TemplateElement[] = [
   {
     id: "el-heading-1",
     type: "heading",
-    label: "§ meeting",
+    label: "Meeting Context",
     content: "Section: Initial Consultation & Stakeholders",
     width: "full",
   },
@@ -125,7 +135,7 @@ const DEFAULT_PAGE_1_ELEMENTS: TemplateElement[] = [
   {
     id: "el-heading-2",
     type: "heading",
-    label: "§ Boiler / Mechanical Room",
+    label: "Boiler / Mechanical Room",
     content: "Physical Plant Assessment & Access Notes",
     width: "full",
   },
@@ -157,7 +167,7 @@ const DEFAULT_PAGE_2_ELEMENTS: TemplateElement[] = [
   {
     id: "el-heading-checklist",
     type: "heading",
-    label: "§ Systematic Technical Checklist",
+    label: "Systematic Technical Checklist",
     content: "Verified field questionnaire and automated compliance checks",
     width: "full",
   },
@@ -236,6 +246,7 @@ export default function AdminTemplatePage() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isBlankPdfModalOpen, setIsBlankPdfModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isBrowseFieldsOpen, setIsBrowseFieldsOpen] = useState(false);
 
   // Mobile layout tab switcher: "palette" | "canvas" | "inspector"
   const [mobileTab, setMobileTab] = useState<"palette" | "canvas" | "inspector">(
@@ -258,9 +269,21 @@ export default function AdminTemplatePage() {
     PdfService.getActiveTemplate()
       .then((active) => {
         if (cancelled || !active?.pages?.length) return;
+        const strip = (s?: string) =>
+          s ? s.replace(/§\s*/g, "").replace(/\u00a7\s*/g, "").replace(/&sect;\s*/g, "").trim() : "";
+        const cleanPages: TemplatePage[] = active.pages.map((p) => ({
+          ...p,
+          title: strip(p.title) || p.title,
+          elements: (p.elements || []).map((el) => ({
+            ...el,
+            label: strip(el.label),
+            content: strip(el.content),
+            placeholder: strip(el.placeholder),
+          })),
+        }));
         setTemplateMeta({ ...active, pages: [] });
-        setPages(active.pages);
-        setHistory([active.pages]);
+        setPages(cleanPages);
+        setHistory([cleanPages]);
         setHistoryIndex(0);
         setSelectedElementId(null);
       })
@@ -324,7 +347,7 @@ export default function AdminTemplatePage() {
         newElement = {
           id,
           type,
-          label: "§ New Section Heading",
+          label: "Section Heading",
           content: "Section description or guidelines",
           width: "full",
         };
@@ -463,6 +486,104 @@ export default function AdminTemplatePage() {
     updatePagesWithHistory(updatedPages);
   };
 
+  // Dynamic field suggestions based on selected element type
+  const {
+    labelSuggestions,
+    contentSuggestions,
+    placeholderSuggestions,
+  } = useMemo(() => {
+    if (!selectedElement) {
+      return {
+        labelSuggestions: [],
+        contentSuggestions: [],
+        placeholderSuggestions: [],
+      };
+    }
+    return buildTemplateSuggestions(selectedElement.type);
+  }, [selectedElement]);
+
+  const handleSelectLabelSuggestion = (suggestion: TemplateSuggestion) => {
+    const updates: Partial<TemplateElement> = {
+      label: suggestion.text,
+    };
+
+    if (suggestion.pairedPlaceholder) {
+      if (
+        !selectedElement?.placeholder ||
+        selectedElement.placeholder === "[value]" ||
+        selectedElement.placeholder === "{{field:site_name}}" ||
+        suggestion.pairedPlaceholder.startsWith("{{field:")
+      ) {
+        updates.placeholder = suggestion.pairedPlaceholder;
+      }
+    }
+
+    if (suggestion.pairedContent && !selectedElement?.content) {
+      updates.content = suggestion.pairedContent;
+    }
+
+    handleUpdateSelectedElement(updates);
+    showToast(
+      `Applied "${suggestion.text}"${
+        updates.placeholder ? ` with placeholder ${updates.placeholder}` : ""
+      }.`
+    );
+  };
+
+  const handleSelectContentSuggestion = (suggestion: TemplateSuggestion) => {
+    const updates: Partial<TemplateElement> = {
+      content: suggestion.text,
+    };
+    if (
+      suggestion.pairedLabel &&
+      (!selectedElement?.label || selectedElement.label === "New Element")
+    ) {
+      updates.label = suggestion.pairedLabel;
+    }
+    handleUpdateSelectedElement(updates);
+    showToast("Updated content subtext.");
+  };
+
+  const handleSelectPlaceholderSuggestion = (
+    suggestion: TemplateSuggestion
+  ) => {
+    const updates: Partial<TemplateElement> = {
+      placeholder: suggestion.text,
+    };
+    if (
+      suggestion.pairedLabel &&
+      (!selectedElement?.label ||
+        selectedElement.label === "Field Label" ||
+        selectedElement.label === "New Element")
+    ) {
+      updates.label = suggestion.pairedLabel;
+    }
+    handleUpdateSelectedElement(updates);
+    showToast(`Bound to placeholder "${suggestion.text}".`);
+  };
+
+  const handleSelectFieldFromBrowser = (payload: SelectedFieldPayload) => {
+    const updates: Partial<TemplateElement> = {
+      placeholder: payload.placeholderToken,
+    };
+    if (
+      !selectedElement?.label ||
+      selectedElement.label === "Field Label" ||
+      selectedElement.label === "New Element" ||
+      selectedElement.label === "Site Name"
+    ) {
+      updates.label = payload.label;
+    }
+    if (payload.description && !selectedElement?.content) {
+      updates.content = payload.description;
+    }
+    handleUpdateSelectedElement(updates);
+    setIsBrowseFieldsOpen(false);
+    showToast(
+      `Bound element to "${payload.label}" (${payload.placeholderToken}).`
+    );
+  };
+
   // Add Page
   const handleAddPage = () => {
     const newPageNum = pages.length + 1;
@@ -474,7 +595,7 @@ export default function AdminTemplatePage() {
         {
           id: `el-heading-p${newPageNum}`,
           type: "heading",
-          label: `§ Section ${newPageNum}`,
+          label: `Section ${newPageNum}`,
           content: "Additional Checklist Section",
           width: "full",
         },
@@ -740,7 +861,7 @@ export default function AdminTemplatePage() {
                   type: "heading" as TemplateElementType,
                   label: "Heading",
                   icon: Heading,
-                  desc: "Section title (e.g. § Boiler Room)",
+                  desc: "Section title (e.g. Boiler Room)",
                 },
                 {
                   type: "text_block" as TemplateElementType,
@@ -1137,79 +1258,91 @@ export default function AdminTemplatePage() {
                   </span>
                 </div>
 
-                {/* Label Field */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                    Label / Title
-                  </label>
-                  <input
-                    type="text"
-                    value={selectedElement.label || ""}
-                    onChange={(e) =>
-                      handleUpdateSelectedElement({ label: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
+                {/* Label Field with Auto Suggestions */}
+                <TemplateFieldAutocomplete
+                  label="Label / Title"
+                  value={selectedElement.label || ""}
+                  onChange={(val) =>
+                    handleUpdateSelectedElement({ label: val })
+                  }
+                  onSelectSuggestion={handleSelectLabelSuggestion}
+                  suggestions={labelSuggestions}
+                  placeholder="e.g. Site Name, Meeting date, Boiler room..."
+                  sparkleHint="Auto-suggestions from Site Visit Form"
+                />
 
-                {/* Content field if applicable */}
+                {/* Content field if applicable with Auto Suggestions */}
                 {selectedElement.type !== "divider" && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Content / Subtitle
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={selectedElement.content || ""}
-                      onChange={(e) =>
-                        handleUpdateSelectedElement({ content: e.target.value })
-                      }
-                      placeholder="Optional descriptive subtext"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
+                  <TemplateFieldAutocomplete
+                    label="Content / Subtitle"
+                    isTextarea
+                    rows={2}
+                    value={selectedElement.content || ""}
+                    onChange={(val) =>
+                      handleUpdateSelectedElement({ content: val })
+                    }
+                    onSelectSuggestion={handleSelectContentSuggestion}
+                    suggestions={contentSuggestions}
+                    placeholder="Optional descriptive subtext or instructions"
+                    sparkleHint="Form guidance and section subtitles"
+                  />
                 )}
 
-                {/* Placeholder Syntax field */}
+                {/* Placeholder Syntax field with Auto Suggestions */}
                 {selectedElement.type === "field" && (
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                        Placeholder Binding
-                      </label>
-                      <span className="text-[10px] text-blue-500 font-mono">
-                        {"{{ }}"}
-                      </span>
-                    </div>
-                    <input
-                      type="text"
+                    <TemplateFieldAutocomplete
+                      label="Placeholder Binding"
+                      mono
                       value={selectedElement.placeholder || ""}
-                      onChange={(e) =>
-                        handleUpdateSelectedElement({ placeholder: e.target.value })
+                      onChange={(val) =>
+                        handleUpdateSelectedElement({ placeholder: val })
                       }
+                      onSelectSuggestion={handleSelectPlaceholderSuggestion}
+                      suggestions={placeholderSuggestions}
                       placeholder="{{field:site_name}} or [value]"
-                      className="w-full px-3 py-2 font-mono bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      sparkleHint="Checklist field tokens (67+ available)"
+                      rightBadge={
+                        <span className="text-[10px] text-blue-500 font-mono">
+                          {"{{ }}"}
+                        </span>
+                      }
+                      helperNode={
+                        <div className="mt-1.5 space-y-1.5">
+                          <div className="flex flex-wrap gap-1">
+                            {[
+                              "{{field:site_name}}",
+                              "{{field:site_address}}",
+                              "{{field:date}}",
+                              "{{timestamp}}",
+                              "[value]",
+                            ].map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() =>
+                                  handleUpdateSelectedElement({
+                                    placeholder: tag,
+                                  })
+                                }
+                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-[10px] font-mono text-slate-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsBrowseFieldsOpen(true)}
+                            className="w-full py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800/80 text-[11px] font-semibold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <Sparkles className="size-3 text-blue-600 dark:text-blue-400" />
+                            <span>Browse all 67+ Form Fields...</span>
+                          </button>
+                        </div>
+                      }
                     />
-                    {/* Quick helper pills */}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {[
-                        "{{field:site_name}}",
-                        "{{field:site_address}}",
-                        "{{field:date}}",
-                        "[value]",
-                      ].map((tag) => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() =>
-                            handleUpdateSelectedElement({ placeholder: tag })
-                          }
-                          className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-[10px] font-mono text-slate-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400"
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 )}
 
@@ -1298,145 +1431,13 @@ export default function AdminTemplatePage() {
         </aside>
       </div>
 
-      {/* PREVIEW PDF MODAL (Populated with Visit Data per Section 17) */}
-      {isPreviewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800/50">
-              <div className="flex items-center gap-2.5">
-                <Eye className="size-5 text-blue-600 dark:text-blue-400" />
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                    Preview Generated PDF Report
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                    Sample populated report: Benbow Inn (September 16, 2026)
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    showToast("Downloaded sample PDF report.");
-                    setIsPreviewModalOpen(false);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors"
-                >
-                  <Download className="size-3.5" />
-                  <span>Download PDF</span>
-                </button>
-                <button
-                  onClick={() => setIsPreviewModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-lg"
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body: Rendered A4 Document Preview */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-zinc-950 flex justify-center">
-              <div className="w-full max-w-2xl bg-white text-slate-900 p-8 rounded-lg shadow-xl border border-slate-300 space-y-6">
-                {/* Simulated Header */}
-                <div className="bg-slate-900 text-white p-5 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-lg bg-white/10 flex items-center justify-center font-black text-xl text-blue-400">
-                      EC
-                    </div>
-                    <div>
-                      <h2 className="font-bold text-base">EC POWER Inc.</h2>
-                      <p className="text-xs text-blue-200">
-                        Site Visit Checklist - Part 1 of 3 - Project Intake
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right text-[10px] text-slate-300">
-                    <div>VISIT ID: VST-2026-0916</div>
-                    <div>DATE: 2026-09-16</div>
-                  </div>
-                </div>
-
-                {/* Populated Field Data */}
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">
-                      Site Name
-                    </div>
-                    <div className="font-semibold text-slate-900 text-sm mt-0.5">
-                      The Benbow Inn
-                    </div>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">
-                      Meeting Date
-                    </div>
-                    <div className="font-semibold text-slate-900 text-sm mt-0.5">
-                      September 16, 2026 • 09:30 AM
-                    </div>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">
-                      Site Address
-                    </div>
-                    <div className="font-medium text-slate-800 mt-0.5">
-                      445 Lake Blvd, Garberville, CA 95542
-                    </div>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">
-                      Primary Contact
-                    </div>
-                    <div className="font-medium text-slate-800 mt-0.5">
-                      Michael Vance (General Manager)
-                    </div>
-                  </div>
-                </div>
-
-                {/* Boiler Room Section with Media Attachments per Section 17 */}
-                <div className="space-y-3 pt-2">
-                  <div className="border-b-2 border-slate-900 pb-1 flex justify-between items-center">
-                    <h3 className="font-bold text-sm uppercase">
-                      § Boiler / Mechanical Room
-                    </h3>
-                    <span className="text-[11px] text-slate-500">
-                      3 photos verified
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                      <div className="h-28 bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-semibold">
-                        [Photo: Burner Flue]
-                      </div>
-                      <div className="p-1.5 text-[10px] text-slate-600 bg-white">
-                        Flue gas exhaust connection
-                      </div>
-                    </div>
-                    <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                      <div className="h-28 bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-semibold">
-                        [Photo: Gas Meter]
-                      </div>
-                      <div className="p-1.5 text-[10px] text-slate-600 bg-white">
-                        Incoming 20 mbar supply line
-                      </div>
-                    </div>
-                    <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
-                      <div className="h-28 bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-semibold">
-                        [Photo: Control Panel]
-                      </div>
-                      <div className="p-1.5 text-[10px] text-slate-600 bg-white">
-                        Master BMS integration rack
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* FULL MULTI-PAGE TEMPLATE PREVIEW MODAL */}
+      <TemplatePreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        pages={pages}
+        templateMeta={templateMeta}
+      />
 
       {/* BLANK PDF MODAL (Print-Friendly with Ruled Lines per Section 16) */}
       {isBlankPdfModalOpen && (
@@ -1566,6 +1567,14 @@ export default function AdminTemplatePage() {
           </div>
         </div>
       )}
+
+      {/* BROWSE ALL 67+ CHECKLIST FORM FIELDS MODAL */}
+      <BrowseChecklistFieldsModal
+        isOpen={isBrowseFieldsOpen}
+        onClose={() => setIsBrowseFieldsOpen(false)}
+        onSelectField={handleSelectFieldFromBrowser}
+        currentPlaceholder={selectedElement?.placeholder}
+      />
 
       {/* FLOATING TOAST NOTIFICATION */}
       {toastMessage && (

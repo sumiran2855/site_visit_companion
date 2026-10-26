@@ -140,7 +140,14 @@ export class PdfService {
     template?: PDFTemplate;
   }): string {
     const template = options.template || DEFAULT_EC_POWER_PDF_TEMPLATE;
-    const cleanStr = (s?: string) => (s ? s.replace(/§\s*/g, "").trim() : "");
+    const cleanStr = (s?: string) =>
+      s
+        ? s
+            .replace(/§\s*/g, "")
+            .replace(/\u00a7\s*/g, "")
+            .replace(/&sect;\s*/g, "")
+            .trim()
+        : "";
 
     const siteName = cleanStr(options.siteName) || "Site Visit Inspection";
     const visitId = options.visitId;

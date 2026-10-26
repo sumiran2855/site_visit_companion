@@ -45,6 +45,10 @@ export interface CustomerRequest {
   areaName: string;
   text: string;
   createdAt: string;
+  resolved?: boolean;
+  resolvedAt?: string;
+  technicianResponse?: string;
+  responsePhotos?: any[];
 }
 
 export interface SiteSubmission {

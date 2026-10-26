@@ -144,6 +144,24 @@ export class SubmissionService {
             cached.checklistValues = checklistValues;
             cached.rawSections = sections;
 
+            // Sync review status, customer requests, area statuses, and approval checklist
+            if (record.service.review) {
+              const rev = record.service.review;
+              if (rev.status) cached.status = rev.status;
+              if (Array.isArray(rev.customerRequests)) cached.customerRequests = rev.customerRequests;
+              if (Array.isArray(rev.approvalChecklist)) cached.approvalChecklist = rev.approvalChecklist;
+              if (rev.internalNotes !== undefined) cached.internalNotes = rev.internalNotes;
+              if (rev.areaStatuses && typeof rev.areaStatuses === "object") {
+                cached.areas.forEach((area) => {
+                  const areaStat = rev.areaStatuses[area.id];
+                  if (areaStat) {
+                    area.status = areaStat.status;
+                    area.requestedNote = areaStat.requestedNote;
+                  }
+                });
+              }
+            }
+
             // If media records are available, update media URLs
             if (mediaRes.ok) {
               const mediaRows = await mediaRes.json();
@@ -268,12 +286,14 @@ export class SubmissionService {
   }
 
   /**
-   * Adds or updates a customer request in the review queue
+   * Adds or updates a customer request in the review queue.
+   * If requestId is not provided, appends a new request into the queue allowing multiple requests per section.
    */
   public static async queueCustomerRequest(
     submissionId: string,
     areaId: string,
-    text: string
+    text: string,
+    requestId?: string
   ): Promise<SiteSubmission> {
     const list = this.getLocalSubmissions();
     const itemIndex = list.findIndex((s) => s.id === submissionId);
@@ -288,9 +308,11 @@ export class SubmissionService {
         area.requestedNote = text;
       }
 
-      const existingIndex = sub.customerRequests.findIndex(
-        (r) => r.areaId === areaId
-      );
+      // If an existing requestId is explicitly provided, update it; otherwise append a new request
+      const existingIndex = requestId
+        ? sub.customerRequests.findIndex((r) => r.id === requestId)
+        : -1;
+
       if (existingIndex >= 0) {
         sub.customerRequests[existingIndex].text = text;
       } else {
@@ -312,7 +334,7 @@ export class SubmissionService {
       const http = HttpClient.getInstance();
       const res = await http.post<SiteSubmission>(
         API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
-        { areaId, text }
+        { areaId, text, requestId }
       );
       if (res?.data) {
         sub = res.data;
@@ -322,12 +344,18 @@ export class SubmissionService {
       console.warn('[SubmissionService] queueCustomerRequest network call error:', err);
     }
 
+    // Direct Supabase sync fallback to guarantee database persistence
+    if (sub) {
+      await this.syncReviewToSupabase(submissionId, sub);
+    }
+
     if (!sub) throw new Error('Submission not found');
     return sub;
   }
 
   /**
-   * Removes a queued customer request
+   * Removes a queued customer request from the queue.
+   * If other requests for the same area remain, the area remains in 'more_requested' status.
    */
   public static async removeQueuedRequest(
     submissionId: string,
@@ -340,14 +368,23 @@ export class SubmissionService {
     if (sub) {
       const req = sub.customerRequests.find((r) => r.id === requestId);
       if (req) {
-        const area = sub.areas.find((a) => a.id === req.areaId);
-        if (area && area.status === 'more_requested') {
-          area.status = 'not_reviewed';
-          delete area.requestedNote;
-        }
         sub.customerRequests = sub.customerRequests.filter(
           (r) => r.id !== requestId
         );
+
+        // Check if any other requests remain for this area
+        const remainingForArea = sub.customerRequests.filter(
+          (r) => r.areaId === req.areaId
+        );
+        const area = sub.areas.find((a) => a.id === req.areaId);
+        if (area) {
+          if (remainingForArea.length === 0 && area.status === 'more_requested') {
+            area.status = 'not_reviewed';
+            delete area.requestedNote;
+          } else if (remainingForArea.length > 0) {
+            area.requestedNote = remainingForArea[remainingForArea.length - 1].text;
+          }
+        }
       }
 
       sub.updatedAt = new Date().toISOString();
@@ -367,6 +404,11 @@ export class SubmissionService {
       }
     } catch (err) {
       console.warn('[SubmissionService] removeQueuedRequest network call error:', err);
+    }
+
+    // Direct Supabase sync fallback to guarantee database persistence
+    if (sub) {
+      await this.syncReviewToSupabase(submissionId, sub);
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -404,8 +446,85 @@ export class SubmissionService {
       console.warn('[SubmissionService] sendRequestsToCustomer network call error:', err);
     }
 
+    // Direct Supabase sync fallback to guarantee database persistence
+    if (sub) {
+      await this.syncReviewToSupabase(submissionId, sub);
+    }
+
     if (!sub) throw new Error('Submission not found');
     return sub;
+  }
+
+  /**
+   * Helper to persist the current review state directly to Supabase visit_records table
+   */
+  private static async syncReviewToSupabase(
+    submissionId: string,
+    sub: SiteSubmission
+  ): Promise<void> {
+    try {
+      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+      if (!API_CONFIG.SUPABASE_URL || !sbKey) return;
+
+      const areaStatusesMap: Record<string, any> = {};
+      sub.areas.forEach((a) => {
+        areaStatusesMap[a.id] = {
+          status: a.status,
+          requestedNote: a.requestedNote,
+        };
+      });
+
+      const reviewPayload = {
+        status: sub.status,
+        areaStatuses: areaStatusesMap,
+        customerRequests: sub.customerRequests,
+        approvalChecklist: sub.approvalChecklist,
+        internalNotes: sub.internalNotes,
+        updatedAt: sub.updatedAt,
+      };
+
+      // Fetch existing service document to preserve sections
+      const recRes = await fetch(
+        `${API_CONFIG.SUPABASE_URL}/rest/v1/visit_records?visit_id=eq.${submissionId}&select=*`,
+        { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` } }
+      );
+
+      let servicePayload: any = {
+        service_id: 'service-site-visit',
+        service_name: 'Site Visit',
+        sections: sub.rawSections || [],
+        review: reviewPayload,
+      };
+
+      if (recRes.ok) {
+        const rows = await recRes.json();
+        if (rows && rows[0]?.service) {
+          servicePayload = {
+            ...rows[0].service,
+            review: reviewPayload,
+          };
+        }
+      }
+
+      await fetch(
+        `${API_CONFIG.SUPABASE_URL}/rest/v1/visit_records?visit_id=eq.${submissionId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: sbKey,
+            Authorization: `Bearer ${sbKey}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            service: servicePayload,
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
+    } catch (err) {
+      console.warn('[SubmissionService] syncReviewToSupabase error:', err);
+    }
   }
 
   /**

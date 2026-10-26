@@ -20,6 +20,12 @@ export const RequestMoreModal: React.FC<RequestMoreModalProps> = ({
 }) => {
   const [text, setText] = useState(initialText);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setText(initialText);
+    }
+  }, [isOpen, initialText]);
+
   if (!isOpen) return null;
 
   const presets = [
@@ -33,6 +39,7 @@ export const RequestMoreModal: React.FC<RequestMoreModalProps> = ({
     e.preventDefault();
     if (!text.trim()) return;
     onSubmit(text.trim());
+    setText("");
   };
 
   return (

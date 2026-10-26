@@ -525,7 +525,14 @@ export class AdminService {
   public static sanitizeTemplate(template: PDFTemplate): PDFTemplate {
     if (!template || !Array.isArray(template.pages)) return template;
 
-    const stripSection = (s?: string) => (s ? s.replace(/§\s*/g, "").trim() : "");
+    const stripSection = (s?: string) =>
+      s
+        ? s
+            .replace(/§\s*/g, "")
+            .replace(/\u00a7\s*/g, "")
+            .replace(/&sect;\s*/g, "")
+            .trim()
+        : "";
 
     const sanitizedPages = template.pages
       .map((p) => {
