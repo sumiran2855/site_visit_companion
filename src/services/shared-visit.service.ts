@@ -69,30 +69,35 @@ export class SharedVisitService {
       throw new Error("Missing share identifier");
     }
 
-    // 1. Try public shared endpoint
-    try {
-      const res = await fetch(`${API_CONFIG.BASE_URL}/public/shared/${cleanId}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && json?.data?.visit) {
-          return json.data as SharedVisitPayload;
+    const prodBackend = "https://site-visit-companion-backend.onrender.com/api";
+    const base = API_CONFIG.BASE_URL;
+    const isLocal = base.includes("localhost") || base.includes("127.0.0.1");
+    const candidateBases = Array.from(new Set([isLocal ? prodBackend : base, prodBackend]));
+
+    // 1. Try public shared endpoint across candidate bases
+    for (const b of candidateBases) {
+      try {
+        const res = await fetch(`${b}/public/shared/${cleanId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && json?.data?.visit) {
+            return json.data as SharedVisitPayload;
+          }
         }
-      }
-    } catch (err) {
-      console.warn("[SharedVisitService] Public shared endpoint failed:", err);
+      } catch {}
     }
 
-    // 2. Try public visits fallback endpoint
-    try {
-      const res = await fetch(`${API_CONFIG.BASE_URL}/public/visits/${cleanId}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && json?.data?.visit) {
-          return json.data as SharedVisitPayload;
+    // 2. Try public visits fallback endpoint across candidate bases
+    for (const b of candidateBases) {
+      try {
+        const res = await fetch(`${b}/public/visits/${cleanId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && json?.data?.visit) {
+            return json.data as SharedVisitPayload;
+          }
         }
-      }
-    } catch (err) {
-      console.warn("[SharedVisitService] Public visits endpoint failed:", err);
+      } catch {}
     }
 
     // 3. Fallback directly to Supabase REST API
@@ -244,7 +249,27 @@ export class SharedVisitService {
     const notesMap: Record<string, string> = {};
     const photosMap: Record<string, ReportPhotoItem[]> = {};
 
+    // Index all media by fieldId and sectionId
+    const mediaByField = new Map<string, SharedVisitPayload["media"]>();
+    const mediaBySection = new Map<string, SharedVisitPayload["media"]>();
+
+    data.media.forEach((m) => {
+      if (m.fieldId) {
+        const list = mediaByField.get(m.fieldId) || [];
+        list.push(m);
+        mediaByField.set(m.fieldId, list);
+      }
+      if (m.sectionId) {
+        const list = mediaBySection.get(m.sectionId) || [];
+        list.push(m);
+        mediaBySection.set(m.sectionId, list);
+      }
+    });
+
+    const assignedMediaIds = new Set<string>();
+
     CHECKLIST_SECTIONS_CONFIG.forEach((sec) => {
+      // 1. Assign answered values and notes
       sec.fields.forEach((f) => {
         const ans = data.answers.find((a) => a.fieldId === f.id);
         if (ans && ans.value) {
@@ -252,17 +277,46 @@ export class SharedVisitService {
           if (ans.notes) notesMap[f.id] = ans.notes;
         }
 
-        const secMedia = data.media.filter((m) => m.fieldId === f.id || m.sectionId === sec.id);
-        if (secMedia.length > 0) {
-          photosMap[f.id] = secMedia.map((m) => ({
-            id: m.id,
-            fileName: m.fileName,
-            uri: m.signedUrl,
-            remoteUrl: m.signedUrl,
-            sectionId: m.sectionId,
-          }));
+        // 2. Assign photos that explicitly match this field ID
+        const matched = mediaByField.get(f.id) || [];
+        if (matched.length > 0) {
+          photosMap[f.id] = matched.map((m) => {
+            assignedMediaIds.add(m.id);
+            return {
+              id: m.id,
+              fileName: m.fileName,
+              uri: m.signedUrl,
+              remoteUrl: m.signedUrl,
+              sectionId: m.sectionId,
+            };
+          });
         }
       });
+
+      // 3. For any remaining photos in this section that didn't match a specific fieldId,
+      // assign them to the primary photo field of this section ONCE (not to every field!)
+      const sectionRemaining = (mediaBySection.get(sec.id) || []).filter(
+        (m) => !assignedMediaIds.has(m.id)
+      );
+
+      if (sectionRemaining.length > 0) {
+        const photoFields = sec.fields.filter((f) => f.type === "photo");
+        const targetFieldId = photoFields[0]?.id || `${sec.id}_photos`;
+        const existing = photosMap[targetFieldId] || [];
+        photosMap[targetFieldId] = [
+          ...existing,
+          ...sectionRemaining.map((m) => {
+            assignedMediaIds.add(m.id);
+            return {
+              id: m.id,
+              fileName: m.fileName,
+              uri: m.signedUrl,
+              remoteUrl: m.signedUrl,
+              sectionId: m.sectionId,
+            };
+          }),
+        ];
+      }
     });
 
     return await PdfService.downloadReport({

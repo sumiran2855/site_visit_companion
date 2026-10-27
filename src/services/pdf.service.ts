@@ -322,11 +322,23 @@ export class PdfService {
                 if (Array.isArray(pList)) targetPhotos.push(...pList);
               });
             }
-            targetPhotos = targetPhotos.slice(0, 3);
           } else {
             Object.values(photosMap).forEach((pList) => {
               if (Array.isArray(pList)) targetPhotos.push(...pList);
             });
+          }
+
+          // Strictly deduplicate photos by unique id / URI to prevent repeated images
+          const seenPhotoKeys = new Set<string>();
+          targetPhotos = targetPhotos.filter((p) => {
+            const key = p.id || p.remoteUrl || p.uri || p.fileName;
+            if (!key || seenPhotoKeys.has(key)) return false;
+            seenPhotoKeys.add(key);
+            return true;
+          });
+
+          if (isBoilerGrid) {
+            targetPhotos = targetPhotos.slice(0, 3);
           }
 
           if (targetPhotos.length === 0) {
@@ -1240,6 +1252,7 @@ export class PdfService {
   ): Promise<Blob | null> {
     const { visitId, shareToken } = opts;
     const base = API_CONFIG.BASE_URL;
+    const prodBackend = "https://site-visit-companion-backend.onrender.com/api";
     const rawToken = shareToken ? null : TokenHelper.getToken();
     const isRealJwt = rawToken && !rawToken.startsWith("demo_");
     const authToken = isRealJwt ? rawToken : null;
@@ -1247,16 +1260,31 @@ export class PdfService {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const tzQuery = tz ? `?tz=${encodeURIComponent(tz)}` : "";
 
-    // Candidate endpoints: public direct, authenticated, and production onrender fallback
-    const endpoints: string[] = [
-      shareToken
-        ? `${base}/public/shared/${shareToken}/export/report-pdf${tzQuery}`
-        : `${base}/public/visits/${visitId}/export/report-pdf${tzQuery}`,
-      ...(authToken ? [`${base}/visits/${visitId}/export/report-pdf${tzQuery}`] : []),
-      `https://site-visit-companion-backend.onrender.com/api/public/visits/${visitId}/export/report-pdf${tzQuery}`,
-    ];
+    // In production or browser, prefer non-localhost backend API
+    const isLocalhost = base.includes("localhost") || base.includes("127.0.0.1");
+    const primaryBase = isLocalhost ? prodBackend : base;
 
-    for (const endpoint of endpoints) {
+    const endpoints: string[] = [];
+
+    if (shareToken) {
+      endpoints.push(`${primaryBase}/public/shared/${shareToken}/export/report-pdf${tzQuery}`);
+      endpoints.push(`${prodBackend}/public/shared/${shareToken}/export/report-pdf${tzQuery}`);
+      if (visitId) {
+        endpoints.push(`${primaryBase}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
+        endpoints.push(`${prodBackend}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
+      }
+    } else {
+      endpoints.push(`${primaryBase}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
+      endpoints.push(`${prodBackend}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
+      if (authToken) {
+        endpoints.push(`${primaryBase}/visits/${visitId}/export/report-pdf${tzQuery}`);
+        endpoints.push(`${prodBackend}/visits/${visitId}/export/report-pdf${tzQuery}`);
+      }
+    }
+
+    const uniqueEndpoints = Array.from(new Set(endpoints));
+
+    for (const endpoint of uniqueEndpoints) {
       try {
         const res = await fetch(endpoint, {
           signal,
