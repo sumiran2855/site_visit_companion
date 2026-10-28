@@ -26,6 +26,7 @@ export const API_CONFIG = {
       ME: "/auth/me",
       LOGOUT: "/auth/logout",
       PROFILE: "/auth/profile",
+      GOOGLE: "/auth/google",
     },
     ADMIN: {
       REQUESTS: "/admin/requests",

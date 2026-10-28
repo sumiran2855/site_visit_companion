@@ -46,7 +46,7 @@ export class AuthController {
   public async handleOAuthCallback(token: string): Promise<ControllerResult<UserProfile>> {
     try {
       TokenHelper.setToken(token);
-      const profile = await this.authService.me();
+      const profile = await this.authService.me(token);
       TokenHelper.setUser(profile);
 
       return {

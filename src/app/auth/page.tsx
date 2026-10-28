@@ -1,12 +1,22 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import Link from "next/link";
-import { Zap, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Zap } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
+import { useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 function AuthContent() {
+  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isAdmin) {
+      router.replace(ROUTES.ADMIN);
+    }
+  }, [isLoading, isAuthenticated, isAdmin, router]);
   return (
     <div className="relative min-h-screen flex flex-col justify-between bg-gradient-to-b from-slate-50 via-white to-slate-50/50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 text-foreground overflow-hidden selection:bg-slate-900 selection:text-white dark:selection:bg-white dark:selection:text-black">
       {/* Decorative Grid & Ambient Blur */}

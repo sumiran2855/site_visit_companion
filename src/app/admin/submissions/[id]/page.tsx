@@ -13,6 +13,7 @@ import {
   X,
   Send,
   Loader2,
+  Share2,
 } from "lucide-react";
 import { useSubmissionDetail } from "@/hooks/useSubmissionDetail";
 import { MediaViewerModal } from "@/components/submissions/MediaViewerModal";
@@ -20,6 +21,7 @@ import { RequestMoreModal } from "@/components/submissions/RequestMoreModal";
 import { RejectSubmissionModal } from "@/components/submissions/RejectSubmissionModal";
 import { ApproveSiteModal } from "@/components/submissions/ApproveSiteModal";
 import { PdfReportPreviewModal } from "@/components/submissions/PdfReportPreviewModal";
+import { ShareSiteModal } from "@/components/submissions/ShareSiteModal";
 import { PdfService } from "@/services/pdf.service";
 
 interface PageProps {
@@ -67,6 +69,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
   } = useSubmissionDetail(id);
 
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [localToast, setLocalToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -194,6 +197,14 @@ export default function SubmissionDetailPage({ params }: PageProps) {
 
         {/* Right Action Buttons */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsShareModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
+          >
+            <Share2 size={14} className="text-slate-500 dark:text-zinc-400" />
+            <span>Share site</span>
+          </button>
           <button
             type="button"
             onClick={handleDownloadZip}
@@ -703,6 +714,14 @@ export default function SubmissionDetailPage({ params }: PageProps) {
           isOpen={isPdfPreviewOpen}
           submission={submission}
           onClose={() => setIsPdfPreviewOpen(false)}
+        />
+      )}
+
+      {submission && (
+        <ShareSiteModal
+          isOpen={isShareModalOpen}
+          submission={submission}
+          onClose={() => setIsShareModalOpen(false)}
         />
       )}
     </div>

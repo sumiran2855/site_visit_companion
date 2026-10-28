@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/admin.service";
+import { HttpClient } from "@/lib/api/httpClient";
 import type { PendingAccessRequest, Company, AdminDashboardMetrics } from "@/types/admin";
 import type { UserRole, UserProfile } from "@/types/auth";
 
@@ -72,30 +73,72 @@ export function useAdminHub() {
     if (isAuthLoading) return;
     const runId = ++loadRunId.current;
     try {
-      const comps = await AdminService.listCompaniesWithCounts();
+      const http = HttpClient.getInstance();
 
-      const adminCompanyName = resolveAdminCompanyName(user, comps);
-      const adminCompanyId = user?.companyId || null;
-
-      const [allMetrics, requests] = await Promise.all([
-        AdminService.getDashboardMetrics(
-          isSuperAdmin ? undefined : adminCompanyName,
-          isSuperAdmin ? undefined : adminCompanyId,
-          isSuperAdmin,
-          comps
-        ),
-        AdminService.listPendingRequests(
-          isSuperAdmin ? undefined : adminCompanyName || undefined,
-          isSuperAdmin ? undefined : adminCompanyId || undefined,
-          comps
-        ),
+      // Fetch the 4 core resources in parallel ONCE
+      const [comps, members, requests, visitsRes] = await Promise.all([
+        AdminService.listCompanies(),
+        AdminService.listMembers(),
+        AdminService.listPendingRequests(),
+        http.get<any>("/visits").catch(() => ({ data: [] })),
       ]);
 
       if (runId !== loadRunId.current) return;
 
-      setMetrics(allMetrics);
+      const visits: any[] = Array.isArray(visitsRes?.data)
+        ? visitsRes.data
+        : Array.isArray(visitsRes)
+        ? visitsRes
+        : [];
+
+      // Compute enriched companies with member and visit counts in-memory
+      const enrichedCompanies = comps.map((comp) => {
+        const compId = comp.id.toLowerCase();
+        const compName = comp.name.trim().toLowerCase();
+
+        const memberCount = members.filter((m) => {
+          if (m.companyId && m.companyId.toLowerCase() === compId) return true;
+          if (m.companyName && m.companyName.trim().toLowerCase() === compName) return true;
+          if (m.requestedCompany && m.requestedCompany.trim().toLowerCase() === compName) return true;
+          return AdminService.matchesCompany(m.companyName || m.requestedCompany, comp.name, comp.id, comps);
+        }).length;
+
+        const visitCount = visits.filter((v: any) => {
+          if (v.companyId && v.companyId.toLowerCase() === compId) return true;
+          if (v.companyName && v.companyName.trim().toLowerCase() === compName) return true;
+          return AdminService.matchesCompany(v.companyName, comp.name, comp.id, comps);
+        }).length;
+
+        return {
+          ...comp,
+          memberCount,
+          visitCount,
+        };
+      });
+
+      // Compute dashboard metrics in-memory
+      const totalVisitsCount = enrichedCompanies.reduce((acc, c) => acc + (c.visitCount || 0), 0);
+      const now = Date.now();
+      const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+      const retentionWarningCount = visits.filter((v: any) => {
+        const created = new Date(v.createdAt);
+        if (isNaN(created.getTime())) return false;
+        const ageInDays = Math.floor((now - created.getTime()) / MS_PER_DAY);
+        return ageInDays >= 335;
+      }).length;
+
+      const computedMetrics = {
+        pendingRequestsCount: requests.length,
+        totalMembersCount: members.length,
+        totalCompaniesCount: isSuperAdmin ? enrichedCompanies.length : 1,
+        totalVisitsCount: totalVisitsCount > 0 ? totalVisitsCount : visits.length,
+        retentionWarningCount,
+      };
+
+      setMetrics(computedMetrics);
       setPendingRequests(requests);
-      setCompanies(comps);
+      setCompanies(enrichedCompanies);
     } catch (e) {
       console.error("[useAdminHub] Failed to load admin dashboard:", e);
     } finally {
@@ -104,7 +147,7 @@ export function useAdminHub() {
         setIsRefreshing(false);
       }
     }
-  }, [isAuthLoading, user, isSuperAdmin]);
+  }, [isAuthLoading, user?.id, isSuperAdmin]);
 
   useEffect(() => {
     loadData();

@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthController } from "@/controllers/auth.controller";
+import { AuthService } from "@/services/auth.service";
+import { TokenHelper } from "@/lib/helpers/token.helper";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/lib/constants";
 
@@ -80,37 +82,40 @@ export function useAuthCallback(): UseAuthCallbackReturn {
     return { accessToken, code, error: errorParam, errorDesc };
   };
 
-  const registerWithCompany = async (userInfo: GoogleUserInfo, companyName: string) => {
-    setStatus("submitting_company");
-    setError(null);
+  const registerWithCompany = useCallback(
+    async (userInfo: GoogleUserInfo, companyName: string) => {
+      setStatus("submitting_company");
+      setError(null);
 
-    const generatedPassword = `GAuth_${Math.random().toString(36).slice(2)}!A9z`;
+      const generatedPassword = `GAuth_${Math.random().toString(36).slice(2)}!A9z`;
 
-    try {
-      const signupResult = await controller.handleSignup({
-        email: userInfo.email,
-        password: generatedPassword,
-        firstName: userInfo.firstName,
-        lastName: userInfo.lastName,
-        requestedCompany: companyName,
-      });
+      try {
+        const signupResult = await controller.handleSignup({
+          email: userInfo.email,
+          password: generatedPassword,
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName,
+          requestedCompany: companyName,
+        });
 
-      if (!signupResult.success) {
+        if (!signupResult.success) {
+          setStatus("requires_company");
+          setError(signupResult.error || "Failed to submit signup request. Please try again.");
+          return;
+        }
+
+        setStatus("pending");
+        setTimeout(() => {
+          router.replace(`${ROUTES.PENDING}?company=${encodeURIComponent(companyName)}`);
+        }, 600);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Signup registration failed";
         setStatus("requires_company");
-        setError(signupResult.error || "Failed to submit signup request. Please try again.");
-        return;
+        setError(message);
       }
-
-      setStatus("pending");
-      setTimeout(() => {
-        router.replace(`${ROUTES.PENDING}?company=${encodeURIComponent(companyName)}`);
-      }, 600);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Signup registration failed";
-      setStatus("requires_company");
-      setError(message);
-    }
-  };
+    },
+    [controller, router]
+  );
 
   const processOAuth = useCallback(async () => {
     const { accessToken, code, error: urlError, errorDesc } = parseUrlParams();
@@ -153,17 +158,24 @@ export function useAuthCallback(): UseAuthCallbackReturn {
         result = await controller.handleOAuthCallback(accessToken);
       } else if (code) {
         result = await controller.handleOAuthCode(code);
+        effectiveToken = effectiveToken || TokenHelper.getToken() || undefined;
       }
 
       if (!result) {
         throw new Error("Unable to complete authentication");
       }
 
+      const finalToken = effectiveToken || TokenHelper.getToken();
+
       if (result.success && result.data) {
-        if (effectiveToken) {
-          setSession(effectiveToken, result.data);
+        if (finalToken) {
+          setSession(finalToken, result.data);
         }
         setStatus("success");
+
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("ec_auth_intent");
+        }
 
         if (result.data.approvalStatus === "pending") {
           setTimeout(() => router.replace(ROUTES.PENDING), 500);
@@ -173,6 +185,24 @@ export function useAuthCallback(): UseAuthCallbackReturn {
           setTimeout(() => router.replace(isAdmin ? ROUTES.ADMIN : ROUTES.HOME), 500);
         }
         return;
+      }
+
+      // If backend was unreachable or profile not found, check if admin login intent
+      const isAuthIntentAdmin =
+        typeof window !== "undefined" && sessionStorage.getItem("ec_auth_intent") === "admin_login";
+      if (isAuthIntentAdmin && finalToken) {
+        const fallbackProfile =
+          controller.getStoredUser() ||
+          AuthService.getInstance().resolveProfileFromTokenOrStorage(finalToken);
+        if (fallbackProfile) {
+          setSession(finalToken, fallbackProfile);
+          setStatus("success");
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("ec_auth_intent");
+          }
+          setTimeout(() => router.replace(ROUTES.ADMIN), 500);
+          return;
+        }
       }
 
       // Handle specific error statuses
@@ -227,7 +257,7 @@ export function useAuthCallback(): UseAuthCallbackReturn {
       setStatus("error");
       setError(message);
     }
-  }, [controller, router, setSession]);
+  }, [controller, registerWithCompany, router, setSession]);
 
   useEffect(() => {
     if (processedRef.current) return;

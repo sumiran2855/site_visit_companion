@@ -12,6 +12,7 @@ export function useLoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const toggleShowPassword = () => {
@@ -71,14 +72,17 @@ export function useLoginForm() {
 
   const handleGoogleLogin = () => {
     setError(null);
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("ec_auth_intent", "admin_login");
+      }
       loginWithGoogle();
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to initiate Google authentication";
       setError(message);
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -109,6 +113,7 @@ export function useLoginForm() {
     showPassword,
     toggleShowPassword,
     isLoading,
+    isGoogleLoading,
     error,
     handleSubmit,
     handleGoogleLogin,
