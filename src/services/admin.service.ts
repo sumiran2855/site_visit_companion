@@ -51,7 +51,12 @@ export function mapProfileToUser(profile: UserProfile | any, companyName?: strin
   const companyId = p.companyId ?? p.company_id ?? null;
   const requestedCompany = p.requestedCompany ?? p.requested_company ?? null;
   const resolvedCompany = p.companyName ?? p.company_name ?? companyName ?? requestedCompany ?? null;
-  const approvalStatus = p.approvalStatus ?? p.approval_status ?? "pending";
+  
+  const rawApproval = String(p.approvalStatus ?? p.approval_status ?? "").toLowerCase().trim();
+  const rawStatus = String(p.status ?? "").toLowerCase().trim();
+  const isApproved =
+    rawApproval === "approved" ||
+    (rawApproval === "" && rawStatus === "active");
 
   return {
     id: p.id,
@@ -66,7 +71,7 @@ export function mapProfileToUser(profile: UserProfile | any, companyName?: strin
       p.role === "company_admin"
         ? "admin"
         : "user",
-    status: approvalStatus === "approved" ? "active" : "pending",
+    status: isApproved ? "active" : "pending",
     companyId: companyId || null,
     companyName: resolvedCompany,
     requestedCompany: requestedCompany || null,
@@ -158,6 +163,39 @@ export class AdminService {
     }
 
     if (requests.length === 0) {
+      // Direct Supabase REST fallback
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const res = await fetch(
+          `${API_CONFIG.SUPABASE_URL}/rest/v1/signup_requests?status=eq.pending&order=created_at.desc`,
+          {
+            headers: {
+              apikey: sbKey,
+              Authorization: `Bearer ${sbKey}`,
+            },
+          }
+        );
+        if (res.ok) {
+          const rows = (await res.json()) as Array<Record<string, unknown>>;
+          if (Array.isArray(rows) && rows.length > 0) {
+            requests = rows.map((r) => ({
+              id: String(r.id),
+              firstName: String(r.first_name || ""),
+              lastName: String(r.last_name || ""),
+              middleName: typeof r.middle_name === "string" ? r.middle_name : undefined,
+              email: String(r.email || ""),
+              requestedCompany: String(r.requested_company || ""),
+              createdAt: typeof r.created_at === "string" ? r.created_at : new Date().toISOString(),
+            }));
+            setStorageItem(CACHE_KEY_REQUESTS, JSON.stringify(requests));
+          }
+        }
+      } catch (err) {
+        console.warn("[AdminService] Supabase fallback for pending requests failed:", err);
+      }
+    }
+
+    if (requests.length === 0) {
       const cached = getStorageItem(CACHE_KEY_REQUESTS);
       const list: PendingAccessRequest[] = cached ? JSON.parse(cached) : [];
       requests = list.filter((r) => !isMockId(r.id));
@@ -179,10 +217,10 @@ export class AdminService {
     role: UserRole
   ): Promise<{ success: boolean; user?: User }> {
     let approvedUser: User | undefined;
+    let resolvedCompanyId = companyId;
     const http = HttpClient.getInstance();
 
     try {
-      let resolvedCompanyId = companyId;
       if (companyId.startsWith("pending-") || companyId.startsWith("comp-")) {
         const companies = await this.listCompanies();
         const existing = companies.find(
@@ -219,6 +257,50 @@ export class AdminService {
       console.warn("[AdminService] approveRequest network call failed:", err);
     }
 
+    if (!approvedUser) {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const headers = {
+          apikey: sbKey,
+          Authorization: `Bearer ${sbKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+        };
+        // 1. Update signup_requests
+        const sRes = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/signup_requests?id=eq.${requestId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ status: "approved", updated_at: new Date().toISOString() }),
+        });
+        const updatedSignups = (await sRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+        const reqItem = updatedSignups[0];
+
+        // 2. Update profiles if profile exists
+        if (reqItem?.email) {
+          const pRes = await fetch(
+            `${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(String(reqItem.email))}`,
+            {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({
+                approval_status: "approved",
+                company_id: resolvedCompanyId,
+                role: role === "admin" ? "admin" : "standard",
+                updated_at: new Date().toISOString(),
+              }),
+            }
+          );
+          const updatedProfiles = (await pRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+          const profile = updatedProfiles[0];
+          if (profile) {
+            approvedUser = mapProfileToUser(profile, companyName);
+          }
+        }
+      } catch (err) {
+        console.warn("[AdminService] Supabase fallback approve failed:", err);
+      }
+    }
+
     // Update local cache
     const cachedRequestsStr = getStorageItem(CACHE_KEY_REQUESTS);
     if (cachedRequestsStr) {
@@ -246,7 +328,36 @@ export class AdminService {
     const http = HttpClient.getInstance();
     try {
       await http.post(API_CONFIG.ENDPOINTS.ADMIN.REJECT_REQUEST(requestId));
-    } catch {}
+    } catch {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/signup_requests?id=eq.${requestId}`, {
+          method: "PATCH",
+          headers: {
+            apikey: sbKey,
+            Authorization: `Bearer ${sbKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify({ status: "rejected", updated_at: new Date().toISOString() }),
+        });
+        const rows = (await res.json().catch(() => [])) as Array<Record<string, unknown>>;
+        if (rows[0]?.email) {
+          await fetch(
+            `${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(String(rows[0].email))}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: sbKey,
+                Authorization: `Bearer ${sbKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ approval_status: "rejected", updated_at: new Date().toISOString() }),
+            }
+          ).catch(() => {});
+        }
+      } catch {}
+    }
 
     const cached = getStorageItem(CACHE_KEY_REQUESTS);
     if (cached) {
@@ -254,11 +365,17 @@ export class AdminService {
       const filtered = requests.filter((r) => r.id !== requestId);
       setStorageItem(CACHE_KEY_REQUESTS, JSON.stringify(filtered));
     }
+    const cachedMembers = getStorageItem(CACHE_KEY_MEMBERS);
+    if (cachedMembers) {
+      const members: User[] = JSON.parse(cachedMembers);
+      const filtered = members.filter((m) => m.id !== requestId);
+      setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(filtered));
+    }
     return true;
   }
 
   /**
-   * Accounts & Members
+   * Accounts & Members (Approved users only)
    */
   static async listMembers(filterCompanyName?: string, filterCompanyId?: string): Promise<User[]> {
     let membersList: User[] = [];
@@ -270,25 +387,72 @@ export class AdminService {
       const data = res?.data || (Array.isArray(res) ? res : null);
       if (Array.isArray(data)) {
         const cleanData = data.filter((m) => !isMockId(m.id));
-        const mappedUsers: User[] = cleanData.map((p) => {
-          const compId = p.companyId || p.company_id;
-          const comp = compId
-            ? companies.find((c) => c.id.toLowerCase() === compId.toLowerCase())
-            : null;
-          const compName =
-            comp?.name ||
-            p.companyName ||
-            p.company_name ||
-            p.requestedCompany ||
-            p.requested_company ||
-            null;
-          return mapProfileToUser(p, compName || undefined);
-        });
+        const mappedUsers: User[] = cleanData
+          .map((p) => {
+            const compId = p.companyId || p.company_id;
+            const comp = compId
+              ? companies.find((c) => c.id.toLowerCase() === compId.toLowerCase())
+              : null;
+            const compName =
+              comp?.name ||
+              p.companyName ||
+              p.company_name ||
+              p.requestedCompany ||
+              p.requested_company ||
+              null;
+            return mapProfileToUser(p, compName || undefined);
+          })
+          .filter((m) => m.status === "active");
+
         setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(mappedUsers));
         membersList = mappedUsers;
       }
     } catch {
-      console.log("[AdminService] Failed to fetch members, falling back to cache.");
+      console.log("[AdminService] Failed to fetch members, falling back to Supabase / cache.");
+    }
+
+    if (membersList.length === 0) {
+      // Direct Supabase REST fallback: only query approved profiles
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const res = await fetch(
+          `${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?approval_status=eq.approved&order=created_at.desc`,
+          {
+            headers: {
+              apikey: sbKey,
+              Authorization: `Bearer ${sbKey}`,
+            },
+          }
+        );
+        if (res.ok) {
+          const rows = (await res.json()) as Array<Record<string, unknown>>;
+          if (Array.isArray(rows) && rows.length > 0) {
+            const companies = await this.listCompanies();
+            const cleanRows = rows.filter((m) => !isMockId(String(m.id)));
+            const mappedUsers: User[] = cleanRows
+              .map((p) => {
+                const compId = (p.companyId || p.company_id) as string | undefined;
+                const comp = compId
+                  ? companies.find((c) => c.id.toLowerCase() === compId.toLowerCase())
+                  : null;
+                const compName =
+                  (comp?.name ||
+                    p.companyName ||
+                    p.company_name ||
+                    p.requestedCompany ||
+                    p.requested_company ||
+                    null) as string | null;
+                return mapProfileToUser(p, compName || undefined);
+              })
+              .filter((m) => m.status === "active");
+
+            setStorageItem(CACHE_KEY_MEMBERS, JSON.stringify(mappedUsers));
+            membersList = mappedUsers;
+          }
+        }
+      } catch (err) {
+        console.warn("[AdminService] Supabase fallback for members failed:", err);
+      }
     }
 
     if (membersList.length === 0) {
@@ -296,7 +460,7 @@ export class AdminService {
       const list: any[] = cached ? JSON.parse(cached) : [];
       const filtered = list.filter((m) => !isMockId(m.id));
       const companies = await this.listCompanies();
-      membersList = filtered.map((p) => {
+      const mapped = filtered.map((p) => {
         const compId = p.companyId || p.company_id;
         const comp = compId
           ? companies.find((c) => c.id.toLowerCase() === compId.toLowerCase())
@@ -310,6 +474,8 @@ export class AdminService {
           null;
         return mapProfileToUser(p, compName || undefined);
       });
+      // Strict filter: only active approved members
+      membersList = mapped.filter((m) => m.status === "active");
     }
 
     if (filterCompanyName && filterCompanyName !== "all") {
@@ -372,7 +538,18 @@ export class AdminService {
     const http = HttpClient.getInstance();
     try {
       await http.delete(API_CONFIG.ENDPOINTS.ADMIN.PURGE_USER(userId));
-    } catch {}
+    } catch {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+          method: "DELETE",
+          headers: {
+            apikey: sbKey,
+            Authorization: `Bearer ${sbKey}`,
+          },
+        });
+      } catch {}
+    }
 
     const cached = getStorageItem(CACHE_KEY_MEMBERS);
     if (cached) {
@@ -414,6 +591,32 @@ export class AdminService {
         return cleanData;
       }
     } catch {}
+
+    // Direct Supabase REST fallback for companies
+    try {
+      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+      const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies?select=*&order=name.asc`, {
+        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` },
+      });
+      if (res.ok) {
+        const rows = (await res.json()) as Array<Record<string, unknown>>;
+        if (Array.isArray(rows) && rows.length > 0) {
+          const mapped: Company[] = rows.map((c) => ({
+            id: String(c.id),
+            name: String(c.name || ""),
+            parentId: typeof c.parent_id === "string" ? c.parent_id : null,
+            allowedEmailDomains: Array.isArray(c.allowed_email_domains) ? (c.allowed_email_domains as string[]) : [],
+            isActive: typeof c.is_active === "boolean" ? c.is_active : true,
+            createdAt: typeof c.created_at === "string" ? c.created_at : new Date().toISOString(),
+            updatedAt: typeof c.updated_at === "string" ? c.updated_at : new Date().toISOString(),
+          }));
+          setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(mapped));
+          return mapped;
+        }
+      }
+    } catch (err) {
+      console.warn("[AdminService] Supabase fallback for companies failed:", err);
+    }
 
     const cached = getStorageItem(CACHE_KEY_COMPANIES);
     if (cached) {

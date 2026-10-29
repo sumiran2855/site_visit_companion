@@ -85,7 +85,8 @@ export function useAdminUsers() {
 
       if (runId !== loadRunId.current) return;
 
-      setMembers(membersData);
+      const approvedOnly = membersData.filter((m) => m.status === "active");
+      setMembers(approvedOnly);
       setPendingRequests(requestsData);
       setCompanies(comps);
 
@@ -122,6 +123,9 @@ export function useAdminUsers() {
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
+      // Must be an approved active member (never pending)
+      if (member.status !== "active") return false;
+
       if (selectedCompanyFilter !== "all") {
         const compId = member.companyId?.toLowerCase();
         const mCompName =
