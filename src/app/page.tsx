@@ -17,9 +17,23 @@ export default function HomePage() {
         router.replace(ROUTES.AUTH);
       } else if (isAdmin) {
         router.replace(ROUTES.ADMIN);
+      } else {
+        router.replace(ROUTES.PENDING);
       }
     }
   }, [isLoading, isAuthenticated, isAdmin, router]);
+
+  // Watchdog: prevent indefinite loading spinner if background verification delays
+  useEffect(() => {
+    const watchdog = setTimeout(() => {
+      if (!isAuthenticated) {
+        router.replace(ROUTES.AUTH);
+      } else if (isAdmin) {
+        router.replace(ROUTES.ADMIN);
+      }
+    }, 1800);
+    return () => clearTimeout(watchdog);
+  }, [isAuthenticated, isAdmin, router]);
 
   if (isLoading) {
     return (

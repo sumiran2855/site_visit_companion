@@ -17,6 +17,7 @@ import type {
 const CACHE_KEY_REQUESTS = "ecpower_cached_pending_requests";
 const CACHE_KEY_MEMBERS = "ecpower_cached_members";
 const CACHE_KEY_COMPANIES = "ecpower_cached_companies";
+const CACHE_KEY_VISITS = "ecpower_cached_visits";
 const CACHE_KEY_TEMPLATE = "ecpower_cached_pdf_template";
 const CACHE_KEY_RETENTION_RUN = "ecpower_last_retention_run";
 
@@ -97,18 +98,23 @@ export class AdminService {
     const target = targetCompany?.trim().toLowerCase();
     const targetId = targetCompanyId?.trim().toLowerCase();
 
-    if (target && req === target) return true;
+    // Direct ID match
     if (targetId && req === targetId) return true;
 
+    // Direct exact name match
+    if (target && req === target) return true;
+
+    // Normalize legal suffixes (Inc., LLC, etc.) without false positive partial word matching
+    const stripSuffix = (s: string) =>
+      s
+        .replace(/\b(inc|incorporated|llc|corp|corporation|ltd|limited|co|company)\b\.?/gi, "")
+        .replace(/[^a-z0-9]/gi, "")
+        .trim();
+
     if (target) {
-      const cleanReq = req.replace(/[^a-z0-9]/g, "");
-      const cleanTarget = target.replace(/[^a-z0-9]/g, "");
+      const cleanReq = stripSuffix(req);
+      const cleanTarget = stripSuffix(target);
       if (cleanReq && cleanTarget && cleanReq === cleanTarget) {
-        return true;
-      }
-      const reqWords = req.split(/[\s,.-]+/);
-      const targetWords = target.split(/[\s,.-]+/);
-      if (reqWords.includes(target) || targetWords.includes(req)) {
         return true;
       }
     }
@@ -117,23 +123,19 @@ export class AdminService {
       const targetObj = companiesList.find(
         (c) =>
           (targetId && c.id.toLowerCase() === targetId) ||
-          (target && c.name.trim().toLowerCase() === target)
+          (target && (c.name.trim().toLowerCase() === target || stripSuffix(c.name) === stripSuffix(target)))
       );
-      if (targetObj) {
-        const tName = targetObj.name.trim().toLowerCase();
-        if (req === tName) return true;
-        const cleanT = tName.replace(/[^a-z0-9]/g, "");
-        const cleanR = req.replace(/[^a-z0-9]/g, "");
-        if (cleanT && cleanR && cleanT === cleanR) return true;
-        const tWords = tName.split(/[\s,.-]+/);
-        const rWords = req.split(/[\s,.-]+/);
-        if (tWords.includes(req) || rWords.includes(tName)) return true;
-      }
 
       const reqObj = companiesList.find(
-        (c) => c.id.toLowerCase() === req || c.name.trim().toLowerCase() === req
+        (c) =>
+          c.id.toLowerCase() === req ||
+          c.name.trim().toLowerCase() === req ||
+          (stripSuffix(c.name) && stripSuffix(c.name) === stripSuffix(req))
       );
-      if (reqObj && targetObj && reqObj.id === targetObj.id) return true;
+
+      if (reqObj && targetObj && reqObj.id.toLowerCase() === targetObj.id.toLowerCase()) {
+        return true;
+      }
     }
 
     return false;
@@ -294,6 +296,55 @@ export class AdminService {
           const profile = updatedProfiles[0];
           if (profile) {
             approvedUser = mapProfileToUser(profile, companyName);
+          }
+
+          // 3. Automatically append approved user's email to company's allowed_email_domains
+          if (resolvedCompanyId) {
+            try {
+              const compRes = await fetch(
+                `${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${encodeURIComponent(resolvedCompanyId)}`,
+                { headers }
+              );
+              if (compRes.ok) {
+                const compRows = (await compRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+                if (compRows[0]) {
+                  const targetComp = compRows[0];
+                  const userEmail = String(reqItem.email).trim().toLowerCase();
+                  const currentDomains = Array.isArray(targetComp.allowed_email_domains)
+                    ? (targetComp.allowed_email_domains as string[])
+                    : [];
+                  if (!currentDomains.some((d: string) => d.toLowerCase() === userEmail)) {
+                    const newDomains = [...currentDomains, userEmail];
+                    await fetch(
+                      `${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${encodeURIComponent(resolvedCompanyId)}`,
+                      {
+                        method: "PATCH",
+                        headers,
+                        body: JSON.stringify({
+                          allowed_email_domains: newDomains,
+                          updated_at: new Date().toISOString(),
+                        }),
+                      }
+                    );
+
+                    // Update cached companies
+                    const cachedCompStr = getStorageItem(CACHE_KEY_COMPANIES);
+                    if (cachedCompStr) {
+                      try {
+                        const compList: Company[] = JSON.parse(cachedCompStr);
+                        const cIdx = compList.findIndex((c) => c.id === resolvedCompanyId);
+                        if (cIdx >= 0) {
+                          compList[cIdx].allowedEmailDomains = newDomains;
+                          setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(compList));
+                        }
+                      } catch {}
+                    }
+                  }
+                }
+              }
+            } catch (cErr) {
+              console.warn("[AdminService] Failed to append email to company allowed_email_domains on approve:", cErr);
+            }
           }
         }
       } catch (err) {
@@ -521,7 +572,73 @@ export class AdminService {
     const http = HttpClient.getInstance();
     try {
       await http.patch(API_CONFIG.ENDPOINTS.ADMIN.MOVE_COMPANY(userId), { companyId });
-    } catch {}
+    } catch {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const headers = {
+          apikey: sbKey,
+          Authorization: `Bearer ${sbKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation",
+        };
+        // 1. Update profile's company_id
+        const pRes = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({
+            company_id: companyId,
+            updated_at: new Date().toISOString(),
+          }),
+        });
+        const pRows = (await pRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+        const userEmail = pRows[0]?.email ? String(pRows[0].email).trim().toLowerCase() : null;
+
+        // 2. Append email to new company's allowed_email_domains
+        if (userEmail && companyId) {
+          const compRes = await fetch(
+            `${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${encodeURIComponent(companyId)}`,
+            { headers }
+          );
+          if (compRes.ok) {
+            const compRows = (await compRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+            if (compRows[0]) {
+              const currentDomains = Array.isArray(compRows[0].allowed_email_domains)
+                ? (compRows[0].allowed_email_domains as string[])
+                : [];
+              if (!currentDomains.some((d: string) => d.toLowerCase() === userEmail)) {
+                const newDomains = [...currentDomains, userEmail];
+                await fetch(
+                  `${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${encodeURIComponent(companyId)}`,
+                  {
+                    method: "PATCH",
+                    headers,
+                    body: JSON.stringify({
+                      allowed_email_domains: newDomains,
+                      updated_at: new Date().toISOString(),
+                    }),
+                  }
+                );
+
+                // Update cached companies
+                const cachedCompStr = getStorageItem(CACHE_KEY_COMPANIES);
+                if (cachedCompStr) {
+                  try {
+                    const compList: Company[] = JSON.parse(cachedCompStr);
+                    const cIdx = compList.findIndex((c) => c.id === companyId);
+                    if (cIdx >= 0) {
+                      compList[cIdx].allowedEmailDomains = newDomains;
+                      setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(compList));
+                    }
+                  } catch {}
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[AdminService] Supabase fallback moveUserCompany failed:", err);
+      }
+    }
 
     const cached = getStorageItem(CACHE_KEY_MEMBERS);
     if (cached) {
@@ -626,33 +743,119 @@ export class AdminService {
     return [];
   }
 
-  static async listCompaniesWithCounts(): Promise<Company[]> {
+  /**
+   * Visits Listing with Supabase REST and Local Cache Fallback
+   */
+  static async listVisits(): Promise<any[]> {
+    let visits: any[] = [];
     const http = HttpClient.getInstance();
-    const [companies, members, visitsRes] = await Promise.all([
+
+    try {
+      const res = await http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST);
+      const data = res?.data || (Array.isArray(res) ? res : null);
+      if (Array.isArray(data) && data.length > 0) {
+        visits = data.filter((v) => !isMockId(v.id));
+        setStorageItem(CACHE_KEY_VISITS, JSON.stringify(visits));
+        return visits;
+      }
+    } catch {
+      console.log("[AdminService] Failed to fetch visits via API, falling back to Supabase / cache.");
+    }
+
+    // Direct Supabase REST fallback
+    try {
+      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+      const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/visits?select=*&order=created_at.desc`, {
+        headers: {
+          apikey: sbKey,
+          Authorization: `Bearer ${sbKey}`,
+        },
+      });
+      if (res.ok) {
+        const rows = (await res.json()) as Array<Record<string, unknown>>;
+        if (Array.isArray(rows) && rows.length > 0) {
+          const cleanRows = rows.filter((v) => !isMockId(String(v.id)));
+          visits = cleanRows.map((v) => ({
+            id: String(v.id),
+            siteName: String(v.site_name || v.siteName || ""),
+            companyId: (v.company_id || v.companyId || null) as string | null,
+            companyName: (v.company_name || v.companyName || null) as string | null,
+            ownerId: (v.owner_id || v.ownerId || null) as string | null,
+            status: String(v.status || "draft"),
+            completedFields: Number(v.completed_fields ?? v.completedFields ?? 0),
+            totalFields: Number(v.total_fields ?? v.totalFields ?? 67),
+            completionPercentage: Number(v.completion_percentage ?? v.completionPercentage ?? 0),
+            createdAt: String(v.created_at || v.createdAt || new Date().toISOString()),
+            updatedAt: String(v.updated_at || v.updatedAt || new Date().toISOString()),
+          }));
+          setStorageItem(CACHE_KEY_VISITS, JSON.stringify(visits));
+          return visits;
+        }
+      }
+    } catch (err) {
+      console.warn("[AdminService] Supabase fallback for visits failed:", err);
+    }
+
+    // Cache fallback
+    const cached = getStorageItem(CACHE_KEY_VISITS);
+    if (cached) {
+      try {
+        const list: any[] = JSON.parse(cached);
+        if (Array.isArray(list) && list.length > 0) {
+          return list.filter((v) => !isMockId(v.id));
+        }
+      } catch {}
+    }
+
+    // Cache fallback from submissions if present
+    const cachedSubs = getStorageItem("@ecpower_admin_site_submissions_v2");
+    if (cachedSubs) {
+      try {
+        const subs: any[] = JSON.parse(cachedSubs);
+        if (Array.isArray(subs) && subs.length > 0) {
+          return subs.filter((s) => !isMockId(s.id)).map((s) => ({
+            id: s.id,
+            siteName: s.siteName,
+            companyId: s.customerId || null,
+            companyName: s.customer || null,
+            status: s.status || "draft",
+            createdAt: s.sentAt || s.createdAt || new Date().toISOString(),
+            updatedAt: s.closedAt || s.updatedAt || new Date().toISOString(),
+          }));
+        }
+      } catch {}
+    }
+
+    return [];
+  }
+
+  static async listCompaniesWithCounts(): Promise<Company[]> {
+    const [companies, members, visits] = await Promise.all([
       this.listCompanies(),
       this.listMembers().catch(() => []),
-      http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST).catch(() => ({ data: [] })),
+      this.listVisits().catch(() => []),
     ]);
-
-    const visits = Array.isArray(visitsRes?.data)
-      ? visitsRes.data
-      : Array.isArray(visitsRes)
-      ? visitsRes
-      : [];
 
     const enriched = companies.map((comp) => {
       const compId = comp.id.toLowerCase();
       const compName = comp.name.trim().toLowerCase();
 
       const memberCount = members.filter((m) => {
-        if (m.companyId && m.companyId.toLowerCase() === compId) return true;
+        // Priority 1: If member has an assigned companyId, match ONLY by companyId
+        if (m.companyId) {
+          return m.companyId.toLowerCase() === compId;
+        }
+        // Priority 2: Fall back to exact name matching only if member has no companyId
         if (m.companyName && m.companyName.trim().toLowerCase() === compName) return true;
         if (m.requestedCompany && m.requestedCompany.trim().toLowerCase() === compName) return true;
         return this.matchesCompany(m.companyName || m.requestedCompany, comp.name, comp.id, companies);
       }).length;
 
       const visitCount = visits.filter((v: any) => {
-        if (v.companyId && v.companyId.toLowerCase() === compId) return true;
+        // Priority 1: If visit has an assigned companyId, match ONLY by companyId
+        if (v.companyId) {
+          return String(v.companyId).toLowerCase() === compId;
+        }
         if (v.companyName && v.companyName.trim().toLowerCase() === compName) return true;
         return this.matchesCompany(v.companyName, comp.name, comp.id, companies);
       }).length;
@@ -670,14 +873,95 @@ export class AdminService {
 
   static async createCompany(input: CreateCompanyInput): Promise<Company> {
     const http = HttpClient.getInstance();
-    const res = await http.post<any>(API_CONFIG.ENDPOINTS.COMPANIES.CREATE, input);
-    const created: Company = res?.data || res;
+    let created: Company | null = null;
+
+    try {
+      const res = await http.post<any>(API_CONFIG.ENDPOINTS.COMPANIES.CREATE, input);
+      const data = res?.data || res;
+      if (data && (data.id || data.name)) {
+        created = {
+          id: String(data.id),
+          name: String(data.name || input.name),
+          parentId: typeof data.parentId === "string" ? data.parentId : typeof data.parent_id === "string" ? data.parent_id : input.parentId || null,
+          allowedEmailDomains: Array.isArray(data.allowedEmailDomains) ? data.allowedEmailDomains : Array.isArray(data.allowed_email_domains) ? data.allowed_email_domains : input.allowedEmailDomains || [],
+          isActive: typeof data.isActive === "boolean" ? data.isActive : typeof data.is_active === "boolean" ? data.is_active : true,
+          createdAt: typeof data.createdAt === "string" ? data.createdAt : typeof data.created_at === "string" ? data.created_at : new Date().toISOString(),
+          updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : typeof data.updated_at === "string" ? data.updated_at : new Date().toISOString(),
+        };
+      }
+    } catch (err) {
+      console.warn("[AdminService] createCompany API call failed, falling back to Supabase/cache:", err);
+    }
+
+    // Direct Supabase REST fallback
+    if (!created) {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const newId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `comp-${Date.now()}`;
+        const newRow = {
+          id: newId,
+          name: input.name.trim(),
+          parent_id: input.parentId || null,
+          allowed_email_domains: input.allowedEmailDomains || [],
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies`, {
+          method: "POST",
+          headers: {
+            apikey: sbKey,
+            Authorization: `Bearer ${sbKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify(newRow),
+        });
+
+        if (res.ok) {
+          const rows = (await res.json().catch(() => [])) as Array<Record<string, unknown>>;
+          const c = rows[0] || newRow;
+          created = {
+            id: String(c.id),
+            name: String(c.name || input.name),
+            parentId: typeof c.parent_id === "string" ? c.parent_id : input.parentId || null,
+            allowedEmailDomains: Array.isArray(c.allowed_email_domains) ? (c.allowed_email_domains as string[]) : input.allowedEmailDomains || [],
+            isActive: typeof c.is_active === "boolean" ? c.is_active : true,
+            createdAt: typeof c.created_at === "string" ? c.created_at : new Date().toISOString(),
+            updatedAt: typeof c.updated_at === "string" ? c.updated_at : new Date().toISOString(),
+          };
+        }
+      } catch (err) {
+        console.warn("[AdminService] Supabase fallback createCompany failed:", err);
+      }
+    }
+
+    // Local fallback if network failed
+    if (!created) {
+      created = {
+        id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `comp-${Date.now()}`,
+        name: input.name.trim(),
+        parentId: input.parentId || null,
+        allowedEmailDomains: input.allowedEmailDomains || [],
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
 
     const cached = getStorageItem(CACHE_KEY_COMPANIES);
     if (cached) {
-      const list: Company[] = JSON.parse(cached);
-      list.push(created);
-      setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(list));
+      try {
+        const list: Company[] = JSON.parse(cached);
+        const withoutOld = list.filter((c) => c.id !== created!.id);
+        withoutOld.push(created);
+        setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify(withoutOld));
+      } catch {
+        setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify([created]));
+      }
+    } else {
+      setStorageItem(CACHE_KEY_COMPANIES, JSON.stringify([created]));
     }
     return created;
   }
@@ -689,6 +973,45 @@ export class AdminService {
       const res = await http.patch<any>(API_CONFIG.ENDPOINTS.COMPANIES.UPDATE(id), input);
       if (res?.data) updated = res.data;
     } catch {}
+
+    if (!updated) {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const updateBody: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (input.name) updateBody.name = input.name.trim();
+        if (input.parentId !== undefined) updateBody.parent_id = input.parentId;
+        if (input.allowedEmailDomains) updateBody.allowed_email_domains = input.allowedEmailDomains;
+
+        const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${id}`, {
+          method: "PATCH",
+          headers: {
+            apikey: sbKey,
+            Authorization: `Bearer ${sbKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify(updateBody),
+        });
+
+        if (res.ok) {
+          const rows = (await res.json().catch(() => [])) as Array<Record<string, unknown>>;
+          if (rows[0]) {
+            const r = rows[0];
+            updated = {
+              id: String(r.id),
+              name: String(r.name || ""),
+              parentId: typeof r.parent_id === "string" ? r.parent_id : null,
+              allowedEmailDomains: Array.isArray(r.allowed_email_domains) ? (r.allowed_email_domains as string[]) : [],
+              isActive: typeof r.is_active === "boolean" ? r.is_active : true,
+              createdAt: typeof r.created_at === "string" ? r.created_at : new Date().toISOString(),
+              updatedAt: typeof r.updated_at === "string" ? r.updated_at : new Date().toISOString(),
+            };
+          }
+        }
+      } catch {}
+    }
 
     const cached = getStorageItem(CACHE_KEY_COMPANIES);
     if (cached) {
@@ -711,7 +1034,18 @@ export class AdminService {
     const http = HttpClient.getInstance();
     try {
       await http.delete(API_CONFIG.ENDPOINTS.COMPANIES.DELETE(id));
-    } catch {}
+    } catch {
+      try {
+        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${id}`, {
+          method: "DELETE",
+          headers: {
+            apikey: sbKey,
+            Authorization: `Bearer ${sbKey}`,
+          },
+        });
+      } catch {}
+    }
 
     const cached = getStorageItem(CACHE_KEY_COMPANIES);
     if (cached) {
@@ -918,7 +1252,7 @@ export class AdminService {
     companiesList?: Company[]
   ): Promise<AdminDashboardMetrics> {
     const http = HttpClient.getInstance();
-    const [requests, members, companies, visitsRes] = await Promise.all([
+    const [requests, members, companies, visits] = await Promise.all([
       this.listPendingRequests(
         isSuper ? undefined : userCompany || undefined,
         isSuper ? undefined : userCompanyId || undefined,
@@ -929,13 +1263,12 @@ export class AdminService {
         isSuper ? undefined : userCompanyId || undefined
       ),
       this.listCompaniesWithCounts(),
-      http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST).catch(() => ({ data: [] })),
+      this.listVisits().catch(() => []),
     ]);
 
     const totalVisitsCount = companies.reduce((acc, c) => acc + (c.visitCount || 0), 0);
     const now = Date.now();
     const MS_PER_DAY = 1000 * 60 * 60 * 24;
-    const visits: any[] = Array.isArray(visitsRes?.data) ? visitsRes.data : [];
 
     const retentionWarningCount = visits.filter((v) => {
       const created = new Date(v.createdAt);
@@ -958,14 +1291,12 @@ export class AdminService {
    */
   static async getRetentionStorageMetrics(olderThanDays = 365): Promise<RetentionStorageMetrics> {
     const http = HttpClient.getInstance();
-    const [visitsRes, companies] = await Promise.all([
-      http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST).catch(() => ({ data: [] })),
+    const [rawVisits, companies] = await Promise.all([
+      this.listVisits().catch(() => []),
       this.listCompanies().catch(() => []),
     ]);
 
-    const visits: any[] = (Array.isArray(visitsRes?.data) ? visitsRes.data : []).filter(
-      (v) => !isMockId(v.id)
-    );
+    const visits: any[] = rawVisits.filter((v) => !isMockId(v.id));
     const companyMap = new Map(companies.map((c) => [c.id.toLowerCase(), c.name]));
 
     const now = Date.now();

@@ -127,19 +127,26 @@ export function useAdminUsers() {
       if (member.status !== "active") return false;
 
       if (selectedCompanyFilter !== "all") {
-        const compId = member.companyId?.toLowerCase();
-        const mCompName =
-          member.companyName ||
-          (compId ? companies.find((c) => c.id.toLowerCase() === compId)?.name : null) ||
-          member.requestedCompany;
-
-        const matches = AdminService.matchesCompany(
-          mCompName,
-          selectedCompanyFilter,
-          undefined,
-          companies
+        const targetComp = companies.find(
+          (c) => c.name.toLowerCase() === selectedCompanyFilter.toLowerCase()
         );
-        if (!matches) return false;
+        const compId = member.companyId?.toLowerCase();
+        if (targetComp && compId) {
+          if (compId !== targetComp.id.toLowerCase()) return false;
+        } else {
+          const mCompName =
+            member.companyName ||
+            (compId ? companies.find((c) => c.id.toLowerCase() === compId)?.name : null) ||
+            member.requestedCompany;
+
+          const matches = AdminService.matchesCompany(
+            mCompName,
+            selectedCompanyFilter,
+            targetComp?.id,
+            companies
+          );
+          if (!matches) return false;
+        }
       }
 
       if (searchQuery.trim()) {
@@ -159,10 +166,13 @@ export function useAdminUsers() {
   const filteredRequests = useMemo(() => {
     return pendingRequests.filter((req) => {
       if (selectedCompanyFilter !== "all") {
+        const targetComp = companies.find(
+          (c) => c.name.toLowerCase() === selectedCompanyFilter.toLowerCase()
+        );
         const matches = AdminService.matchesCompany(
           req.requestedCompany,
           selectedCompanyFilter,
-          undefined,
+          targetComp?.id,
           companies
         );
         if (!matches) return false;

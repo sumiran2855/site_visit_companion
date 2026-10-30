@@ -43,9 +43,12 @@ export class AuthController {
   /**
    * Handle OAuth return: persist access token and fetch user profile via /api/auth/me
    */
-  public async handleOAuthCallback(token: string): Promise<ControllerResult<UserProfile>> {
+  public async handleOAuthCallback(token: string, refreshToken?: string): Promise<ControllerResult<UserProfile>> {
     try {
       TokenHelper.setToken(token);
+      if (refreshToken) {
+        TokenHelper.setRefreshToken(refreshToken);
+      }
       const profile = await this.authService.me(token);
       TokenHelper.setUser(profile);
 
@@ -70,8 +73,8 @@ export class AuthController {
    */
   public async handleOAuthCode(code: string): Promise<ControllerResult<UserProfile>> {
     try {
-      const { access_token } = await this.authService.exchangeOAuthCode(code);
-      return this.handleOAuthCallback(access_token);
+      const { access_token, refresh_token } = await this.authService.exchangeOAuthCode(code);
+      return this.handleOAuthCallback(access_token, refresh_token);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to exchange authorization code";
       return {
@@ -90,6 +93,10 @@ export class AuthController {
       const result = await this.authService.login(input);
       // Persist auth state
       TokenHelper.setToken(result.token);
+      const anyRes = result as any;
+      if (anyRes?.refreshToken || anyRes?.refresh_token) {
+        TokenHelper.setRefreshToken(anyRes.refreshToken || anyRes.refresh_token);
+      }
       TokenHelper.setUser(result.user);
 
       return {
@@ -152,8 +159,13 @@ export class AuthController {
         data: profile,
       };
     } catch (err: unknown) {
-      // If token is invalid or user rejected, clear storage
-      TokenHelper.clearAuth();
+      const cached = TokenHelper.getUser();
+      if (cached) {
+        return {
+          success: true,
+          data: cached,
+        };
+      }
       const message = err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Session expired or invalid";
       const statusCode = err instanceof ApiError ? err.statusCode : 401;
 

@@ -13,10 +13,11 @@ export const API_CONFIG = {
     process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvaWx4bXJkbnZ3dmZ5a2ZienRnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDIyMjAzNiwiZXhwIjoyMTA1Nzk4MDM2fQ.vmdGBR48B2nJp3u314XKlIa3quJfaq-N0iMlQaG0fRs",
-  TIMEOUT_MS: 15000,
+  TIMEOUT_MS: 5000,
   STORAGE_KEYS: {
     AUTH_TOKEN: "ec_auth_token",
     AUTH_USER: "ec_auth_user",
+    REFRESH_TOKEN: "ec_auth_refresh_token",
   },
   ENDPOINTS: {
     AUTH: {

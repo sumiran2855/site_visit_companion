@@ -18,6 +18,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [isLoading, isAuthenticated, router]);
 
+  // Watchdog: prevent indefinite loading spinner if background verification delays
+  useEffect(() => {
+    const watchdog = setTimeout(() => {
+      if (!isAuthenticated) {
+        router.replace(ROUTES.AUTH);
+      }
+    }, 1800);
+    return () => clearTimeout(watchdog);
+  }, [isAuthenticated, router]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">

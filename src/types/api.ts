@@ -21,5 +21,6 @@ export class ApiError extends Error {
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   requiresAuth?: boolean;
+  _isRetry?: boolean;
 }
 

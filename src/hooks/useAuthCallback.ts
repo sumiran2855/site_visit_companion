@@ -62,7 +62,13 @@ export function useAuthCallback(): UseAuthCallbackReturn {
   const controller = AuthController.getInstance();
   const processedRef = useRef(false);
 
-  const parseUrlParams = (): { accessToken?: string; code?: string; error?: string; errorDesc?: string } => {
+  const parseUrlParams = (): {
+    accessToken?: string;
+    refreshToken?: string;
+    code?: string;
+    error?: string;
+    errorDesc?: string;
+  } => {
     if (typeof window === "undefined") return {};
 
     const hash = window.location.hash.substring(1);
@@ -71,7 +77,10 @@ export function useAuthCallback(): UseAuthCallbackReturn {
     const hashParams = new URLSearchParams(hash);
     const searchParams = new URLSearchParams(search);
 
-    const accessToken = hashParams.get("access_token") || searchParams.get("access_token") || undefined;
+    const accessToken =
+      hashParams.get("access_token") || searchParams.get("access_token") || undefined;
+    const refreshToken =
+      hashParams.get("refresh_token") || searchParams.get("refresh_token") || undefined;
     const code = searchParams.get("code") || hashParams.get("code") || undefined;
     const errorParam = hashParams.get("error") || searchParams.get("error") || undefined;
     const errorDesc =
@@ -79,7 +88,7 @@ export function useAuthCallback(): UseAuthCallbackReturn {
       searchParams.get("error_description") ||
       undefined;
 
-    return { accessToken, code, error: errorParam, errorDesc };
+    return { accessToken, refreshToken, code, error: errorParam, errorDesc };
   };
 
   const registerWithCompany = useCallback(
@@ -118,7 +127,7 @@ export function useAuthCallback(): UseAuthCallbackReturn {
   );
 
   const processOAuth = useCallback(async () => {
-    const { accessToken, code, error: urlError, errorDesc } = parseUrlParams();
+    const { accessToken, refreshToken, code, error: urlError, errorDesc } = parseUrlParams();
 
     if (urlError || errorDesc) {
       setStatus("error");
@@ -155,7 +164,10 @@ export function useAuthCallback(): UseAuthCallbackReturn {
       let effectiveToken = accessToken;
 
       if (accessToken) {
-        result = await controller.handleOAuthCallback(accessToken);
+        if (refreshToken) {
+          TokenHelper.setRefreshToken(refreshToken);
+        }
+        result = await controller.handleOAuthCallback(accessToken, refreshToken);
       } else if (code) {
         result = await controller.handleOAuthCode(code);
         effectiveToken = effectiveToken || TokenHelper.getToken() || undefined;

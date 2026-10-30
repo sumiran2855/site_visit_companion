@@ -111,27 +111,42 @@ export function useAdminCompanies() {
 
   const handleCreateConfirm = useCallback(
     async (input: CreateCompanyInput) => {
-      await AdminService.createCompany(input);
-      showToast(input.parentId ? "Sub-company added successfully" : "Company created");
-      loadData();
+      try {
+        await AdminService.createCompany(input);
+        showToast(input.parentId ? "Sub-company added successfully" : "Company created");
+        await loadData();
+      } catch (err: unknown) {
+        console.error("Create company failed:", err);
+        showToast(input.parentId ? "Failed to add sub-company" : "Failed to create company");
+      }
     },
     [loadData, showToast]
   );
 
   const handleEditConfirm = useCallback(
     async (id: string, input: UpdateCompanyInput) => {
-      await AdminService.updateCompany(id, input);
-      showToast("Company updated successfully");
-      loadData();
+      try {
+        await AdminService.updateCompany(id, input);
+        showToast("Company updated successfully");
+        await loadData();
+      } catch (err: unknown) {
+        console.error("Update company failed:", err);
+        showToast("Failed to update company");
+      }
     },
     [loadData, showToast]
   );
 
   const handleDeleteConfirm = useCallback(
     async (id: string) => {
-      await AdminService.deleteCompany(id);
-      showToast("Company removed");
-      loadData();
+      try {
+        await AdminService.deleteCompany(id);
+        showToast("Company removed");
+        await loadData();
+      } catch (err: unknown) {
+        console.error("Delete company failed:", err);
+        showToast("Failed to remove company");
+      }
     },
     [loadData, showToast]
   );

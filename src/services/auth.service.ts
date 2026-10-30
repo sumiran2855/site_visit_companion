@@ -124,11 +124,17 @@ export class AuthService {
    * Resolves a user profile from local storage cache or decodes the Supabase JWT
    */
   public resolveProfileFromTokenOrStorage(token?: string): UserProfile | null {
+    // Preserve existing valid user profile if already present
+    const storedUser = TokenHelper.getUser();
+    if (storedUser && storedUser.email) {
+      return storedUser;
+    }
+
     const effectiveToken = token || TokenHelper.getToken();
-    if (!effectiveToken) return TokenHelper.getUser();
+    if (!effectiveToken) return storedUser;
 
     const payload = TokenHelper.decodeJwt<Record<string, unknown>>(effectiveToken);
-    if (!payload) return TokenHelper.getUser();
+    if (!payload) return storedUser;
 
     const meta = (payload.user_metadata as Record<string, unknown>) || {};
     const appMeta = (payload.app_metadata as Record<string, unknown>) || {};
@@ -245,6 +251,7 @@ export class AuthService {
    * Fetch current authenticated user's profile (GET /api/auth/me) with fallback resolution
    */
   public async me(token?: string): Promise<UserProfile> {
+    const cached = TokenHelper.getUser();
     try {
       const response = await this.http.get<UserProfile>(
         API_CONFIG.ENDPOINTS.AUTH.ME,
@@ -254,15 +261,14 @@ export class AuthService {
       if (response.data) {
         return response.data;
       }
-    } catch (err: unknown) {
-      const fallback = this.resolveProfileFromTokenOrStorage(token);
+    } catch {
+      const fallback = cached || this.resolveProfileFromTokenOrStorage(token);
       if (fallback) {
         return fallback;
       }
-      throw err;
     }
 
-    const fallback = this.resolveProfileFromTokenOrStorage(token);
+    const fallback = cached || this.resolveProfileFromTokenOrStorage(token);
     if (fallback) {
       return fallback;
     }

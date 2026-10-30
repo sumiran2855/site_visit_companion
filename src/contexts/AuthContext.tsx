@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { AuthController } from "@/controllers/auth.controller";
 import { AuthService } from "@/services/auth.service";
 import { TokenHelper } from "@/lib/helpers/token.helper";
+import { HttpClient } from "@/lib/api/httpClient";
 import type {
   LoginRequestInput,
   LoginResponsePayload,
@@ -28,7 +29,7 @@ export interface AuthContextType {
   loginWithGoogle: (redirectTo?: string) => void;
   demoLogin: (role?: UserRole) => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
-  setSession: (token: string, user: UserProfile) => void;
+  setSession: (token: string, user: UserProfile, refreshToken?: string) => void;
   updateUser: (updates: Partial<UserProfile>) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -44,27 +45,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const controller = AuthController.getInstance();
 
   const refreshUser = useCallback(async () => {
-    const storedToken = TokenHelper.getToken();
-    if (!storedToken) {
-      setUser(null);
-      setToken(null);
+    try {
+      const storedToken = TokenHelper.getToken();
+      const cachedUser = TokenHelper.getUser();
+
+      if (!storedToken && !cachedUser) {
+        setUser(null);
+        setToken(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Immediately hydrate cached session synchronously
+      if (storedToken) setToken(storedToken);
+      if (cachedUser) setUser(cachedUser);
       setIsLoading(false);
-      return;
-    }
 
-    setToken(storedToken);
-    const cachedUser = TokenHelper.getUser();
-    if (cachedUser) {
-      setUser(cachedUser);
+      // Background silent refresh only if refresh_token is available
+      const refreshToken = TokenHelper.getRefreshToken();
+      if (refreshToken && storedToken && TokenHelper.isTokenExpired(storedToken)) {
+        try {
+          const refreshed = await HttpClient.silentRefreshToken();
+          if (refreshed) {
+            setToken(refreshed);
+          }
+        } catch {}
+      }
+    } catch (err) {
+      console.warn("[AuthContext] Error during refreshUser:", err);
+      setIsLoading(false);
     }
-
-    const result = await controller.handleGetMe();
-    if (result.success && result.data) {
-      setUser(result.data);
-      TokenHelper.setUser(result.data);
-    }
-    setIsLoading(false);
-  }, [controller]);
+  }, []);
 
   useEffect(() => {
     refreshUser();
@@ -152,8 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(updated);
   };
 
-  const setSession = (newToken: string, newUser: UserProfile): void => {
+  const setSession = (newToken: string, newUser: UserProfile, refreshToken?: string): void => {
     TokenHelper.setToken(newToken);
+    if (refreshToken) {
+      TokenHelper.setRefreshToken(refreshToken);
+    }
     TokenHelper.setUser(newUser);
     setToken(newToken);
     setUser(newUser);

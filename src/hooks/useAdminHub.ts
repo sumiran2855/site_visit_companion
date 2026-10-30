@@ -76,20 +76,14 @@ export function useAdminHub() {
       const http = HttpClient.getInstance();
 
       // Fetch the 4 core resources in parallel ONCE
-      const [comps, members, requests, visitsRes] = await Promise.all([
+      const [comps, members, requests, visits] = await Promise.all([
         AdminService.listCompanies(),
         AdminService.listMembers(),
         AdminService.listPendingRequests(),
-        http.get<any>("/visits").catch(() => ({ data: [] })),
+        AdminService.listVisits().catch(() => []),
       ]);
 
       if (runId !== loadRunId.current) return;
-
-      const visits: any[] = Array.isArray(visitsRes?.data)
-        ? visitsRes.data
-        : Array.isArray(visitsRes)
-        ? visitsRes
-        : [];
 
       // Compute enriched companies with member and visit counts in-memory
       const enrichedCompanies = comps.map((comp) => {
@@ -97,14 +91,18 @@ export function useAdminHub() {
         const compName = comp.name.trim().toLowerCase();
 
         const memberCount = members.filter((m) => {
-          if (m.companyId && m.companyId.toLowerCase() === compId) return true;
+          if (m.companyId) {
+            return m.companyId.toLowerCase() === compId;
+          }
           if (m.companyName && m.companyName.trim().toLowerCase() === compName) return true;
           if (m.requestedCompany && m.requestedCompany.trim().toLowerCase() === compName) return true;
           return AdminService.matchesCompany(m.companyName || m.requestedCompany, comp.name, comp.id, comps);
         }).length;
 
         const visitCount = visits.filter((v: any) => {
-          if (v.companyId && v.companyId.toLowerCase() === compId) return true;
+          if (v.companyId) {
+            return String(v.companyId).toLowerCase() === compId;
+          }
           if (v.companyName && v.companyName.trim().toLowerCase() === compName) return true;
           return AdminService.matchesCompany(v.companyName, comp.name, comp.id, comps);
         }).length;
