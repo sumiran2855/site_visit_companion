@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X,
   Printer,
@@ -9,7 +9,6 @@ import {
   ZoomOut,
   RotateCcw,
   Eye,
-  FileCheck2,
 } from "lucide-react";
 import type { PDFTemplate, TemplatePage } from "@/types/template";
 import { PdfService, ReportPhotoItem } from "@/services/pdf.service";

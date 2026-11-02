@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Navbar, type NavbarProps } from "@/components/layout/Navbar";
+import { Navbar } from "@/components/layout/Navbar";
 
 export interface AdminHeaderProps {
   title?: string;

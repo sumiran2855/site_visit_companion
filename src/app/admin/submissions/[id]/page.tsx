@@ -12,7 +12,6 @@ import {
   Check,
   X,
   Send,
-  Loader2,
   Share2,
 } from "lucide-react";
 import { useSubmissionDetail } from "@/hooks/useSubmissionDetail";
@@ -22,7 +21,6 @@ import { RejectSubmissionModal } from "@/components/submissions/RejectSubmission
 import { ApproveSiteModal } from "@/components/submissions/ApproveSiteModal";
 import { PdfReportPreviewModal } from "@/components/submissions/PdfReportPreviewModal";
 import { ShareSiteModal } from "@/components/submissions/ShareSiteModal";
-import { PdfService } from "@/services/pdf.service";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -71,13 +69,6 @@ export default function SubmissionDetailPage({ params }: PageProps) {
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [localToast, setLocalToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setLocalToast(msg);
-    setTimeout(() => {
-      setLocalToast(null);
-    }, 4500);
-  };
 
   if (isLoading) {
     return (

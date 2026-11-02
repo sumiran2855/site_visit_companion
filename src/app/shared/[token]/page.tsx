@@ -1,11 +1,10 @@
 "use client";
 
-import { use, useEffect, useState, useCallback, useMemo } from "react";
+import { use, useEffect, useState, useCallback } from "react";
 import {
   Building2,
   Calendar,
   User,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
@@ -18,7 +17,6 @@ import {
   Check,
   X,
   Share2,
-  FileCheck2,
 } from "lucide-react";
 import {
   SharedVisitService,

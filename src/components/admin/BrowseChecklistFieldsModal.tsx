@@ -6,8 +6,6 @@ import {
   Search,
   Sparkles,
   Check,
-  FileCode,
-  Tag,
   Copy,
   Layers,
 } from "lucide-react";

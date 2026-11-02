@@ -1,27 +1,16 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft,
   Check,
   CheckCircle2,
-  ChevronDown,
-  CloudCheck,
-  Copy,
-  Download,
   Eye,
   FileCode,
-  FileDown,
   FileText,
   Grid,
   Heading,
-  HelpCircle,
   Image as ImageIcon,
-  Layers,
   LayoutTemplate,
-  Maximize2,
-  Minimize2,
   Minus,
   MoveDown,
   MoveUp,
@@ -40,9 +29,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { ROUTES } from "@/lib/constants";
 import { PdfService } from "@/services/pdf.service";
-import { AdminHeader } from "@/components/admin/AdminHeader";
 import { TemplateFieldAutocomplete } from "@/components/admin/TemplateFieldAutocomplete";
 import { TemplatePreviewModal } from "@/components/admin/TemplatePreviewModal";
 import {

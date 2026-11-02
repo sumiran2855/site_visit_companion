@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -28,7 +28,6 @@ export default function AdminHubPage() {
   const {
     user,
     isSuperAdmin,
-    isCompanyAdmin,
     isLoading,
     isRefreshing,
     metrics,

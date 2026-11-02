@@ -62,11 +62,7 @@ export default function AdminUsersPage() {
   // Approve modal local form state
   const [assignedCompanyId, setAssignedCompanyId] = useState("");
   const [assignedRole, setAssignedRole] = useState<UserRole>("user");
-
-  // Change Role modal local state
   const [newRole, setNewRole] = useState<UserRole>("user");
-
-  // Move Company modal local state
   const [newCompanyId, setNewCompanyId] = useState("");
 
   const openApprove = (req: PendingAccessRequest) => {

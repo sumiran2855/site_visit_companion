@@ -1,9 +1,9 @@
 "use client";
 
-import React, { Suspense, useState, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, Loader2, LogIn, RefreshCw, Zap } from "lucide-react";
+import { AlertCircle, Loader2, LogIn, RefreshCw } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { Navbar } from "@/components/layout/Navbar";
 import { AuthController } from "@/controllers/auth.controller";

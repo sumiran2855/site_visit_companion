@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Building2,
   Check,
   ChevronDown,
   FileCode,
@@ -45,9 +44,7 @@ export function Navbar({
     user,
     logout,
     updateUser,
-    switchRole,
     isAuthenticated,
-    isLoading,
     isAdmin,
     isSuperAdmin,
     isCompanyAdmin,
@@ -252,17 +249,6 @@ export function Navbar({
                   </span>
                 </div>
               </Link>
-
-              {/* Active Company Badge */}
-              {/* {isAuthenticated && userCompany ? (
-                <>
-                  <span className="hidden lg:inline-block h-5 w-px bg-slate-200 dark:border-zinc-800 ml-1" />
-                  <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 border border-slate-200/80 dark:border-zinc-700/80 text-xs font-semibold text-slate-800 dark:text-zinc-200">
-                    <Building2 className="size-3.5 text-slate-500 dark:text-zinc-400 shrink-0" />
-                    <span className="truncate max-w-[160px]">{userCompany}</span>
-                  </div>
-                </>
-              ) : null} */}
             </div>
 
             {/* Center: Desktop Navigation Tabs */}

@@ -5,7 +5,6 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
-  FolderTree,
   Plus,
   Search,
   Trash2,
@@ -14,21 +13,17 @@ import {
   RotateCw,
   X,
   Mail,
-  Phone,
   CornerDownRight,
-  ShieldCheck,
   AlertTriangle,
   Check,
 } from "lucide-react";
 import { useAdminCompanies } from "@/hooks/useAdminCompanies";
 import { CompaniesTreeSkeleton } from "@/components/admin/AdminDashboardSkeleton";
-import type { Company, CreateCompanyInput, UpdateCompanyInput } from "@/types/admin";
+import type { Company } from "@/types/admin";
 
 export default function AdminCompaniesPage() {
   const {
     isSuperAdmin,
-    isCompanyAdmin,
-    companies,
     searchQuery,
     setSearchQuery,
     clearSearchQuery,
@@ -39,7 +34,6 @@ export default function AdminCompaniesPage() {
     toggleCollapse,
     roots,
     childMap,
-    totalCount,
     isCreateModalOpen,
     createParentId,
     editCompanyTarget,

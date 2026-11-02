@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { useSubmissions } from "@/hooks/useSubmissions";
 import { SubmissionsFilterPills } from "@/components/submissions/SubmissionsFilterPills";

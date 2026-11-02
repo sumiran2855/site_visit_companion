@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
 import { ShieldAlert, LogOut, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function AdminAccessDenied() {
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950 px-4 py-12">
