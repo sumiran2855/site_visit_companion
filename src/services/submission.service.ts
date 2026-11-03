@@ -241,6 +241,7 @@ export class SubmissionService {
         area.status = status;
         if (requestedNote !== undefined) {
           area.customerNote = requestedNote;
+          area.requestedNote = requestedNote;
         }
       }
       if (status === 'ok' && sub.customerRequests) {

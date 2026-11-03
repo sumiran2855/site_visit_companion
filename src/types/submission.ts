@@ -56,6 +56,7 @@ export interface SubmissionArea {
   media: SubmissionMedia[];
   specs: Record<string, string>;
   customerNote?: string;
+  requestedNote?: string;
   rawFields?: Record<string, any>;
   status?: AreaStatus;
 }
