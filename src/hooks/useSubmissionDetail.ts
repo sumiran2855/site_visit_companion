@@ -15,12 +15,8 @@ export function useSubmissionDetail(id: string) {
   const [internalNotes, setInternalNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Modal States
-  const [isRequestMoreOpen, setIsRequestMoreOpen] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [isApproveConfirmOpen, setIsApproveConfirmOpen] = useState(false);
   const [activeMedia, setActiveMedia] = useState<SubmissionMedia | null>(null);
+  const [isRequestMoreOpen, setIsRequestMoreOpen] = useState(false);
 
   // Toast helper
   const showToast = useCallback((msg: string) => {
@@ -38,7 +34,6 @@ export function useSubmissionDetail(id: string) {
         setSubmission(data);
         setInternalNotes(data.internalNotes || "");
         if (data.areas && data.areas.length > 0) {
-          // If no active area or active area doesn't exist, pick boiler room or first area
           const boilerArea = data.areas.find(
             (a) => a.id === "area-boiler" || a.name.toLowerCase().includes("boiler")
           );
@@ -135,22 +130,23 @@ export function useSubmissionDetail(id: string) {
     [submission, showToast]
   );
 
-  const handleToggleChecklist = useCallback(
-    async (checkId: string, checked: boolean) => {
-      if (!submission) return;
-      try {
-        const updated = await SubmissionService.toggleChecklistItem(
-          submission.id,
-          checkId,
-          checked
-        );
-        setSubmission(updated);
-      } catch (err) {
-        console.error("Failed to toggle checklist:", err);
-      }
-    },
-    [submission]
-  );
+  const handleSendRequestsToCustomer = useCallback(async () => {
+    if (!submission) return;
+    const count = (submission.customerRequests || []).length;
+    if (count === 0) {
+      showToast("No requests queued to send.");
+      return;
+    }
+    try {
+      const updated = await SubmissionService.sendRequestsToCustomer(
+        submission.id
+      );
+      setSubmission(updated);
+      showToast(`Successfully dispatched request(s) to technician`);
+    } catch (err) {
+      console.error("Failed to send requests:", err);
+    }
+  }, [submission, showToast]);
 
   const handleSaveInternalNotes = useCallback(async () => {
     if (!submission) return;
@@ -168,58 +164,6 @@ export function useSubmissionDetail(id: string) {
       setIsSavingNotes(false);
     }
   }, [submission, internalNotes, showToast]);
-
-  const handleSendRequestsToCustomer = useCallback(async () => {
-    if (!submission) return;
-    const count = submission.customerRequests.length;
-    if (count === 0) {
-      showToast("No requests queued to send.");
-      return;
-    }
-    try {
-      const updated = await SubmissionService.sendRequestsToCustomer(
-        submission.id
-      );
-      setSubmission(updated);
-      showToast(`Successfully dispatched ${count} request(s) to customer`);
-    } catch (err) {
-      console.error("Failed to send requests:", err);
-    }
-  }, [submission, showToast]);
-
-  const handleApproveSite = useCallback(async () => {
-    if (!submission) return;
-    try {
-      const updated = await SubmissionService.approveSubmission(
-        submission.id,
-        "Martin H."
-      );
-      setSubmission(updated);
-      setIsApproveConfirmOpen(false);
-      showToast("Site submission successfully approved!");
-    } catch (err) {
-      console.error("Failed to approve site:", err);
-    }
-  }, [submission, showToast]);
-
-  const handleRejectSite = useCallback(
-    async (reason: string) => {
-      if (!submission) return;
-      try {
-        const updated = await SubmissionService.rejectSubmission(
-          submission.id,
-          reason,
-          "Martin H."
-        );
-        setSubmission(updated);
-        setIsRejectModalOpen(false);
-        showToast("Site submission rejected. Customer notified.");
-      } catch (err) {
-        console.error("Failed to reject site:", err);
-      }
-    },
-    [submission, showToast]
-  );
 
   const handleDownloadZip = useCallback(async () => {
     if (!submission) return;
@@ -259,35 +203,25 @@ export function useSubmissionDetail(id: string) {
     isLoading,
     activeArea,
     activeAreaId,
-    allAreasOk,
     internalNotes,
     setInternalNotes,
     isSavingNotes,
     toastMessage,
-    // Modals
-    isRequestMoreOpen,
-    setIsRequestMoreOpen,
-    isRejectModalOpen,
-    setIsRejectModalOpen,
-    isApproveConfirmOpen,
-    setIsApproveConfirmOpen,
     activeMedia,
-    // Actions
     handleSelectArea,
-    handleMarkAreaOk,
-    handleQueueRequest,
-    handleRemoveRequest,
-    handleToggleChecklist,
     handleSaveInternalNotes,
-    handleSendRequestsToCustomer,
-    handleApproveSite,
-    handleRejectSite,
     handleDownloadZip,
-    // Lightbox
     handleOpenMedia,
     handleCloseMedia,
     handleNextMedia,
     handlePrevMedia,
+    isRequestMoreOpen,
+    setIsRequestMoreOpen,
+    allAreasOk,
+    handleMarkAreaOk,
+    handleQueueRequest,
+    handleRemoveRequest,
+    handleSendRequestsToCustomer,
   };
 }
 

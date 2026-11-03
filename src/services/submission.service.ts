@@ -1,4 +1,6 @@
 import {
+  AreaStatus,
+  normalizeSubmissionStatus,
   SiteSubmission,
   SubmissionsFilterState,
 } from '@/types/submission';
@@ -22,8 +24,10 @@ export class SubmissionService {
       const res = await http.get<SiteSubmission[]>(API_CONFIG.ENDPOINTS.ADMIN.SUBMISSIONS);
       const data = res?.data || (Array.isArray(res) ? (res as any) : null);
       if (Array.isArray(data)) {
-        // Clean real database submissions only
-        list = data.filter((s) => s && s.id && !s.id.startsWith('sub-00'));
+        // Clean real database submissions only and normalize status
+        list = data
+          .filter((s) => s && s.id && !s.id.startsWith('sub-00'))
+          .map((s) => ({ ...s, status: normalizeSubmissionStatus(s.status) }));
         this.saveLocalSubmissions(list);
       }
     } catch (err) {
@@ -32,6 +36,8 @@ export class SubmissionService {
 
     if (!list || list.length === 0) {
       list = this.getLocalSubmissions();
+    } else {
+      list = list.map((s) => ({ ...s, status: normalizeSubmissionStatus(s.status) }));
     }
 
     // Apply Filters
@@ -79,7 +85,7 @@ export class SubmissionService {
           const storageKey = (m as any).storageKey || (m as any).storage_key;
           if (storageKey) {
             m.url = `/api/media/image?key=${encodeURIComponent(storageKey)}`;
-          } else if (m.url && m.url.startsWith("file:///")) {
+          } else if (m.url && m.url.startsWith('file:///')) {
             const keyMatch = m.url.match(/(visit-media\/[^"'\s]+)/);
             if (keyMatch) {
               m.url = `/api/media/image?key=${encodeURIComponent(keyMatch[1])}`;
@@ -114,7 +120,7 @@ export class SubmissionService {
       console.warn(`[SubmissionService] getSubmissionById API call failed for ${id}, checking cache:`, err);
     }
 
-    // 2. Direct Supabase REST fallback if backend is unreachable
+    // Direct Supabase REST fallback if backend is unreachable
     try {
       const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
       const headers = { apikey: sbKey, Authorization: `Bearer ${sbKey}` };
@@ -130,9 +136,9 @@ export class SubmissionService {
           const sections: any[] = record.service.sections;
           const checklistValues: Record<string, any> = {};
           sections.forEach((sec) => {
-            if (sec.fields && typeof sec.fields === "object") {
+            if (sec.fields && typeof sec.fields === 'object') {
               Object.entries(sec.fields).forEach(([k, v]) => {
-                if (v && typeof v === "object" && ("url" in (v as any) || "storage_key" in (v as any))) return;
+                if (v && typeof v === 'object' && ('url' in (v as any) || 'storage_key' in (v as any))) return;
                 checklistValues[k] = v;
               });
             }
@@ -144,22 +150,10 @@ export class SubmissionService {
             cached.checklistValues = checklistValues;
             cached.rawSections = sections;
 
-            // Sync review status, customer requests, area statuses, and approval checklist
+            cached.status = normalizeSubmissionStatus(cached.status);
             if (record.service.review) {
               const rev = record.service.review;
-              if (rev.status) cached.status = rev.status;
-              if (Array.isArray(rev.customerRequests)) cached.customerRequests = rev.customerRequests;
-              if (Array.isArray(rev.approvalChecklist)) cached.approvalChecklist = rev.approvalChecklist;
               if (rev.internalNotes !== undefined) cached.internalNotes = rev.internalNotes;
-              if (rev.areaStatuses && typeof rev.areaStatuses === "object") {
-                cached.areas.forEach((area) => {
-                  const areaStat = rev.areaStatuses[area.id];
-                  if (areaStat) {
-                    area.status = areaStat.status;
-                    area.requestedNote = areaStat.requestedNote;
-                  }
-                });
-              }
             }
 
             // If media records are available, update media URLs
@@ -190,341 +184,6 @@ export class SubmissionService {
     const list = this.getLocalSubmissions();
     const item = list.find((s) => s.id === id);
     return item ? this.sanitizeMediaUrls(item) : null;
-  }
-
-  /**
-   * Updates an area's review status (e.g. 'ok', 'more_requested', 'not_reviewed')
-   */
-  public static async updateAreaStatus(
-    submissionId: string,
-    areaId: string,
-    status: 'ok' | 'more_requested' | 'not_reviewed',
-    requestedNote?: string
-  ): Promise<SiteSubmission> {
-    // 1. Local optimistic update
-    const list = this.getLocalSubmissions();
-    const itemIndex = list.findIndex((s) => s.id === submissionId);
-    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
-
-    if (sub) {
-      const area = sub.areas.find((a) => a.id === areaId);
-      if (area) {
-        area.status = status;
-        if (requestedNote !== undefined) {
-          area.requestedNote = requestedNote;
-        }
-      }
-
-      if (status === 'ok') {
-        sub.customerRequests = sub.customerRequests.filter(
-          (r) => r.areaId !== areaId
-        );
-      }
-
-      sub.updatedAt = new Date().toISOString();
-      list[itemIndex] = sub;
-      this.saveLocalSubmissions(list);
-    }
-
-    // 2. Network sync
-    try {
-      const http = HttpClient.getInstance();
-      const res = await http.patch<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.UPDATE_AREA_STATUS(submissionId),
-        { areaId, status, requestedNote }
-      );
-      if (res?.data) {
-        sub = res.data;
-        this.updateSingleLocalSubmission(sub);
-      }
-    } catch (err) {
-      console.warn('[SubmissionService] updateAreaStatus network call error:', err);
-    }
-
-    if (!sub) throw new Error('Submission not found');
-    return sub;
-  }
-
-  /**
-   * Toggles an item in the approval checklist
-   */
-  public static async toggleChecklistItem(
-    submissionId: string,
-    checkId: string,
-    checked: boolean
-  ): Promise<SiteSubmission> {
-    const list = this.getLocalSubmissions();
-    const itemIndex = list.findIndex((s) => s.id === submissionId);
-    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
-
-    if (sub) {
-      const item = sub.approvalChecklist.find((c) => c.id === checkId);
-      if (item) {
-        item.checked = checked;
-      }
-      sub.updatedAt = new Date().toISOString();
-      list[itemIndex] = sub;
-      this.saveLocalSubmissions(list);
-    }
-
-    try {
-      const http = HttpClient.getInstance();
-      const res = await http.patch<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.TOGGLE_CHECKLIST(submissionId),
-        { checkId, checked }
-      );
-      if (res?.data) {
-        sub = res.data;
-        this.updateSingleLocalSubmission(sub);
-      }
-    } catch (err) {
-      console.warn('[SubmissionService] toggleChecklistItem network call error:', err);
-    }
-
-    if (!sub) throw new Error('Submission not found');
-    return sub;
-  }
-
-  /**
-   * Adds or updates a customer request in the review queue.
-   * If requestId is not provided, appends a new request into the queue allowing multiple requests per section.
-   */
-  public static async queueCustomerRequest(
-    submissionId: string,
-    areaId: string,
-    text: string,
-    requestId?: string
-  ): Promise<SiteSubmission> {
-    const list = this.getLocalSubmissions();
-    const itemIndex = list.findIndex((s) => s.id === submissionId);
-    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
-
-    if (sub) {
-      const area = sub.areas.find((a) => a.id === areaId);
-      const areaName = area?.name || 'Area';
-
-      if (area) {
-        area.status = 'more_requested';
-        area.requestedNote = text;
-      }
-
-      // If an existing requestId is explicitly provided, update it; otherwise append a new request
-      const existingIndex = requestId
-        ? sub.customerRequests.findIndex((r) => r.id === requestId)
-        : -1;
-
-      if (existingIndex >= 0) {
-        sub.customerRequests[existingIndex].text = text;
-      } else {
-        sub.customerRequests.push({
-          id: `req-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          areaId,
-          areaName,
-          text,
-          createdAt: new Date().toISOString(),
-        });
-      }
-
-      sub.updatedAt = new Date().toISOString();
-      list[itemIndex] = sub;
-      this.saveLocalSubmissions(list);
-    }
-
-    try {
-      const http = HttpClient.getInstance();
-      const res = await http.post<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
-        { areaId, text, requestId }
-      );
-      if (res?.data) {
-        sub = res.data;
-        this.updateSingleLocalSubmission(sub);
-      }
-    } catch (err) {
-      console.warn('[SubmissionService] queueCustomerRequest network call error:', err);
-    }
-
-    // Direct Supabase sync fallback to guarantee database persistence
-    if (sub) {
-      await this.syncReviewToSupabase(submissionId, sub);
-    }
-
-    if (!sub) throw new Error('Submission not found');
-    return sub;
-  }
-
-  /**
-   * Removes a queued customer request from the queue.
-   * If other requests for the same area remain, the area remains in 'more_requested' status.
-   */
-  public static async removeQueuedRequest(
-    submissionId: string,
-    requestId: string
-  ): Promise<SiteSubmission> {
-    const list = this.getLocalSubmissions();
-    const itemIndex = list.findIndex((s) => s.id === submissionId);
-    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
-
-    if (sub) {
-      const req = sub.customerRequests.find((r) => r.id === requestId);
-      if (req) {
-        sub.customerRequests = sub.customerRequests.filter(
-          (r) => r.id !== requestId
-        );
-
-        // Check if any other requests remain for this area
-        const remainingForArea = sub.customerRequests.filter(
-          (r) => r.areaId === req.areaId
-        );
-        const area = sub.areas.find((a) => a.id === req.areaId);
-        if (area) {
-          if (remainingForArea.length === 0 && area.status === 'more_requested') {
-            area.status = 'not_reviewed';
-            delete area.requestedNote;
-          } else if (remainingForArea.length > 0) {
-            area.requestedNote = remainingForArea[remainingForArea.length - 1].text;
-          }
-        }
-      }
-
-      sub.updatedAt = new Date().toISOString();
-      list[itemIndex] = sub;
-      this.saveLocalSubmissions(list);
-    }
-
-    try {
-      const http = HttpClient.getInstance();
-      const res = await http.post<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
-        { requestId, remove: true }
-      );
-      if (res?.data) {
-        sub = res.data;
-        this.updateSingleLocalSubmission(sub);
-      }
-    } catch (err) {
-      console.warn('[SubmissionService] removeQueuedRequest network call error:', err);
-    }
-
-    // Direct Supabase sync fallback to guarantee database persistence
-    if (sub) {
-      await this.syncReviewToSupabase(submissionId, sub);
-    }
-
-    if (!sub) throw new Error('Submission not found');
-    return sub;
-  }
-
-  /**
-   * Dispatches all queued requests to the customer, setting status to 'waiting_for_customer'
-   */
-  public static async sendRequestsToCustomer(
-    submissionId: string
-  ): Promise<SiteSubmission> {
-    const list = this.getLocalSubmissions();
-    const itemIndex = list.findIndex((s) => s.id === submissionId);
-    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
-
-    if (sub) {
-      sub.status = 'waiting_for_customer';
-      sub.updatedAt = new Date().toISOString();
-      list[itemIndex] = sub;
-      this.saveLocalSubmissions(list);
-    }
-
-    try {
-      const http = HttpClient.getInstance();
-      const res = await http.post<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
-        { sendNow: true }
-      );
-      if (res?.data) {
-        sub = res.data;
-        this.updateSingleLocalSubmission(sub);
-      }
-    } catch (err) {
-      console.warn('[SubmissionService] sendRequestsToCustomer network call error:', err);
-    }
-
-    // Direct Supabase sync fallback to guarantee database persistence
-    if (sub) {
-      await this.syncReviewToSupabase(submissionId, sub);
-    }
-
-    if (!sub) throw new Error('Submission not found');
-    return sub;
-  }
-
-  /**
-   * Helper to persist the current review state directly to Supabase visit_records table
-   */
-  private static async syncReviewToSupabase(
-    submissionId: string,
-    sub: SiteSubmission
-  ): Promise<void> {
-    try {
-      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
-      if (!API_CONFIG.SUPABASE_URL || !sbKey) return;
-
-      const areaStatusesMap: Record<string, any> = {};
-      sub.areas.forEach((a) => {
-        areaStatusesMap[a.id] = {
-          status: a.status,
-          requestedNote: a.requestedNote,
-        };
-      });
-
-      const reviewPayload = {
-        status: sub.status,
-        areaStatuses: areaStatusesMap,
-        customerRequests: sub.customerRequests,
-        approvalChecklist: sub.approvalChecklist,
-        internalNotes: sub.internalNotes,
-        updatedAt: sub.updatedAt,
-      };
-
-      // Fetch existing service document to preserve sections
-      const recRes = await fetch(
-        `${API_CONFIG.SUPABASE_URL}/rest/v1/visit_records?visit_id=eq.${submissionId}&select=*`,
-        { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` } }
-      );
-
-      let servicePayload: any = {
-        service_id: 'service-site-visit',
-        service_name: 'Site Visit',
-        sections: sub.rawSections || [],
-        review: reviewPayload,
-      };
-
-      if (recRes.ok) {
-        const rows = await recRes.json();
-        if (rows && rows[0]?.service) {
-          servicePayload = {
-            ...rows[0].service,
-            review: reviewPayload,
-          };
-        }
-      }
-
-      await fetch(
-        `${API_CONFIG.SUPABASE_URL}/rest/v1/visit_records?visit_id=eq.${submissionId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
-            'Content-Type': 'application/json',
-            Prefer: 'return=minimal',
-          },
-          body: JSON.stringify({
-            service: servicePayload,
-            updated_at: new Date().toISOString(),
-          }),
-        }
-      );
-    } catch (err) {
-      console.warn('[SubmissionService] syncReviewToSupabase error:', err);
-    }
   }
 
   /**
@@ -564,39 +223,46 @@ export class SubmissionService {
   }
 
   /**
-   * Approves the site submission in backend and updates status to approved
+   * Updates an individual survey area status (ok, more_requested, not_reviewed)
    */
-  public static async approveSubmission(
+  public static async updateAreaStatus(
     submissionId: string,
-    reviewerName: string = 'Admin'
+    areaId: string,
+    status: AreaStatus,
+    requestedNote?: string
   ): Promise<SiteSubmission> {
     const list = this.getLocalSubmissions();
     const itemIndex = list.findIndex((s) => s.id === submissionId);
     let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
 
     if (sub) {
-      sub.status = 'approved';
-      sub.reviewer = reviewerName;
-      sub.closedAt = new Date().toISOString();
+      const area = sub.areas.find((a) => a.id === areaId);
+      if (area) {
+        area.status = status;
+        if (requestedNote !== undefined) {
+          area.customerNote = requestedNote;
+        }
+      }
+      if (status === 'ok' && sub.customerRequests) {
+        sub.customerRequests = sub.customerRequests.filter((r) => r.areaId !== areaId);
+      }
       sub.updatedAt = new Date().toISOString();
-      sub.areas.forEach((a) => {
-        a.status = 'ok';
-      });
       list[itemIndex] = sub;
       this.saveLocalSubmissions(list);
     }
 
     try {
       const http = HttpClient.getInstance();
-      const res = await http.post<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.APPROVE_SUBMISSION(submissionId)
+      const res = await http.patch<SiteSubmission>(
+        API_CONFIG.ENDPOINTS.ADMIN.UPDATE_AREA_STATUS(submissionId),
+        { areaId, status, requestedNote }
       );
       if (res?.data) {
         sub = res.data;
         this.updateSingleLocalSubmission(sub);
       }
     } catch (err) {
-      console.warn('[SubmissionService] approveSubmission network call error:', err);
+      console.warn('[SubmissionService] updateAreaStatus network call error:', err);
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -604,21 +270,44 @@ export class SubmissionService {
   }
 
   /**
-   * Rejects the site submission / requests revision in backend
+   * Adds or updates a customer/technician request in the review queue.
    */
-  public static async rejectSubmission(
+  public static async queueCustomerRequest(
     submissionId: string,
-    reason: string,
-    reviewerName: string = 'Admin'
+    areaId: string,
+    text: string,
+    requestId?: string
   ): Promise<SiteSubmission> {
     const list = this.getLocalSubmissions();
     const itemIndex = list.findIndex((s) => s.id === submissionId);
     let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
 
     if (sub) {
-      sub.status = 'waiting_for_customer';
-      sub.rejectionReason = reason;
-      sub.reviewer = reviewerName;
+      if (!sub.customerRequests) sub.customerRequests = [];
+      const area = sub.areas.find((a) => a.id === areaId);
+      const areaName = area ? area.name : 'Survey Area';
+
+      const existingIndex = requestId
+        ? sub.customerRequests.findIndex((r) => r.id === requestId)
+        : -1;
+
+      if (existingIndex >= 0 && sub.customerRequests[existingIndex]) {
+        sub.customerRequests[existingIndex].text = text;
+      } else {
+        sub.customerRequests.push({
+          id: `req-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          areaId,
+          areaName,
+          text,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      if (area) {
+        area.status = 'more_requested';
+        area.customerNote = text;
+      }
+
       sub.updatedAt = new Date().toISOString();
       list[itemIndex] = sub;
       this.saveLocalSubmissions(list);
@@ -627,15 +316,100 @@ export class SubmissionService {
     try {
       const http = HttpClient.getInstance();
       const res = await http.post<SiteSubmission>(
-        API_CONFIG.ENDPOINTS.ADMIN.REJECT_SUBMISSION(submissionId),
-        { reason }
+        API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
+        { areaId, text, requestId }
       );
       if (res?.data) {
         sub = res.data;
         this.updateSingleLocalSubmission(sub);
       }
     } catch (err) {
-      console.warn('[SubmissionService] rejectSubmission network call error:', err);
+      console.warn('[SubmissionService] queueCustomerRequest network call error:', err);
+    }
+
+    if (!sub) throw new Error('Submission not found');
+    return sub;
+  }
+
+  /**
+   * Removes a queued customer/technician request from the queue.
+   */
+  public static async removeQueuedRequest(
+    submissionId: string,
+    requestId: string
+  ): Promise<SiteSubmission> {
+    const list = this.getLocalSubmissions();
+    const itemIndex = list.findIndex((s) => s.id === submissionId);
+    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
+
+    if (sub && sub.customerRequests) {
+      const req = sub.customerRequests.find((r) => r.id === requestId);
+      if (req) {
+        const areaId = req.areaId;
+        sub.customerRequests = sub.customerRequests.filter((r) => r.id !== requestId);
+        const remainingForArea = sub.customerRequests.filter((r) => r.areaId === areaId);
+        const area = sub.areas.find((a) => a.id === areaId);
+        if (area) {
+          if (remainingForArea.length === 0) {
+            area.status = 'not_reviewed';
+            area.customerNote = undefined;
+          } else {
+            area.status = 'more_requested';
+            area.customerNote = remainingForArea[remainingForArea.length - 1].text;
+          }
+        }
+        sub.updatedAt = new Date().toISOString();
+        list[itemIndex] = sub;
+        this.saveLocalSubmissions(list);
+      }
+    }
+
+    try {
+      const http = HttpClient.getInstance();
+      const res = await http.post<SiteSubmission>(
+        API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
+        { requestId, remove: true }
+      );
+      if (res?.data) {
+        sub = res.data;
+        this.updateSingleLocalSubmission(sub);
+      }
+    } catch (err) {
+      console.warn('[SubmissionService] removeQueuedRequest network call error:', err);
+    }
+
+    if (!sub) throw new Error('Submission not found');
+    return sub;
+  }
+
+  /**
+   * Dispatches all queued requests to the technician
+   */
+  public static async sendRequestsToCustomer(
+    submissionId: string
+  ): Promise<SiteSubmission> {
+    const list = this.getLocalSubmissions();
+    const itemIndex = list.findIndex((s) => s.id === submissionId);
+    let sub: SiteSubmission | null = itemIndex >= 0 ? list[itemIndex] : null;
+
+    if (sub) {
+      sub.updatedAt = new Date().toISOString();
+      list[itemIndex] = sub;
+      this.saveLocalSubmissions(list);
+    }
+
+    try {
+      const http = HttpClient.getInstance();
+      const res = await http.post<SiteSubmission>(
+        API_CONFIG.ENDPOINTS.ADMIN.REQUEST_MORE(submissionId),
+        { sendNow: true }
+      );
+      if (res?.data) {
+        sub = res.data;
+        this.updateSingleLocalSubmission(sub);
+      }
+    } catch (err) {
+      console.warn('[SubmissionService] sendRequestsToCustomer network call error:', err);
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -688,8 +462,13 @@ export class SubmissionService {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            // Filter out any mock submissions from previous sessions
-            return parsed.filter((s) => s && s.id && !s.id.startsWith('sub-00'));
+            // Filter out any mock submissions from previous sessions and normalize statuses
+            return parsed
+              .filter((s) => s && s.id && !s.id.startsWith('sub-00'))
+              .map((s) => ({
+                ...s,
+                status: normalizeSubmissionStatus(s.status),
+              }));
           }
         }
       } catch (err) {
@@ -701,12 +480,16 @@ export class SubmissionService {
 
   private static updateSingleLocalSubmission(updated: SiteSubmission): void {
     if (!updated || !updated.id || updated.id.startsWith('sub-00')) return;
+    const cleanUpdated = {
+      ...updated,
+      status: normalizeSubmissionStatus(updated.status),
+    };
     const list = this.getLocalSubmissions();
-    const index = list.findIndex((s) => s.id === updated.id);
+    const index = list.findIndex((s) => s.id === cleanUpdated.id);
     if (index >= 0) {
-      list[index] = updated;
+      list[index] = cleanUpdated;
     } else {
-      list.unshift(updated);
+      list.unshift(cleanUpdated);
     }
     this.saveLocalSubmissions(list);
   }
@@ -714,7 +497,12 @@ export class SubmissionService {
   private static saveLocalSubmissions(list: SiteSubmission[]): void {
     if (typeof window !== 'undefined') {
       try {
-        const cleanList = list.filter((s) => s && s.id && !s.id.startsWith('sub-00'));
+        const cleanList = list
+          .filter((s) => s && s.id && !s.id.startsWith('sub-00'))
+          .map((s) => ({
+            ...s,
+            status: normalizeSubmissionStatus(s.status),
+          }));
         localStorage.setItem(CACHE_KEY_SUBMISSIONS, JSON.stringify(cleanList));
       } catch (err) {
         console.warn('Failed to save submissions to localStorage:', err);

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { SiteSubmission, SubmissionStatus } from "@/types/submission";
+import {
+  SiteSubmission,
+  SubmissionStatus,
+  normalizeSubmissionStatus,
+} from "@/types/submission";
 import { SubmissionService } from "@/services/submission.service";
 
 export function useSubmissions() {
@@ -16,7 +20,11 @@ export function useSubmissions() {
     setIsLoading(true);
     try {
       const data = await SubmissionService.getSubmissions();
-      setSubmissions(data);
+      const normalized = (data || []).map((s) => ({
+        ...s,
+        status: normalizeSubmissionStatus(s.status),
+      }));
+      setSubmissions(normalized);
     } catch (err) {
       console.error("Failed to load submissions:", err);
     } finally {
@@ -30,15 +38,18 @@ export function useSubmissions() {
 
   // Status Tab Counts
   const counts = useMemo(() => {
+    const isCompleted = (s: SiteSubmission) =>
+      normalizeSubmissionStatus(s.status) === "completed";
+    const isInProgress = (s: SiteSubmission) =>
+      normalizeSubmissionStatus(s.status) === "in_progress";
+    const isDraft = (s: SiteSubmission) =>
+      normalizeSubmissionStatus(s.status) === "draft";
+
     return {
       all: submissions.length,
-      new: submissions.filter((s) => s.status === "new").length,
-      in_review: submissions.filter((s) => s.status === "in_review").length,
-      waiting_for_customer: submissions.filter(
-        (s) => s.status === "waiting_for_customer"
-      ).length,
-      approved: submissions.filter((s) => s.status === "approved").length,
-      draft: submissions.filter((s) => s.status === "draft").length,
+      completed: submissions.filter(isCompleted).length,
+      in_progress: submissions.filter(isInProgress).length,
+      draft: submissions.filter(isDraft).length,
     };
   }, [submissions]);
 
@@ -64,8 +75,11 @@ export function useSubmissions() {
   const filteredSubmissions = useMemo(() => {
     return submissions.filter((s) => {
       // 1. Status Filter
-      if (statusFilter !== "all" && s.status !== statusFilter) {
-        return false;
+      if (statusFilter !== "all") {
+        const itemStatus = normalizeSubmissionStatus(s.status);
+        if (itemStatus !== statusFilter) {
+          return false;
+        }
       }
 
       // 2. Customer Filter

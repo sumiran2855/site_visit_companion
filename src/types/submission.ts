@@ -1,12 +1,40 @@
 export type SubmissionStatus =
   | 'all'
-  | 'new'
-  | 'in_review'
-  | 'waiting_for_customer'
-  | 'approved'
+  | 'completed'
+  | 'in_progress'
   | 'draft';
 
+export function normalizeSubmissionStatus(
+  status: unknown
+): 'completed' | 'in_progress' | 'draft' {
+  if (typeof status !== 'string') return 'draft';
+  const clean = status.toLowerCase().trim();
+  if (clean === 'completed' || clean === 'approved') return 'completed';
+  if (clean === 'in_progress' || clean === 'in_review') return 'in_progress';
+  return 'draft';
+}
+
 export type AreaStatus = 'ok' | 'more_requested' | 'not_reviewed';
+
+export interface CustomerRequest {
+  id: string;
+  areaId: string;
+  areaName: string;
+  text: string;
+  createdAt: string;
+  resolved?: boolean;
+  resolvedAt?: string;
+  technicianResponse?: string;
+  responsePhotos?: Array<{
+    id: string;
+    url: string;
+    fileName?: string;
+    createdAt?: string;
+    fieldId?: string;
+    remoteUrl?: string;
+    uri?: string;
+  }>;
+}
 
 export interface SubmissionMedia {
   id: string;
@@ -25,30 +53,11 @@ export interface SubmissionMedia {
 export interface SubmissionArea {
   id: string;
   name: string;
-  status: AreaStatus;
-  requestedNote?: string;
   media: SubmissionMedia[];
   specs: Record<string, string>;
   customerNote?: string;
   rawFields?: Record<string, any>;
-}
-
-export interface ApprovalChecklistItem {
-  id: string;
-  label: string;
-  checked: boolean;
-}
-
-export interface CustomerRequest {
-  id: string;
-  areaId: string;
-  areaName: string;
-  text: string;
-  createdAt: string;
-  resolved?: boolean;
-  resolvedAt?: string;
-  technicianResponse?: string;
-  responsePhotos?: any[];
+  status?: AreaStatus;
 }
 
 export interface SiteSubmission {
@@ -65,18 +74,14 @@ export interface SiteSubmission {
   sentBy: string;
   sentAt: string; // ISO string
   formattedDate: string; // e.g. "Oct 21"
-  status: 'new' | 'in_review' | 'waiting_for_customer' | 'approved' | 'draft';
-  reviewer: string | null;
+  status: 'completed' | 'in_progress' | 'draft';
   mediaCount: {
     photos: number;
     videos: number;
   };
   areas: SubmissionArea[];
-  approvalChecklist: ApprovalChecklistItem[];
   customerRequests: CustomerRequest[];
   internalNotes: string;
-  rejectionReason?: string;
-  closedAt?: string;
   rawSections?: any[];
   checklistValues?: Record<string, any>;
   createdAt: string;

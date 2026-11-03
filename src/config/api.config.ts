@@ -40,12 +40,9 @@ export const API_CONFIG = {
       RETENTION_CLEANUP: "/admin/retention/cleanup",
       SUBMISSIONS: "/admin/submissions",
       SUBMISSION_DETAIL: (id: string) => `/admin/submissions/${id}`,
-      APPROVE_SUBMISSION: (id: string) => `/admin/submissions/${id}/approve`,
-      REJECT_SUBMISSION: (id: string) => `/admin/submissions/${id}/reject`,
       REQUEST_MORE: (id: string) => `/admin/submissions/${id}/request-more`,
       UPDATE_AREA_STATUS: (id: string) => `/admin/submissions/${id}/area-status`,
       UPDATE_NOTES: (id: string) => `/admin/submissions/${id}/notes`,
-      TOGGLE_CHECKLIST: (id: string) => `/admin/submissions/${id}/checklist`,
     },
     COMPANIES: {
       LIST: "/companies",

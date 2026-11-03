@@ -31,7 +31,7 @@ export default function SubmissionsPage() {
             Submissions
           </h1>
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-            Sites customers have sent for approval. Newest first.
+            Field site inspections recorded by technicians and partners. Newest first.
           </p>
         </div>
 

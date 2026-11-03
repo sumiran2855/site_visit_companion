@@ -18,28 +18,16 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
 
   const renderStatusBadge = (status: SiteSubmission["status"]) => {
     switch (status) {
-      case "in_review":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
-            In review
-          </span>
-        );
-      case "new":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
-            New
-          </span>
-        );
-      case "waiting_for_customer":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
-            Waiting for customer
-          </span>
-        );
-      case "approved":
+      case "completed":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-            Approved
+            Completed
+          </span>
+        );
+      case "in_progress":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+            In progress
           </span>
         );
       case "draft":
@@ -74,7 +62,7 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-12 text-center shadow-xs">
         <h3 className="text-base font-semibold text-slate-800 dark:text-white">
-          No site submissions found
+          No site inspections found
         </h3>
         <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
           Try adjusting your search query, status tab, or customer filters.
@@ -91,12 +79,11 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
             <thead>
               <tr className="border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
                 <th className="py-3 px-5">Site</th>
-                <th className="py-3 px-5">Customer</th>
-                <th className="py-3 px-5">Sent By</th>
-                <th className="py-3 px-5">Sent</th>
+                <th className="py-3 px-5">Customer / Organization</th>
+                <th className="py-3 px-5">Inspector</th>
+                <th className="py-3 px-5">Date</th>
                 <th className="py-3 px-5">Media</th>
                 <th className="py-3 px-5">Status</th>
-                <th className="py-3 px-5">Reviewer</th>
                 <th className="py-3 px-5 text-right">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -158,11 +145,6 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                       {renderStatusBadge(sub.status)}
                     </td>
 
-                    {/* Reviewer Column */}
-                    <td className="py-4 px-5 text-slate-600 dark:text-zinc-400 whitespace-nowrap">
-                      {sub.reviewer || "—"}
-                    </td>
-
                     {/* Actions Column */}
                     <td className="py-4 px-5 text-right whitespace-nowrap">
                       <Link
@@ -180,12 +162,6 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
           </table>
         </div>
       </div>
-
-      {/* Footer Disclaimer / Retention Note from Screenshot */}
-      <p className="text-[11px] text-slate-400 dark:text-zinc-500 px-1">
-        Example rows. Files are deleted automatically 12 months after a site is
-        closed.
-      </p>
     </div>
   );
 };

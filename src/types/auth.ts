@@ -5,8 +5,7 @@ export type UserRole =
   | "company_admin"
   | "super_admin"
   | "inspector"
-  | "manager"
-  | "client";
+  | "manager";
 
 export type PrimaryUserRole = "user" | "admin";
 

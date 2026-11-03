@@ -45,7 +45,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
         <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed pt-1">
           {step === "account"
             ? "Use your Google account or register with your company email to request checklist access."
-            : "Enter the customer or service company you are assigned to. Administrators will verify your access request."}
+            : "Enter the partner or service contractor company you are assigned to. Administrators will verify your access request."}
         </p>
       </div>
 

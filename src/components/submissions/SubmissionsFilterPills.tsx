@@ -8,10 +8,8 @@ export interface SubmissionsFilterPillsProps {
   onChange: (status: SubmissionStatus) => void;
   counts: {
     all: number;
-    new: number;
-    in_review: number;
-    waiting_for_customer: number;
-    approved: number;
+    completed: number;
+    in_progress: number;
     draft: number;
   };
 }
@@ -23,15 +21,9 @@ export const SubmissionsFilterPills: React.FC<SubmissionsFilterPillsProps> = ({
 }) => {
   const tabs: { id: SubmissionStatus; label: string; count?: number }[] = [
     { id: "all", label: "All", count: counts.all },
-    { id: "new", label: "New", count: counts.new },
-    { id: "in_review", label: "In review", count: counts.in_review },
-    {
-      id: "waiting_for_customer",
-      label: "Waiting for customer",
-      count: counts.waiting_for_customer,
-    },
-    { id: "approved", label: "Approved", count: counts.approved },
-    { id: "draft", label: "Drafts (not sent)" },
+    { id: "completed", label: "Completed", count: counts.completed },
+    { id: "in_progress", label: "In progress", count: counts.in_progress },
+    { id: "draft", label: "Drafts", count: counts.draft },
   ];
 
   return (

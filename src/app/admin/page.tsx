@@ -218,7 +218,7 @@ export default function AdminHubPage() {
                 {metrics.totalVisitsCount}
               </div>
               <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 mt-0.5">
-                Site Reviews
+                Site Visits
               </p>
             </div>
           </Link>
