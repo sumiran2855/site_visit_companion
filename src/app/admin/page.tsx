@@ -385,7 +385,7 @@ export default function AdminHubPage() {
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
                 >
                   <option value="user" className="dark:bg-zinc-900">
-                    Normal User
+                    Technician
                   </option>
                   <option value="admin" className="dark:bg-zinc-900">
                     Administrator

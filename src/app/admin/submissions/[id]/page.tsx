@@ -412,7 +412,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               )}
 
               {/* Customer/Admin Request on Area */}
-              {activeArea.customerNote && (
+              {activeArea.status === "more_requested" && activeArea.customerNote && (
                 <div className="bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-900/60 p-4 space-y-1">
                   <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
                     <AlertCircle size={13} />
@@ -423,6 +423,43 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                   </p>
                 </div>
               )}
+
+              {/* Resolved Request info for Area */}
+              {activeArea.status === "ok" && (() => {
+                const resolvedReq = (submission.customerRequests || []).find(
+                  (r) =>
+                    (r.areaId === activeArea.id ||
+                      `sec-${r.areaId}` === activeArea.id ||
+                      r.areaId.replace(/^sec-/, "") === activeArea.id.replace(/^sec-/, "")) &&
+                    r.resolved
+                );
+                if (!resolvedReq) return null;
+                return (
+                  <div className="bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                        <CheckCircle2 size={13} />
+                        <span>Request Resolved by Technician</span>
+                      </div>
+                      {resolvedReq.resolvedAt && (
+                        <span className="text-[10px] text-emerald-700/80 dark:text-emerald-400 font-medium">
+                          {new Date(resolvedReq.resolvedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    {resolvedReq.text && (
+                      <div className="text-[11px] text-slate-500 dark:text-zinc-400 pl-4 border-l-2 border-emerald-300 dark:border-emerald-700">
+                        Requested: &ldquo;{resolvedReq.text}&rdquo;
+                      </div>
+                    )}
+                    {resolvedReq.technicianResponse && (
+                      <p className="text-xs text-emerald-950 dark:text-emerald-100 whitespace-pre-wrap pl-4 font-medium">
+                        Technician: {resolvedReq.technicianResponse}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
@@ -513,29 +550,36 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                           Submitted Photos ({req.responsePhotos.length}):
                         </span>
                         <div className="grid grid-cols-3 gap-1.5">
-                          {req.responsePhotos.map((photo, idx) => (
-                            <button
-                              key={photo.id || idx}
-                              type="button"
-                              onClick={() =>
-                                handleOpenMedia({
-                                  id: photo.id || `req-photo-${idx}`,
-                                  type: "photo",
-                                  title: photo.fileName || `Technician Response Photo`,
-                                  url: photo.url,
-                                  fieldId: photo.fieldId || "",
-                                  takenAt: photo.createdAt || "",
-                                })
-                              }
-                              className="relative aspect-square rounded-md overflow-hidden border border-slate-200 dark:border-zinc-700 hover:opacity-90 group cursor-pointer"
-                            >
-                              <img
-                                src={photo.url}
-                                alt={photo.fileName || "Technician Photo"}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </button>
-                          ))}
+                          {req.responsePhotos.map((photo, idx) => {
+                            const photoSrc =
+                              photo.url ||
+                              (photo as any).remoteUrl ||
+                              (photo as any).uri ||
+                              "";
+                            return (
+                              <button
+                                key={photo.id || idx}
+                                type="button"
+                                onClick={() =>
+                                  handleOpenMedia({
+                                    id: photo.id || `req-photo-${idx}`,
+                                    type: "photo",
+                                    title: photo.fileName || `Technician Response Photo`,
+                                    url: photoSrc,
+                                    fieldId: photo.fieldId || "",
+                                    takenAt: photo.createdAt || "",
+                                  })
+                                }
+                                className="relative aspect-square rounded-md overflow-hidden border border-slate-200 dark:border-zinc-700 hover:opacity-90 group cursor-pointer"
+                              >
+                                <img
+                                  src={photoSrc}
+                                  alt={photo.fileName || "Technician Photo"}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

@@ -22,7 +22,7 @@ export function AdminAccessDenied() {
           </h1>
           <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
             This web application is exclusively reserved for <strong>Administrators</strong>.
-            Normal users and technicians must use the Site Visit Companion mobile app.
+            Partners and technicians must use the Site Visit Companion mobile app.
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export function AdminAccessDenied() {
           <div className="flex justify-between">
             <span className="text-slate-400">Current Role:</span>
             <span className="font-bold text-slate-700 dark:text-zinc-300 capitalize">
-              {user?.role === "admin" ? "Administrator" : "Normal User"}
+              {user?.role === "admin" ? "Administrator" : "Technician"}
             </span>
           </div>
           <div className="flex justify-between">
@@ -52,7 +52,7 @@ export function AdminAccessDenied() {
         <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900/60 flex items-start gap-3 text-left">
           <Smartphone className="size-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
           <div className="text-xs text-sky-900 dark:text-sky-200 space-y-1">
-            <p className="font-bold">Field Technicians & Normal Users</p>
+            <p className="font-bold">Field Technicians & Partners</p>
             <p className="text-sky-700 dark:text-sky-300 leading-snug">
               Please open the Site Visit Companion mobile app on iOS or Android to complete inspections, upload media, and generate client reports.
             </p>

@@ -175,7 +175,7 @@ export function Navbar({
     "A"
   ).toUpperCase();
 
-  const roleLabel = isAdmin ? "Administrator" : "Normal User";
+  const roleLabel = isAdmin ? "Administrator" : "Technician";
 
   const handleLogout = async () => {
     setShowUserMenu(false);

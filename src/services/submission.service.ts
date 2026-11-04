@@ -94,6 +94,22 @@ export class SubmissionService {
         });
       }
     });
+
+    if (submission.customerRequests && submission.customerRequests.length > 0) {
+      submission.customerRequests.forEach((req) => {
+        if (req.responsePhotos && req.responsePhotos.length > 0) {
+          req.responsePhotos.forEach((p) => {
+            const storageKey = (p as any).storageKey || (p as any).storage_key;
+            if (storageKey) {
+              p.url = `/api/media/image?key=${encodeURIComponent(storageKey)}`;
+            } else if (!p.url && ((p as any).remoteUrl || (p as any).uri)) {
+              p.url = (p as any).remoteUrl || (p as any).uri;
+            }
+          });
+        }
+      });
+    }
+
     return submission;
   }
 
@@ -154,6 +170,67 @@ export class SubmissionService {
             if (record.service.review) {
               const rev = record.service.review;
               if (rev.internalNotes !== undefined) cached.internalNotes = rev.internalNotes;
+
+              if (Array.isArray(rev.customerRequests)) {
+                cached.customerRequests = rev.customerRequests.map((r: any) => ({
+                  ...r,
+                  resolved: Boolean(r.resolved),
+                  responsePhotos: (r.responsePhotos || []).map((p: any) => ({
+                    ...p,
+                    url:
+                      p.url ||
+                      p.remoteUrl ||
+                      p.uri ||
+                      (p.storageKey
+                        ? `https://ec-power-site-visit.042c2a93d9bbcb294c87d69d053e7a6a.r2.cloudflarestorage.com/${p.storageKey}`
+                        : ''),
+                  })),
+                }));
+              }
+
+              if (rev.areaStatuses && typeof rev.areaStatuses === 'object') {
+                cached.areas.forEach((area) => {
+                  const s =
+                    rev.areaStatuses[area.id] ||
+                    rev.areaStatuses[`sec-${area.id}`] ||
+                    rev.areaStatuses[area.id.replace(/^sec-/, '')];
+
+                  const hasUnresolved = (cached.customerRequests || []).some(
+                    (r: any) =>
+                      (r.areaId === area.id ||
+                        `sec-${r.areaId}` === area.id ||
+                        r.areaId.replace(/^sec-/, '') === area.id.replace(/^sec-/, '')) &&
+                      !r.resolved
+                  );
+
+                  if (hasUnresolved) {
+                    area.status = 'more_requested';
+                    area.customerNote = s?.requestedNote || 'Reviewer requested changes';
+                    area.requestedNote = area.customerNote;
+                  } else {
+                    area.status = 'ok';
+                    area.customerNote = undefined;
+                    area.requestedNote = undefined;
+                  }
+                });
+              } else if (cached.customerRequests) {
+                cached.areas.forEach((area) => {
+                  const hasUnresolved = cached.customerRequests!.some(
+                    (r: any) =>
+                      (r.areaId === area.id ||
+                        `sec-${r.areaId}` === area.id ||
+                        r.areaId.replace(/^sec-/, '') === area.id.replace(/^sec-/, '')) &&
+                      !r.resolved
+                  );
+                  if (hasUnresolved) {
+                    area.status = 'more_requested';
+                  } else {
+                    area.status = 'ok';
+                    area.customerNote = undefined;
+                    area.requestedNote = undefined;
+                  }
+                });
+              }
             }
 
             // If media records are available, update media URLs
@@ -261,9 +338,14 @@ export class SubmissionService {
       if (res?.data) {
         sub = res.data;
         this.updateSingleLocalSubmission(sub);
+      } else if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
       console.warn('[SubmissionService] updateAreaStatus network call error:', err);
+      if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
+      }
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -323,9 +405,14 @@ export class SubmissionService {
       if (res?.data) {
         sub = res.data;
         this.updateSingleLocalSubmission(sub);
+      } else if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
       console.warn('[SubmissionService] queueCustomerRequest network call error:', err);
+      if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
+      }
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -374,9 +461,14 @@ export class SubmissionService {
       if (res?.data) {
         sub = res.data;
         this.updateSingleLocalSubmission(sub);
+      } else if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
       console.warn('[SubmissionService] removeQueuedRequest network call error:', err);
+      if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
+      }
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -408,9 +500,14 @@ export class SubmissionService {
       if (res?.data) {
         sub = res.data;
         this.updateSingleLocalSubmission(sub);
+      } else if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
       console.warn('[SubmissionService] sendRequestsToCustomer network call error:', err);
+      if (sub) {
+        await this.syncReviewToSupabase(submissionId, sub);
+      }
     }
 
     if (!sub) throw new Error('Submission not found');
@@ -493,6 +590,61 @@ export class SubmissionService {
       list.unshift(cleanUpdated);
     }
     this.saveLocalSubmissions(list);
+  }
+
+  private static async syncReviewToSupabase(submissionId: string, sub: SiteSubmission): Promise<void> {
+    try {
+      const sbUrl = API_CONFIG.SUPABASE_URL;
+      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+      if (!sbUrl || !sbKey) return;
+
+      const getRes = await fetch(`${sbUrl}/rest/v1/visit_records?visit_id=eq.${submissionId}&select=*`, {
+        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` },
+      });
+      if (!getRes.ok) return;
+      const records = await getRes.json();
+      if (!records || records.length === 0) return;
+
+      const record = records[0];
+      const service = record.service || {
+        service_id: 'service-site-visit',
+        service_name: 'Site Visit',
+        sections: [],
+      };
+
+      const areaStatuses: Record<string, { status: string; requestedNote?: string }> = {};
+      (sub.areas || []).forEach((a) => {
+        areaStatuses[a.id] = {
+          status: a.status!,
+          requestedNote: a.requestedNote || a.customerNote,
+        };
+      });
+
+      service.review = {
+        ...(service.review || {}),
+        status: sub.customerRequests && sub.customerRequests.some((r) => !r.resolved) ? 'more_requested' : 'reviewed',
+        customerRequests: sub.customerRequests || [],
+        areaStatuses,
+        internalNotes: sub.internalNotes || '',
+        updatedAt: new Date().toISOString(),
+      };
+
+      await fetch(`${sbUrl}/rest/v1/visit_records?visit_id=eq.${submissionId}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: sbKey,
+          Authorization: `Bearer ${sbKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          service,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    } catch (e) {
+      console.warn('[SubmissionService] syncReviewToSupabase fallback error:', e);
+    }
   }
 
   private static saveLocalSubmissions(list: SiteSubmission[]): void {

@@ -26,30 +26,63 @@ export function useSubmissionDetail(id: string) {
     }, 4000);
   }, []);
 
-  const loadSubmission = useCallback(async () => {
-    setIsLoading(true);
+  const loadSubmission = useCallback(async (isBackground = false) => {
+    if (!isBackground) setIsLoading(true);
     try {
       const data = await SubmissionService.getSubmissionById(id);
       if (data) {
         setSubmission(data);
         setInternalNotes(data.internalNotes || "");
         if (data.areas && data.areas.length > 0) {
-          const boilerArea = data.areas.find(
-            (a) => a.id === "area-boiler" || a.name.toLowerCase().includes("boiler")
-          );
-          setActiveAreaId(boilerArea ? boilerArea.id : data.areas[0].id);
+          setActiveAreaId((prev) => {
+            if (prev && data.areas.some((a) => a.id === prev)) return prev;
+            const boilerArea = data.areas.find(
+              (a) => a.id === "area-boiler" || a.name.toLowerCase().includes("boiler")
+            );
+            return boilerArea ? boilerArea.id : data.areas[0].id;
+          });
         }
       }
     } catch (err) {
       console.error("Failed to load submission:", err);
     } finally {
-      setIsLoading(false);
+      if (!isBackground) setIsLoading(false);
     }
   }, [id]);
 
   useEffect(() => {
     loadSubmission();
   }, [loadSubmission]);
+
+  // Background auto-refresh polling (every 3.5s) and window focus refresh
+  // to ensure technician updates from mobile show up in real time without manual reload
+  useEffect(() => {
+    let isCancelled = false;
+
+    const poll = async () => {
+      try {
+        const fresh = await SubmissionService.getSubmissionById(id);
+        if (fresh && !isCancelled) {
+          setSubmission(fresh);
+        }
+      } catch {
+        console.log("Failed to poll submission data, will retry...");
+      }
+    };
+
+    const intervalId = setInterval(poll, 3500);
+
+    const onFocus = () => {
+      poll();
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(intervalId);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [id]);
 
   // Active Area Object
   const activeArea = useMemo<SubmissionArea | null>(() => {

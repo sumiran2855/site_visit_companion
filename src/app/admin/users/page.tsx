@@ -403,7 +403,7 @@ export default function AdminUsersPage() {
                               <span>
                                 {member.role === "admin" || isSuper || isCoAdmin
                                   ? "Administrator"
-                                  : "Normal User"}
+                                  : "Technician"}
                               </span>
                             </span>
                           </td>
@@ -514,7 +514,7 @@ export default function AdminUsersPage() {
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
                 >
                   <option value="user" className="dark:bg-zinc-900">
-                    Normal User
+                    Technician
                   </option>
                   <option value="admin" className="dark:bg-zinc-900">
                     Administrator
@@ -637,7 +637,7 @@ export default function AdminUsersPage() {
                   />
                   <div>
                     <span className="text-xs font-bold block">
-                      {r === "user" ? "Normal User" : "Administrator"}
+                      {r === "user" ? "Technician" : "Administrator"}
                     </span>
                     <span className="text-[11px] text-slate-500 dark:text-zinc-400 block font-normal mt-0.5">
                       {r === "user"
