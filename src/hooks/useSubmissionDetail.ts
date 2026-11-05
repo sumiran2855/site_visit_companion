@@ -7,8 +7,10 @@ import {
   SubmissionMedia,
 } from "@/types/submission";
 import { SubmissionService } from "@/services/submission.service";
+import { useTranslation } from "@/i18n";
 
 export function useSubmissionDetail(id: string) {
+  const { t } = useTranslation();
   const [submission, setSubmission] = useState<SiteSubmission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeAreaId, setActiveAreaId] = useState<string>("");
@@ -27,7 +29,10 @@ export function useSubmissionDetail(id: string) {
   }, []);
 
   const loadSubmission = useCallback(async (isBackground = false) => {
-    if (!isBackground) setIsLoading(true);
+    if (!isBackground) {
+      await Promise.resolve();
+      setIsLoading(true);
+    }
     try {
       const data = await SubmissionService.getSubmissionById(id);
       if (data) {
@@ -51,7 +56,15 @@ export function useSubmissionDetail(id: string) {
   }, [id]);
 
   useEffect(() => {
-    loadSubmission();
+    let isCancelled = false;
+    Promise.resolve().then(() => {
+      if (!isCancelled) {
+        loadSubmission();
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
   }, [loadSubmission]);
 
   // Background auto-refresh polling (every 3.5s) and window focus refresh
@@ -121,11 +134,17 @@ export function useSubmissionDetail(id: string) {
         "ok"
       );
       setSubmission(updated);
-      showToast(`Area "${activeArea.name}" marked as OK`);
+      showToast(
+        t(
+          "submissionDetail.toasts.areaMarkedOk",
+          `Area "${activeArea.name}" marked as OK`,
+          { area: activeArea.name }
+        )
+      );
     } catch (err) {
       console.error("Failed to mark area OK:", err);
     }
-  }, [submission, activeArea, showToast]);
+  }, [submission, activeArea, showToast, t]);
 
   const handleQueueRequest = useCallback(
     async (text: string) => {
@@ -138,12 +157,18 @@ export function useSubmissionDetail(id: string) {
         );
         setSubmission(updated);
         setIsRequestMoreOpen(false);
-        showToast(`Request queued for "${activeArea.name}"`);
+        showToast(
+          t(
+            "submissionDetail.toasts.requestQueued",
+            `Request queued for "${activeArea.name}"`,
+            { area: activeArea.name }
+          )
+        );
       } catch (err) {
         console.error("Failed to queue request:", err);
       }
     },
-    [submission, activeArea, showToast]
+    [submission, activeArea, showToast, t]
   );
 
   const handleRemoveRequest = useCallback(
@@ -155,19 +180,29 @@ export function useSubmissionDetail(id: string) {
           requestId
         );
         setSubmission(updated);
-        showToast("Request removed from queue");
+        showToast(
+          t(
+            "submissionDetail.toasts.requestRemoved",
+            "Request removed from queue"
+          )
+        );
       } catch (err) {
         console.error("Failed to remove request:", err);
       }
     },
-    [submission, showToast]
+    [submission, showToast, t]
   );
 
   const handleSendRequestsToCustomer = useCallback(async () => {
     if (!submission) return;
     const count = (submission.customerRequests || []).length;
     if (count === 0) {
-      showToast("No requests queued to send.");
+      showToast(
+        t(
+          "submissionDetail.toasts.noRequestsToSend",
+          "No requests queued to send."
+        )
+      );
       return;
     }
     try {
@@ -175,11 +210,16 @@ export function useSubmissionDetail(id: string) {
         submission.id
       );
       setSubmission(updated);
-      showToast(`Successfully dispatched request(s) to technician`);
+      showToast(
+        t(
+          "submissionDetail.toasts.dispatchedSuccess",
+          "Successfully dispatched request(s) to technician"
+        )
+      );
     } catch (err) {
       console.error("Failed to send requests:", err);
     }
-  }, [submission, showToast]);
+  }, [submission, showToast, t]);
 
   const handleSaveInternalNotes = useCallback(async () => {
     if (!submission) return;
@@ -190,23 +230,30 @@ export function useSubmissionDetail(id: string) {
         internalNotes
       );
       setSubmission(updated);
-      showToast("Internal note saved");
+      showToast(
+        t("submissionDetail.toasts.notesSaved", "Internal note saved")
+      );
     } catch (err) {
       console.error("Failed to save notes:", err);
     } finally {
       setIsSavingNotes(false);
     }
-  }, [submission, internalNotes, showToast]);
+  }, [submission, internalNotes, showToast, t]);
 
   const handleDownloadZip = useCallback(async () => {
     if (!submission) return;
     try {
       await SubmissionService.downloadMediaZip(submission);
-      showToast("Media package manifest downloaded");
+      showToast(
+        t(
+          "submissionDetail.toasts.zipDownloaded",
+          "Media package manifest downloaded"
+        )
+      );
     } catch (err) {
       console.error("Failed to download ZIP:", err);
     }
-  }, [submission, showToast]);
+  }, [submission, showToast, t]);
 
   // Media Lightbox Navigation
   const handleOpenMedia = useCallback((media: SubmissionMedia) => {

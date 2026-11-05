@@ -4,13 +4,16 @@ import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Zap } from "lucide-react";
+import { useTranslation } from "@/i18n";
 import { ROUTES } from "@/lib/constants";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 function AuthContent() {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && isAdmin) {
@@ -24,7 +27,7 @@ function AuthContent() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[320px] bg-sky-100/40 dark:bg-sky-950/20 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Header */}
-      <header className="relative z-10 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md">
+      <header className="relative z-30 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href={ROUTES.HOME} className="flex items-center gap-2.5 group">
             <div className="flex items-center justify-center size-9 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm transition-transform group-hover:scale-105">
@@ -33,17 +36,22 @@ function AuthContent() {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
-                  EC POWER
+                  {t("header.brand", "EC POWER")}
                 </span>
                 <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
-                  ADMIN
+                  {t("header.badge", "ADMIN")}
                 </span>
               </div>
               <span className="text-[10px] tracking-wider font-semibold text-slate-500 dark:text-zinc-400 uppercase mt-0.5">
-                Administration Portal
+                {t("header.subtitle", "Administration Portal")}
               </span>
             </div>
           </Link>
+
+          {/* Language Switcher */}
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+          </div>
         </div>
       </header>
 
@@ -64,21 +72,26 @@ function AuthContent() {
               href={ROUTES.PRIVACY}
               className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              Privacy Policy
+              {t("footer.privacyPolicy", "Privacy Policy")}
             </Link>
             <Link
               href={ROUTES.TERMS}
               className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              Terms of Service
+              {t("footer.termsOfService", "Terms of Service")}
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
-            <span>&copy; {new Date().getFullYear()} EC POWER. All rights reserved.</span>
+            <span>
+              {t("footer.copyright", {
+                year: new Date().getFullYear(),
+                defaultValue: `© ${new Date().getFullYear()} EC POWER. All rights reserved.`,
+              })}
+            </span>
             <span className="hidden sm:inline text-slate-300 dark:text-zinc-700">|</span>
             <span className="hidden sm:inline text-[11px] text-slate-400 dark:text-zinc-500">
-              Administrator Web Console
+              {t("footer.adminWebConsole", "Administrator Web Console")}
             </span>
           </div>
         </div>

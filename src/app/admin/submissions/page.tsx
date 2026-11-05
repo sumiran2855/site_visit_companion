@@ -4,8 +4,10 @@ import { Search, ChevronDown } from "lucide-react";
 import { useSubmissions } from "@/hooks/useSubmissions";
 import { SubmissionsFilterPills } from "@/components/submissions/SubmissionsFilterPills";
 import { SubmissionsTable } from "@/components/submissions/SubmissionsTable";
+import { useTranslation } from "@/i18n";
 
 export default function SubmissionsPage() {
+  const { t } = useTranslation();
   const {
     submissions,
     isLoading,
@@ -28,10 +30,10 @@ export default function SubmissionsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Submissions
+            {t("submissions.title", "Submissions")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-            Field site inspections recorded by technicians and partners. Newest first.
+            {t("submissions.subtitle", "Field site inspections recorded by technicians and partners. Newest first.")}
           </p>
         </div>
 
@@ -47,7 +49,7 @@ export default function SubmissionsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search site, customer or person"
+              placeholder={t("submissions.searchPlaceholder", "Search site, customer or person")}
               className="w-full text-xs rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 pl-9 pr-3.5 py-2 text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-sky-500"
             />
           </div>
@@ -59,7 +61,7 @@ export default function SubmissionsPage() {
               onChange={(e) => setCustomerFilter(e.target.value)}
               className="appearance-none text-xs rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 pl-3 pr-8 py-2 text-slate-700 dark:text-zinc-300 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-sky-500 cursor-pointer font-medium"
             >
-              <option value="all">Customer: All</option>
+              <option value="all">{t("submissions.customerAll", "Customer: All")}</option>
               {customerOptions.map((cust) => (
                 <option key={cust} value={cust}>
                   {cust}
@@ -79,7 +81,7 @@ export default function SubmissionsPage() {
               onChange={(e) => setCountryFilter(e.target.value)}
               className="appearance-none text-xs rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 pl-3 pr-8 py-2 text-slate-700 dark:text-zinc-300 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-sky-500 cursor-pointer font-medium"
             >
-              <option value="all">Country: All</option>
+              <option value="all">{t("submissions.countryAll", "Country: All")}</option>
               {countryOptions.map((country) => (
                 <option key={country} value={country}>
                   {country}

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { useAdminHub } from "@/hooks/useAdminHub";
+import { useTranslation } from "@/i18n";
 import {
   AdminMetricsRowSkeleton,
   PendingRequestCardSkeleton,
@@ -25,6 +26,7 @@ import type { PendingAccessRequest } from "@/types/admin";
 import type { UserRole } from "@/types/auth";
 
 export default function AdminHubPage() {
+  const { t } = useTranslation();
   const {
     user,
     isSuperAdmin,
@@ -96,7 +98,9 @@ export default function AdminHubPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
-              {isSuperAdmin ? "Super Admin Hub" : "Company Admin Portal"}
+              {isSuperAdmin
+                ? t("dashboard.superAdminTitle", "Super Admin Hub")
+                : t("dashboard.companyAdminTitle", "Company Admin Portal")}
             </h1>
             <span
               className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide border ${
@@ -105,13 +109,18 @@ export default function AdminHubPage() {
                   : "bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800"
               }`}
             >
-              {isSuperAdmin ? "Global" : user?.companyName || "Organization"}
+              {isSuperAdmin
+                ? t("dashboard.global", "Global")
+                : user?.companyName || t("dashboard.organization", "Organization")}
             </span>
           </div>
           <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
             {isSuperAdmin
-              ? "Global Management, Company Hierarchy & System Controls"
-              : `Administrative oversight for ${user?.companyName || "your organization"}`}
+              ? t("dashboard.globalSubtitle", "Global Management, Company Hierarchy & System Controls")
+              : t("dashboard.companySubtitle", {
+                  company: user?.companyName || t("dashboard.organization", "your organization"),
+                  defaultValue: `Administrative oversight for ${user?.companyName || "your organization"}`,
+                })}
           </p>
         </div>
 
@@ -122,7 +131,7 @@ export default function AdminHubPage() {
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-300 shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
         >
           <RotateCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span>Refresh Data</span>
+          <span>{t("common.refreshData", "Refresh Data")}</span>
         </button>
       </div>
 
@@ -138,7 +147,7 @@ export default function AdminHubPage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Requests
+                {t("dashboard.metrics.requests", "Requests")}
               </span>
               <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400">
                 <Clock className="size-4" />
@@ -149,7 +158,7 @@ export default function AdminHubPage() {
                 {metrics.pendingRequestsCount}
               </div>
               <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
-                Pending Approval
+                {t("dashboard.metrics.pendingApproval", "Pending Approval")}
               </p>
             </div>
           </Link>
@@ -161,7 +170,7 @@ export default function AdminHubPage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Members
+                {t("dashboard.metrics.members", "Members")}
               </span>
               <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-sky-600 dark:text-sky-400">
                 <Users className="size-4" />
@@ -172,7 +181,7 @@ export default function AdminHubPage() {
                 {metrics.totalMembersCount}
               </div>
               <p className="text-xs font-semibold text-sky-600 dark:text-sky-400 mt-0.5">
-                Active Users
+                {t("dashboard.metrics.activeUsers", "Active Users")}
               </p>
             </div>
           </Link>
@@ -184,7 +193,7 @@ export default function AdminHubPage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Companies
+                {t("dashboard.metrics.companies", "Companies")}
               </span>
               <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400">
                 <Building2 className="size-4" />
@@ -195,7 +204,7 @@ export default function AdminHubPage() {
                 {metrics.totalCompaniesCount}
               </div>
               <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                Org Units
+                {t("dashboard.metrics.orgUnits", "Org Units")}
               </p>
             </div>
           </Link>
@@ -207,7 +216,7 @@ export default function AdminHubPage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                Submissions
+                {t("dashboard.metrics.submissions", "Submissions")}
               </span>
               <div className="p-2 rounded-xl bg-violet-50 dark:bg-violet-950/60 border border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400">
                 <Inbox className="size-4" />
@@ -218,7 +227,7 @@ export default function AdminHubPage() {
                 {metrics.totalVisitsCount}
               </div>
               <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 mt-0.5">
-                Site Visits
+                {t("dashboard.metrics.siteVisits", "Site Visits")}
               </p>
             </div>
           </Link>
@@ -230,7 +239,7 @@ export default function AdminHubPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-              Pending Access Requests
+              {t("dashboard.pendingRequests.title", "Pending Access Requests")}
             </h2>
             {isLoading ? (
               <span className="h-5 w-6 rounded-full bg-slate-200 dark:bg-zinc-800 animate-pulse" />
@@ -244,7 +253,7 @@ export default function AdminHubPage() {
             href={ROUTES.ADMIN_USERS}
             className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline"
           >
-            <span>View All</span>
+            <span>{t("common.viewAll", "View All")}</span>
             <ChevronRight className="size-3.5" />
           </Link>
         </div>
@@ -262,10 +271,10 @@ export default function AdminHubPage() {
             </div>
             <div>
               <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200">
-                All Caught Up
+                {t("dashboard.pendingRequests.emptyTitle", "All Caught Up")}
               </h4>
               <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">
-                No technician access requests pending review
+                {t("dashboard.pendingRequests.emptyDesc", "No technician access requests pending review")}
               </p>
             </div>
           </div>
@@ -298,7 +307,7 @@ export default function AdminHubPage() {
 
                   {req.note && (
                     <p className="text-xs text-slate-600 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-800/60 p-2.5 rounded-xl italic">
-                      "{req.note}"
+                      &ldquo;{req.note}&rdquo;
                     </p>
                   )}
                 </div>
@@ -310,7 +319,7 @@ export default function AdminHubPage() {
                     onClick={() => setRejectTarget(req)}
                     className="flex-1 py-1.5 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   >
-                    Reject
+                    {t("dashboard.pendingRequests.reject", "Reject")}
                   </button>
                   <button
                     type="button"
@@ -318,7 +327,7 @@ export default function AdminHubPage() {
                     onClick={() => openApproveModal(req)}
                     className="flex-1 py-1.5 px-3 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
                   >
-                    Approve
+                    {t("dashboard.pendingRequests.approve", "Approve")}
                   </button>
                 </div>
               </div>
@@ -335,7 +344,7 @@ export default function AdminHubPage() {
               <div className="flex items-center gap-2">
                 <UserCheck className="size-5 text-sky-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Approve Access Request
+                  {t("dashboard.approveModal.title", "Approve Access Request")}
                 </h3>
               </div>
               <button
@@ -353,14 +362,15 @@ export default function AdminHubPage() {
               </p>
               <p className="text-slate-500">{approveTarget.email}</p>
               <p className="text-slate-500">
-                Requested Org: <strong>{approveTarget.requestedCompany}</strong>
+                {t("dashboard.pendingRequests.requestedCompany", "Requested:")}{" "}
+                <strong>{approveTarget.requestedCompany}</strong>
               </p>
             </div>
 
             <div className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Assign Organization Unit
+                  {t("dashboard.approveModal.assignCompanyLabel", "Assign Organization Unit")}
                 </label>
                 <select
                   value={assignedCompanyId}
@@ -377,7 +387,7 @@ export default function AdminHubPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Assign User Role
+                  {t("dashboard.approveModal.assignRoleLabel", "Assign User Role")}
                 </label>
                 <select
                   value={assignedRole}
@@ -385,10 +395,10 @@ export default function AdminHubPage() {
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
                 >
                   <option value="user" className="dark:bg-zinc-900">
-                    Technician
+                    {t("dashboard.approveModal.roleUser", "Technician")}
                   </option>
                   <option value="admin" className="dark:bg-zinc-900">
-                    Administrator
+                    {t("dashboard.approveModal.roleAdmin", "Administrator")}
                   </option>
                 </select>
               </div>
@@ -400,7 +410,7 @@ export default function AdminHubPage() {
                 onClick={() => setApproveTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -408,7 +418,9 @@ export default function AdminHubPage() {
                 onClick={handleConfirmApprove}
                 className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 disabled:opacity-60"
               >
-                {processingAction === "approving" ? "Approving..." : "Confirm & Approve"}
+                {processingAction === "approving"
+                  ? t("dashboard.approveModal.approving", "Approving...")
+                  : t("dashboard.approveModal.confirmButton", "Confirm & Approve")}
               </button>
             </div>
           </div>
@@ -423,7 +435,7 @@ export default function AdminHubPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="size-5 text-rose-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Reject Request?
+                  {t("dashboard.rejectModal.title", "Reject Request?")}
                 </h3>
               </div>
               <button
@@ -436,11 +448,12 @@ export default function AdminHubPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-              Are you sure you want to reject the access request for{" "}
+              {t("dashboard.rejectModal.warning", "Are you sure you want to reject the access request for")}{" "}
               <strong>
                 {rejectTarget.firstName} {rejectTarget.lastName}
               </strong>{" "}
-              ({rejectTarget.email})? This action will permanently remove the pending signup.
+              ({rejectTarget.email})?{" "}
+              {t("dashboard.rejectModal.cannotUndo", "This user will not be granted access to the system.")}
             </p>
 
             <div className="flex gap-2 pt-2">
@@ -449,7 +462,7 @@ export default function AdminHubPage() {
                 onClick={() => setRejectTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -457,7 +470,9 @@ export default function AdminHubPage() {
                 onClick={handleConfirmReject}
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 disabled:opacity-60"
               >
-                {processingAction === "rejecting" ? "Rejecting..." : "Reject & Purge"}
+                {processingAction === "rejecting"
+                  ? t("dashboard.rejectModal.rejecting", "Rejecting...")
+                  : t("dashboard.rejectModal.confirmButton", "Reject & Purge")}
               </button>
             </div>
           </div>

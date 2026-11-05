@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteSubmission } from "@/types/submission";
+import { useTranslation } from "@/i18n";
 
 export interface SubmissionsTableProps {
   submissions: SiteSubmission[];
@@ -15,26 +16,27 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
   isLoading,
 }) => {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const renderStatusBadge = (status: SiteSubmission["status"]) => {
     switch (status) {
       case "completed":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-            Completed
+            {t("submissions.status.completed", "Completed")}
           </span>
         );
       case "in_progress":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
-            In progress
+            {t("submissions.status.in_progress", "In progress")}
           </span>
         );
       case "draft":
       default:
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
-            Draft
+            {t("submissions.status.draft", "Draft")}
           </span>
         );
     }
@@ -62,10 +64,10 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-12 text-center shadow-xs">
         <h3 className="text-base font-semibold text-slate-800 dark:text-white">
-          No site inspections found
+          {t("submissions.table.noInspections", "No site inspections found")}
         </h3>
         <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-          Try adjusting your search query, status tab, or customer filters.
+          {t("submissions.table.noInspectionsDesc", "Try adjusting your search query, status tab, or customer filters.")}
         </p>
       </div>
     );
@@ -78,14 +80,14 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
-                <th className="py-3 px-5">Site</th>
-                <th className="py-3 px-5">Customer / Organization</th>
-                <th className="py-3 px-5">Inspector</th>
-                <th className="py-3 px-5">Date</th>
-                <th className="py-3 px-5">Media</th>
-                <th className="py-3 px-5">Status</th>
+                <th className="py-3 px-5">{t("submissions.table.site", "Site")}</th>
+                <th className="py-3 px-5">{t("submissions.table.customer", "Customer / Organization")}</th>
+                <th className="py-3 px-5">{t("submissions.table.inspector", "Inspector")}</th>
+                <th className="py-3 px-5">{t("submissions.table.date", "Date")}</th>
+                <th className="py-3 px-5">{t("submissions.table.media", "Media")}</th>
+                <th className="py-3 px-5">{t("submissions.table.status", "Status")}</th>
                 <th className="py-3 px-5 text-right">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t("submissions.table.actions", "Actions")}</span>
                 </th>
               </tr>
             </thead>
@@ -136,8 +138,8 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
 
                     {/* Media Count Column */}
                     <td className="py-4 px-5 text-slate-600 dark:text-zinc-400 whitespace-nowrap">
-                      {sub.mediaCount.photos} photos · {sub.mediaCount.videos}{" "}
-                      videos
+                      {sub.mediaCount.photos} {t("submissions.table.photos", "photos")} · {sub.mediaCount.videos}{" "}
+                      {t("submissions.table.videos", "videos")}
                     </td>
 
                     {/* Status Column */}
@@ -152,7 +154,7 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                         onClick={(e) => e.stopPropagation()}
                         className="font-semibold text-sky-700 dark:text-sky-400 hover:text-sky-900 dark:hover:text-sky-300 hover:underline text-xs"
                       >
-                        Open
+                        {t("submissions.table.open", "Open")}
                       </Link>
                     </td>
                   </tr>

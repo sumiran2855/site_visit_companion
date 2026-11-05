@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/admin.service";
+import { useTranslation } from "@/i18n";
 import type { RetentionStorageMetrics, RetentionCleanupResult } from "@/types/admin";
 
 export function useAdminRetention() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin" || user?.role === "admin";
   const isCompanyAdmin = user?.role === "company_admin";
@@ -45,23 +47,60 @@ export function useAdminRetention() {
       if (data.lastCleanup) {
         setLastRunResult(data.lastCleanup);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!isMountedRef.current) return;
       console.error("[useAdminRetention] Failed to load retention metrics:", err);
-      setErrorMessage(
-        err?.message || "Failed to load real-time retention metrics. Please check connection."
-      );
+      const msg =
+        err instanceof Error
+          ? err.message
+          : t(
+              "retention.notifications.metricsLoadFailed",
+              "Failed to load real-time retention metrics. Please check connection."
+            );
+      setErrorMessage(msg);
     } finally {
       if (isMountedRef.current) {
         setIsLoading(false);
         setIsRefreshing(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
-    fetchRetentionData();
-  }, [fetchRetentionData]);
+    let isCancelled = false;
+    AdminService.getRetentionStorageMetrics(365)
+      .then((data) => {
+        if (!isCancelled) {
+          setMetrics(data);
+          if (data.lastCleanup) {
+            setLastRunResult(data.lastCleanup);
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (!isCancelled) {
+          console.error("[useAdminRetention] Failed to load retention metrics:", err);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : t(
+                  "retention.notifications.metricsLoadFailed",
+                  "Failed to load real-time retention metrics. Please check connection."
+                );
+          setErrorMessage(msg);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [t]);
 
   const onRefresh = useCallback(() => {
     fetchRetentionData(true);
@@ -79,22 +118,45 @@ export function useAdminRetention() {
 
       if (res.purgedVisits > 0 || res.deletedFilesCount > 0) {
         setNotification({
-          title: "Retention Purge Completed",
-          message: `Successfully purged ${res.purgedVisits} expired visit(s) and deleted ${res.deletedFilesCount} file(s), freeing ${res.freedSpaceMB} MB.`,
+          title: t(
+            "retention.notifications.purgeCompletedTitle",
+            "Retention Purge Completed"
+          ),
+          message: t(
+            "retention.notifications.purgeCompletedMessage",
+            "Successfully purged {{visits}} expired visit(s) and deleted {{files}} file(s), freeing {{space}} MB.",
+            {
+              visits: res.purgedVisits,
+              files: res.deletedFilesCount,
+              space: res.freedSpaceMB,
+            }
+          ),
           type: "success",
         });
       } else {
         setNotification({
-          title: "Retention Verification Completed",
-          message: "No visits or media older than 365 days were found. All system data remains in compliance.",
+          title: t(
+            "retention.notifications.verificationCompletedTitle",
+            "Retention Verification Completed"
+          ),
+          message: t(
+            "retention.notifications.verificationCompletedMessage",
+            "No visits or media older than 365 days were found. All system data remains in compliance."
+          ),
           type: "info",
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("[useAdminRetention] Purge failed:", e);
       setNotification({
-        title: "Purge Failed",
-        message: e?.message || "Failed to execute retention cleanup.",
+        title: t("retention.notifications.purgeFailedTitle", "Purge Failed"),
+        message:
+          e instanceof Error
+            ? e.message
+            : t(
+                "retention.notifications.purgeFailedMessage",
+                "Failed to execute retention cleanup."
+              ),
         type: "error",
       });
     } finally {
@@ -102,7 +164,7 @@ export function useAdminRetention() {
         setIsRunning(false);
       }
     }
-  }, [fetchRetentionData]);
+  }, [fetchRetentionData, t]);
 
   return {
     isSuperAdmin,

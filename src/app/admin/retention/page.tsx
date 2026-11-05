@@ -6,7 +6,6 @@ import {
   AlertCircle,
   CheckCircle2,
   HardHat,
-  Image as ImageIcon,
   Database,
   Clock,
   ShieldAlert,
@@ -21,8 +20,10 @@ import {
   RetentionLastCleanupSkeleton,
   RetentionMetricsRowSkeleton,
 } from "@/components/admin/AdminDashboardSkeleton";
+import { useTranslation } from "@/i18n";
 
 export default function AdminRetentionPage() {
+  const { t } = useTranslation();
   const {
     isSuperAdmin,
     metrics,
@@ -39,8 +40,6 @@ export default function AdminRetentionPage() {
     onRefresh,
     triggerCleanup,
   } = useAdminRetention();
-
-  const pastRetentionDays = metrics?.pastRetentionDays ?? 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -76,10 +75,10 @@ export default function AdminRetentionPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
-            Data Retention & Storage
+            {t("retention.title", "Data Retention & Storage")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Automated 1-Year Compliance Window & Storage Capacity Health
+            {t("retention.subtitle", "Automated 1-Year Compliance Window & Storage Capacity Health")}
           </p>
         </div>
 
@@ -91,7 +90,7 @@ export default function AdminRetentionPage() {
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-300 shadow-xs transition-colors cursor-pointer"
           >
             <RotateCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
+            <span>{t("common.refreshData", "Refresh")}</span>
           </button>
 
           {isSuperAdmin && (
@@ -102,7 +101,11 @@ export default function AdminRetentionPage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
               <Play className="size-3.5 fill-current" />
-              <span>{isRunning ? "Running Purge..." : "Run Purge Now"}</span>
+              <span>
+                {isRunning
+                  ? t("retention.cleanupRunning", "Running Purge...")
+                  : t("retention.runCleanup", "Run Retention Cleanup")}
+              </span>
             </button>
           )}
         </div>
@@ -120,7 +123,7 @@ export default function AdminRetentionPage() {
             onClick={() => fetchRetentionData()}
             className="px-3 py-1 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700"
           >
-            Retry
+            {t("retention.retry", "Retry")}
           </button>
         </div>
       )}
@@ -131,18 +134,17 @@ export default function AdminRetentionPage() {
         <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs space-y-2">
           <div className="flex items-center gap-2 text-slate-900 dark:text-zinc-100 font-bold text-sm">
             <ShieldAlert className="size-4 text-sky-600" />
-            <h3>1-Year Retention Policy Active</h3>
+            <h3>{t("retention.compliancePolicy", "1-Year Retention Policy Active")}</h3>
           </div>
           <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-            All checklist surveys, inspection answers, photographs, and video recordings older than{" "}
-            <strong>365 days</strong> are subject to automated data retention purge to ensure strict compliance with storage standards and privacy policies.
+            {t("retention.compliancePolicyDesc", "All field surveys, checklists, photos, and report assets older than 365 days are eligible for cleanup in compliance with data privacy regulations.")}
           </p>
           <div className="pt-2 flex items-center gap-3 text-[11px] font-semibold text-slate-500">
-            <span>Cutoff: 365 Days</span>
+            <span>{t("retention.cutoff365", "Cutoff: 365 Days")}</span>
             <span>•</span>
-            <span>Warning Trigger: 335 Days</span>
+            <span>{t("retention.warningTrigger335", "Warning Trigger: 335 Days")}</span>
             <span>•</span>
-            <span>Cloudflare R2 Object Storage</span>
+            <span>{t("retention.storageProvider", "Cloudflare R2 Object Storage")}</span>
           </div>
         </div>
 
@@ -151,7 +153,7 @@ export default function AdminRetentionPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-slate-900 dark:text-zinc-100 font-bold text-sm">
               <CheckCircle2 className="size-4 text-emerald-600" />
-              <h3>Last Cleanup Execution</h3>
+              <h3>{t("retention.lastCleanupTitle", "Last Cleanup Execution")}</h3>
             </div>
             {isLoading ? (
               <span className="inline-block w-24 h-3 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
@@ -170,24 +172,30 @@ export default function AdminRetentionPage() {
                 <div className="text-base font-extrabold text-slate-900 dark:text-zinc-100">
                   {lastRunResult.purgedVisits}
                 </div>
-                <div className="text-[10px] text-slate-400 font-semibold uppercase">Visits Purged</div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase">
+                  {t("retention.visitsPurged", "Visits Purged")}
+                </div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60">
                 <div className="text-base font-extrabold text-slate-900 dark:text-zinc-100">
                   {lastRunResult.deletedFilesCount}
                 </div>
-                <div className="text-[10px] text-slate-400 font-semibold uppercase">Files Deleted</div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase">
+                  {t("retention.filesDeleted", "Files Deleted")}
+                </div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60">
                 <div className="text-base font-extrabold text-emerald-600">
                   {lastRunResult.freedSpaceMB} MB
                 </div>
-                <div className="text-[10px] text-slate-400 font-semibold uppercase">Freed Space</div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase">
+                  {t("retention.freedSpace", "Freed Space")}
+                </div>
               </div>
             </div>
           ) : (
             <p className="text-xs text-slate-400 italic pt-2">
-              No cleanup execution recorded yet in this session.
+              {t("retention.noExecutionRecorded", "No cleanup execution recorded yet in this session.")}
             </p>
           )}
         </div>
@@ -202,7 +210,7 @@ export default function AdminRetentionPage() {
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Past 365 Days
+                {t("retention.metrics.eligibleForCleanup", "Past 365 Days")}
               </span>
               <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600">
                 <Trash2 className="size-4" />
@@ -213,7 +221,7 @@ export default function AdminRetentionPage() {
                 {metrics?.pastRetentionDays ?? 0}
               </div>
               <p className="text-xs font-semibold text-rose-600 mt-0.5">
-                Due for immediate purge
+                {t("retention.dueForPurge", "Due for immediate purge")}
               </p>
             </div>
           </div>
@@ -222,7 +230,7 @@ export default function AdminRetentionPage() {
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Expiring &lt;30d
+                {t("retention.expiringSoonTitle", "Expiring <30d")}
               </span>
               <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600">
                 <Clock className="size-4" />
@@ -233,7 +241,7 @@ export default function AdminRetentionPage() {
                 {metrics?.expiringIn30Days ?? 0}
               </div>
               <p className="text-xs font-semibold text-amber-600 mt-0.5">
-                Approaching retention cutoff
+                {t("retention.approachingCutoff", "Approaching retention cutoff")}
               </p>
             </div>
           </div>
@@ -242,7 +250,7 @@ export default function AdminRetentionPage() {
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Active Visits
+                {t("retention.metrics.activeWithinWindow", "Active Visits")}
               </span>
               <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600">
                 <HardHat className="size-4" />
@@ -253,7 +261,7 @@ export default function AdminRetentionPage() {
                 {metrics?.activeVisits ?? 0}
               </div>
               <p className="text-xs font-semibold text-emerald-600 mt-0.5">
-                Within compliance window
+                {t("retention.withinCompliance", "Within compliance window")}
               </p>
             </div>
           </div>
@@ -262,7 +270,7 @@ export default function AdminRetentionPage() {
           <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Estimated Storage
+                {t("retention.metrics.storageUsed", "Estimated Storage")}
               </span>
               <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600">
                 <Database className="size-4" />
@@ -273,7 +281,8 @@ export default function AdminRetentionPage() {
                 {metrics?.estimatedStorageMB ?? 0} MB
               </div>
               <p className="text-xs font-semibold text-sky-600 mt-0.5">
-                {metrics?.totalPhotosCount ?? 0} photos, {metrics?.totalVideosCount ?? 0} videos
+                {metrics?.totalPhotosCount ?? 0} {t("retention.photos", "photos")},{" "}
+                {metrics?.totalVideosCount ?? 0} {t("retention.videos", "videos")}
               </p>
             </div>
           </div>
@@ -284,13 +293,13 @@ export default function AdminRetentionPage() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-            Visits Approaching or Past 365-Day Retention
+            {t("retention.expiringTableTitle", "Visits Approaching or Past 365-Day Retention")}
           </h2>
           {isLoading ? (
             <span className="inline-block w-24 h-4 bg-slate-200 dark:bg-zinc-800 rounded animate-pulse" />
           ) : (
             <span className="text-xs text-slate-400 font-semibold">
-              {metrics?.expiringVisits.length ?? 0} visits queued
+              {metrics?.expiringVisits.length ?? 0} {t("retention.visitsQueued", "visits queued")}
             </span>
           )}
         </div>
@@ -301,12 +310,12 @@ export default function AdminRetentionPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3 px-4">Site Name</th>
-                    <th className="py-3 px-4">Organization</th>
-                    <th className="py-3 px-4">Inspection Date</th>
-                    <th className="py-3 px-4">Age (Days)</th>
-                    <th className="py-3 px-4">Media Items</th>
-                    <th className="py-3 px-4 text-right">Retention Status</th>
+                    <th className="py-3 px-4">{t("retention.table.siteName", "Site Name")}</th>
+                    <th className="py-3 px-4">{t("retention.table.organization", "Organization")}</th>
+                    <th className="py-3 px-4">{t("retention.table.inspectionDate", "Inspection Date")}</th>
+                    <th className="py-3 px-4">{t("retention.table.ageDays", "Age (Days)")}</th>
+                    <th className="py-3 px-4">{t("retention.table.mediaItems", "Media Items")}</th>
+                    <th className="py-3 px-4 text-right">{t("retention.table.retentionStatus", "Retention Status")}</th>
                   </tr>
                 </thead>
                 <RetentionTableSkeleton rows={5} />
@@ -319,10 +328,10 @@ export default function AdminRetentionPage() {
               <Check className="size-6" />
             </div>
             <h3 className="text-base font-bold text-slate-800 dark:text-zinc-200">
-              All Visits Compliant
+              {t("retention.allCompliant", "All Visits Compliant")}
             </h3>
             <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-sm mx-auto">
-              No site visits or attached media are approaching or past the 365-day compliance window.
+              {t("retention.allCompliantDesc", "No site visits or attached media are approaching or past the 365-day compliance window.")}
             </p>
           </div>
         ) : (
@@ -331,12 +340,12 @@ export default function AdminRetentionPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-zinc-800">
                   <tr>
-                    <th className="py-3 px-4">Site Name</th>
-                    <th className="py-3 px-4">Organization</th>
-                    <th className="py-3 px-4">Inspection Date</th>
-                    <th className="py-3 px-4">Age (Days)</th>
-                    <th className="py-3 px-4">Media Items</th>
-                    <th className="py-3 px-4 text-right">Retention Status</th>
+                    <th className="py-3 px-4">{t("retention.table.siteName", "Site Name")}</th>
+                    <th className="py-3 px-4">{t("retention.table.organization", "Organization")}</th>
+                    <th className="py-3 px-4">{t("retention.table.inspectionDate", "Inspection Date")}</th>
+                    <th className="py-3 px-4">{t("retention.table.ageDays", "Age (Days)")}</th>
+                    <th className="py-3 px-4">{t("retention.table.mediaItems", "Media Items")}</th>
+                    <th className="py-3 px-4 text-right">{t("retention.table.retentionStatus", "Retention Status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -357,12 +366,12 @@ export default function AdminRetentionPage() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300 font-medium">
                           <Building2 className="size-3 text-slate-400" />
-                          <span>{item.companyName || "Unassigned"}</span>
+                          <span>{item.companyName || t("retention.unassigned", "Unassigned")}</span>
                         </div>
                       </td>
 
                       <td className="py-3 px-4 text-slate-600 dark:text-zinc-400">
-                        {new Date(item.createdAt).toLocaleDateString("en-US", {
+                        {new Date(item.createdAt).toLocaleDateString(undefined, {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
@@ -370,23 +379,31 @@ export default function AdminRetentionPage() {
                       </td>
 
                       <td className="py-3 px-4 font-semibold text-slate-800 dark:text-zinc-200">
-                        {item.ageInDays} days
+                        {item.ageInDays} {t("retention.days", "days")}
                       </td>
 
                       <td className="py-3 px-4 text-slate-600 dark:text-zinc-400">
-                        {item.mediaCount ?? 0} files
+                        {item.mediaCount ?? 0} {t("retention.files", "files")}
                       </td>
 
                       <td className="py-3 px-4 text-right">
                         {item.isExpired ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                             <Trash2 className="size-3" />
-                            <span>Expired ({item.ageInDays - 365}d overdue)</span>
+                            <span>
+                              {t("retention.expiredOverdue", "Expired ({{days}}d overdue)", {
+                                days: item.ageInDays - 365,
+                              })}
+                            </span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                             <Clock className="size-3" />
-                            <span>Expires in {item.daysRemaining}d</span>
+                            <span>
+                              {t("retention.expiresIn", "Expires in {{days}}d", {
+                                days: item.daysRemaining,
+                              })}
+                            </span>
                           </span>
                         )}
                       </td>
@@ -407,7 +424,7 @@ export default function AdminRetentionPage() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="size-5 text-amber-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Execute 1-Year Retention Cleanup?
+                  {t("retention.confirmModalTitle", "Execute 1-Year Retention Cleanup?")}
                 </h3>
               </div>
               <button
@@ -420,18 +437,7 @@ export default function AdminRetentionPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-              {pastRetentionDays > 0 ? (
-                <>
-                  Found <strong>{pastRetentionDays} visit(s)</strong> older than 365 days. Running
-                  cleanup will permanently remove all inspection checklist answers, photos, and
-                  videos for these visits from Cloudflare R2 and Supabase.
-                </>
-              ) : (
-                <>
-                  All inspections are currently within the 365-day compliance window. Running cleanup
-                  will perform a verification scan and prune any orphaned storage files older than 365 days.
-                </>
-              )}
+              {t("retention.confirmModalDesc", "This action will permanently delete all survey data and media older than 1 year. This action cannot be reversed.")}
             </p>
 
             <div className="flex gap-2 pt-2">
@@ -440,7 +446,7 @@ export default function AdminRetentionPage() {
                 onClick={() => setShowConfirmModal(false)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -448,7 +454,9 @@ export default function AdminRetentionPage() {
                 onClick={triggerCleanup}
                 className="flex-1 py-2.5 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 disabled:opacity-60"
               >
-                {isRunning ? "Running..." : "Run Purge Now"}
+                {isRunning
+                  ? t("retention.cleanupRunning", "Running...")
+                  : t("retention.confirmRunPurge", "Run Purge Now")}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Loader2, Mail, Shield, ShieldAlert } from "lucide-react";
+import { useTranslation } from "@/i18n";
 import { useLoginForm } from "@/hooks/useLoginForm";
 
 interface LoginFormProps {
@@ -8,6 +9,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
+  const { t } = useTranslation();
   const {
     email,
     setEmail,
@@ -24,20 +26,42 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
 
   const isAnyLoading = isLoading || isGoogleLoading;
 
+  const getErrorMessage = (err: string) => {
+    if (err.startsWith("errors.")) {
+      return t(err);
+    }
+    if (err === "Login failed. Please check your credentials.") {
+      return t("errors.loginFailed");
+    }
+    if (err === "Failed to initiate Google authentication") {
+      return t("errors.googleAuthFailed");
+    }
+    if (err === "Demo login failed") {
+      return t("errors.demoLoginFailed");
+    }
+    return err;
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* Form Header */}
       <div className="space-y-2 text-left">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-white dark:bg-white dark:text-zinc-900">
           <Shield className="size-3 text-amber-400" />
-          <span>Admin Portal</span>
+          <span>{t("login.cardBadge", "Admin Portal")}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-50">
-          Sign in
+          {t("login.title", "Sign in")}
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-          Centralized administrative management for EC POWER Site Visit Companion. Authorized{" "}
-          <strong>Super Admins</strong> only.
+          {t(
+            "login.description.lead",
+            "Centralized administrative management for EC POWER Site Visit Companion. Authorized "
+          )}
+          <strong>
+            {t("login.description.superAdmins", "Super Admins")}
+          </strong>
+          {t("login.description.tail", " only.")}
         </p>
       </div>
 
@@ -45,7 +69,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       {error && (
         <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-3 text-xs sm:text-sm text-red-700 dark:text-red-400 animate-in fade-in flex items-center gap-2">
           <ShieldAlert className="size-4 shrink-0" />
-          <span>{error}</span>
+          <span>{getErrorMessage(error)}</span>
         </div>
       )}
 
@@ -57,7 +81,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
             htmlFor="email"
             className="block text-xs font-bold text-slate-700 dark:text-zinc-300"
           >
-            Email Address
+            {t("login.emailLabel", "Email Address")}
           </label>
           <div className="relative">
             <input
@@ -66,7 +90,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
               required
               disabled={isAnyLoading}
               autoComplete="email"
-              placeholder="admin@ecpower.com"
+              placeholder={t("login.emailPlaceholder", "admin@ecpower.com")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors disabled:opacity-60"
@@ -81,7 +105,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
             htmlFor="password"
             className="block text-xs font-bold text-slate-700 dark:text-zinc-300"
           >
-            Password
+            {t("login.passwordLabel", "Password")}
           </label>
           <div className="relative">
             <input
@@ -90,7 +114,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
               required
               disabled={isAnyLoading}
               autoComplete="current-password"
-              placeholder="••••••••••••"
+              placeholder={t("login.passwordPlaceholder", "••••••••••••")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors pr-10 disabled:opacity-60"
@@ -100,7 +124,11 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
               disabled={isAnyLoading}
               onClick={toggleShowPassword}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={
+                showPassword
+                  ? t("login.hidePassword", "Hide password")
+                  : t("login.showPassword", "Show password")
+              }
             >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
@@ -116,10 +144,10 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
           {isLoading ? (
             <>
               <Loader2 className="size-4 animate-spin" />
-              <span>Signing in...</span>
+              <span>{t("login.signingIn", "Signing in...")}</span>
             </>
           ) : (
-            <span>Sign in as Administrator</span>
+            <span>{t("login.signInButton", "Sign in as Administrator")}</span>
           )}
         </button>
       </form>
@@ -128,7 +156,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       <div className="relative flex items-center justify-center">
         <div className="w-full border-t border-slate-200 dark:border-zinc-800" />
         <span className="absolute bg-white dark:bg-zinc-900 px-3 text-xs uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-medium">
-          or
+          {t("login.or", "or")}
         </span>
       </div>
 
@@ -142,7 +170,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         {isGoogleLoading ? (
           <>
             <Loader2 className="size-4 animate-spin text-slate-600 dark:text-zinc-300" />
-            <span>Connecting to Google...</span>
+            <span>{t("login.connectingToGoogle", "Connecting to Google...")}</span>
           </>
         ) : (
           <>
@@ -164,7 +192,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>Continue with Google</span>
+            <span>{t("login.continueWithGoogle", "Continue with Google")}</span>
           </>
         )}
       </button>
@@ -172,13 +200,13 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
       {/* Switch to Signup (if callback provided) */}
       {onSwitchToSignup && (
         <div className="pt-2 text-center text-xs sm:text-sm text-slate-500 dark:text-zinc-400">
-          Need technician access?{" "}
+          {t("login.needTechnicianAccess", "Need technician access?")}{" "}
           <button
             type="button"
             onClick={onSwitchToSignup}
             className="font-semibold text-slate-900 dark:text-zinc-200 underline underline-offset-4 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Request an account
+            {t("login.requestAccount", "Request an account")}
           </button>
         </div>
       )}

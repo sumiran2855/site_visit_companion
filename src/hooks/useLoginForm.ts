@@ -25,12 +25,12 @@ export function useLoginForm() {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError("Please enter your email address.");
+      setError("errors.emailRequired");
       return;
     }
 
     if (!password) {
-      setError("Please enter your password.");
+      setError("errors.passwordRequired");
       return;
     }
 
@@ -40,7 +40,7 @@ export function useLoginForm() {
       const result = await login({ email: trimmedEmail, password });
 
       if (!result.success) {
-        setError(result.error || "Login failed. Please check your credentials.");
+        setError(result.error || "errors.loginFailed");
         setIsLoading(false);
         return;
       }
@@ -63,7 +63,7 @@ export function useLoginForm() {
       router.push(ROUTES.ADMIN);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
+        err instanceof Error ? err.message : "errors.unexpectedError";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -80,7 +80,7 @@ export function useLoginForm() {
       loginWithGoogle();
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Failed to initiate Google authentication";
+        err instanceof Error ? err.message : "errors.googleAuthFailed";
       setError(message);
       setIsGoogleLoading(false);
     }
@@ -99,7 +99,7 @@ export function useLoginForm() {
         router.push(ROUTES.ADMIN);
       }
     } catch {
-      setError("Demo login failed");
+      setError("errors.demoLoginFailed");
     } finally {
       setIsLoading(false);
     }

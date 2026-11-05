@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { X, Send, AlertCircle } from "lucide-react";
+import { useTranslation } from "@/i18n";
 
 export interface RequestMoreModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function RequestMoreModal({
   onClose,
   onSubmit,
 }: RequestMoreModalProps) {
+  const { t } = useTranslation();
   const [requestText, setRequestText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,11 +65,12 @@ export function RequestMoreModal({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500" />
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Request Updates on Area
+                {t("modals.requestMore.title", "Request Updates on Area")}
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-              Target area: <span className="font-semibold text-slate-800 dark:text-zinc-200">{areaName}</span>
+              {t("modals.requestMore.targetArea", "Target area:")}{" "}
+              <span className="font-semibold text-slate-800 dark:text-zinc-200">{areaName}</span>
             </p>
           </div>
           <button
@@ -82,13 +85,13 @@ export function RequestMoreModal({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-              Request Details / Instructions for Technician
+              {t("modals.requestMore.detailsLabel", "Request Details / Instructions for Technician")}
             </label>
             <textarea
               rows={4}
               value={requestText}
               onChange={(e) => setRequestText(e.target.value)}
-              placeholder="e.g. Please retake photo of the boiler nameplate with flash so the serial number is legible..."
+              placeholder={t("modals.requestMore.placeholder", "Describe what needs to be retaken, inspected or clarified...")}
               required
               className="w-full text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3 text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
             />
@@ -97,7 +100,7 @@ export function RequestMoreModal({
           {/* Quick Presets */}
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block mb-1.5">
-              Quick Suggestions (tap to add):
+              {t("modals.requestMore.quickPresetsLabel", "Quick Suggestion Presets:")}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {QUICK_PRESETS.map((p) => (
@@ -129,7 +132,7 @@ export function RequestMoreModal({
               disabled={isSubmitting}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
-              Cancel
+              {t("common.cancel", "Cancel")}
             </button>
             <button
               type="submit"
@@ -137,7 +140,11 @@ export function RequestMoreModal({
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
             >
               <Send size={13} />
-              <span>{isSubmitting ? "Queueing..." : "Queue Request"}</span>
+              <span>
+                {isSubmitting
+                  ? t("modals.requestMore.sending", "Submitting...")
+                  : t("modals.requestMore.send", "Queue Feedback")}
+              </span>
             </button>
           </div>
         </form>

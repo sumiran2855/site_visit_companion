@@ -40,6 +40,7 @@ import {
   buildTemplateSuggestions,
   TemplateSuggestion,
 } from "@/utils/template-suggestions";
+import { useTranslation } from "@/i18n";
 import type {
   PDFTemplate,
   TemplateElement,
@@ -213,6 +214,7 @@ const DEFAULT_TEMPLATE_META: PDFTemplate = {
 };
 
 export default function AdminTemplatePage() {
+  const { t } = useTranslation();
   const [pages, setPages] = useState<TemplatePage[]>(INITIAL_PAGES);
   const [templateMeta, setTemplateMeta] = useState<PDFTemplate>(DEFAULT_TEMPLATE_META);
   const [activePageIndex, setActivePageIndex] = useState(0);
@@ -316,6 +318,7 @@ export default function AdminTemplatePage() {
 
   // Add an element to the active page
   const handleAddElement = (type: TemplateElementType) => {
+    // eslint-disable-next-line react-hooks/purity
     const id = `el-${type}-${Date.now().toString().slice(-4)}`;
     let newElement: TemplateElement;
 
@@ -651,7 +654,7 @@ export default function AdminTemplatePage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-white">
             <LayoutTemplate className="size-4 text-blue-600 dark:text-blue-400" />
-            <span>PDF Template Editor</span>
+            <span>{t("template.title", "PDF Template Editor")}</span>
           </div>
 
           <div className="h-4 w-px bg-slate-200 dark:border-zinc-800" />
@@ -661,16 +664,16 @@ export default function AdminTemplatePage() {
             {saveStatus === "saving" ? (
               <span className="flex items-center gap-1.5 text-amber-500 font-medium">
                 <span className="size-2 rounded-full bg-amber-400 animate-ping" />
-                Saving...
+                {t("template.saving", "Saving...")}
               </span>
             ) : saveStatus === "saved" ? (
               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                 <Check className="size-3.5" />
-                Saved
+                {t("template.saved", "Saved")}
               </span>
             ) : (
               <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                ● Unsaved changes
+                ● {t("template.unsavedChanges", "Unsaved changes")}
               </span>
             )}
           </div>
@@ -684,7 +687,7 @@ export default function AdminTemplatePage() {
               onClick={handleUndo}
               disabled={historyIndex <= 0}
               className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors text-slate-700 dark:text-zinc-300"
-              title="Undo change (Ctrl+Z)"
+              title={t("template.undoTitle", "Undo change (Ctrl+Z)")}
             >
               <Undo2 className="size-3.5" />
             </button>
@@ -692,7 +695,7 @@ export default function AdminTemplatePage() {
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
               className="p-1.5 rounded-md hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors text-slate-700 dark:text-zinc-300"
-              title="Redo change (Ctrl+Y)"
+              title={t("template.redoTitle", "Redo change (Ctrl+Y)")}
             >
               <Redo2 className="size-3.5" />
             </button>
@@ -706,7 +709,7 @@ export default function AdminTemplatePage() {
               onChange={(e) => setSnapToGrid(e.target.checked)}
               className="rounded border-slate-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 size-3.5"
             />
-            <span>Snap 2</span>
+            <span>{t("template.snap", "Snap 2")}</span>
           </label>
 
           {/* Zoom Controls */}
@@ -714,7 +717,7 @@ export default function AdminTemplatePage() {
             <button
               onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
               className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-              title="Zoom out"
+              title={t("template.zoomOut", "Zoom out")}
             >
               <Minus className="size-3" />
             </button>
@@ -730,7 +733,7 @@ export default function AdminTemplatePage() {
             <button
               onClick={() => setZoomLevel((z) => Math.min(130, z + 10))}
               className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-              title="Zoom in"
+              title={t("template.zoomIn", "Zoom in")}
             >
               <Plus className="size-3" />
             </button>
@@ -746,20 +749,20 @@ export default function AdminTemplatePage() {
           <button
             onClick={() => setIsBlankPdfModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors shadow-2xs"
-            title="Preview blank print-friendly checklist with ruled lines"
+            title={t("template.blankPdfTitle", "Preview blank print-friendly checklist with ruled lines")}
           >
             <FileText className="size-3.5 text-slate-500" />
-            <span>Blank PDF</span>
+            <span>{t("template.blankPdf", "Blank PDF")}</span>
           </button>
 
           {/* Preview PDF per Section 17 */}
           <button
             onClick={() => setIsPreviewModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors shadow-2xs"
-            title="Preview generated report populated with visit data and photos"
+            title={t("template.previewPdfTitle", "Preview generated report populated with visit data and photos")}
           >
             <Eye className="size-3.5 text-blue-500" />
-            <span>Preview PDF</span>
+            <span>{t("template.previewPdf", "Preview PDF")}</span>
           </button>
 
           {/* Save template */}
@@ -768,14 +771,14 @@ export default function AdminTemplatePage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors shadow-xs"
           >
             <Save className="size-3.5" />
-            <span>Save template</span>
+            <span>{t("template.saveTemplate", "Save template")}</span>
           </button>
 
           {/* Reset */}
           <button
             onClick={() => setIsResetConfirmOpen(true)}
             className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            title="Reset to factory default"
+            title={t("template.resetDefault", "Reset to factory default")}
           >
             <RotateCcw className="size-3.5" />
           </button>
@@ -793,7 +796,7 @@ export default function AdminTemplatePage() {
           }`}
         >
           <PanelLeft className="size-3.5" />
-          <span>Palette</span>
+          <span>{t("template.mobile.palette", "Palette")}</span>
         </button>
         <button
           onClick={() => setMobileTab("canvas")}
@@ -804,7 +807,7 @@ export default function AdminTemplatePage() {
           }`}
         >
           <LayoutTemplate className="size-3.5" />
-          <span>Canvas ({activePage.title})</span>
+          <span>{t("template.mobile.canvas", "Canvas")} ({activePage.title})</span>
         </button>
         <button
           onClick={() => setMobileTab("inspector")}
@@ -815,7 +818,7 @@ export default function AdminTemplatePage() {
           }`}
         >
           <PanelRight className="size-3.5" />
-          <span>Inspector</span>
+          <span>{t("template.mobile.inspector", "Inspector")}</span>
         </button>
       </div>
 
@@ -831,60 +834,60 @@ export default function AdminTemplatePage() {
           <div className="p-4 border-b border-slate-100 dark:border-zinc-800">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                Add Element
+                {t("template.addElement", "Add Element")}
               </h3>
-              <span className="text-[10px] text-slate-400">Click to insert</span>
+              <span className="text-[10px] text-slate-400">{t("template.clickToInsert", "Click to insert")}</span>
             </div>
 
             <div className="space-y-1.5">
               {[
                 {
                   type: "cover_header" as TemplateElementType,
-                  label: "Cover header",
+                  label: t("template.elements.coverHeader", "Cover header"),
                   icon: LayoutTemplate,
-                  desc: "Header banner with logo & title",
+                  desc: t("template.elements.coverHeaderDesc", "Header banner with logo & title"),
                 },
                 {
                   type: "heading" as TemplateElementType,
-                  label: "Heading",
+                  label: t("template.elements.heading", "Heading"),
                   icon: Heading,
-                  desc: "Section title (e.g. Boiler Room)",
+                  desc: t("template.elements.headingDesc", "Section title (e.g. Boiler Room)"),
                 },
                 {
                   type: "text_block" as TemplateElementType,
-                  label: "Text block",
+                  label: t("template.elements.textBlock", "Text block"),
                   icon: Type,
-                  desc: "Instructions or disclaimers",
+                  desc: t("template.elements.textBlockDesc", "Instructions or disclaimers"),
                 },
                 {
                   type: "field" as TemplateElementType,
-                  label: "Field (label + value)",
+                  label: t("template.elements.field", "Field (label + value)"),
                   icon: FileCode,
-                  desc: "{{placeholder}} and [value]",
+                  desc: t("template.elements.fieldDesc", "{{placeholder}} and [value]"),
                 },
                 {
                   type: "photo_grid" as TemplateElementType,
-                  label: "Photo grid",
+                  label: t("template.elements.photoGrid", "Photo grid"),
                   icon: ImageIcon,
-                  desc: "Media attachments per section",
+                  desc: t("template.elements.photoGridDesc", "Media attachments per section"),
                 },
                 {
                   type: "divider" as TemplateElementType,
-                  label: "Divider",
+                  label: t("template.elements.divider", "Divider"),
                   icon: Minus,
-                  desc: "Horizontal section separator",
+                  desc: t("template.elements.dividerDesc", "Horizontal section separator"),
                 },
                 {
                   type: "logo" as TemplateElementType,
-                  label: "Logo",
+                  label: t("template.elements.logo", "Logo"),
                   icon: Zap,
-                  desc: "EC POWER corporate brand mark",
+                  desc: t("template.elements.logoDesc", "EC POWER corporate brand mark"),
                 },
                 {
                   type: "autoflow_checklist" as TemplateElementType,
-                  label: "Auto-flow checklist",
+                  label: t("template.elements.autoflowChecklist", "Auto-flow checklist"),
                   icon: Grid,
-                  desc: "Dynamic verified question table",
+                  desc: t("template.elements.autoflowChecklistDesc", "Dynamic verified question table"),
                 },
               ].map((item) => {
                 const Icon = item.icon;
@@ -915,14 +918,14 @@ export default function AdminTemplatePage() {
           <div className="p-4 flex-1">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                Pages ({pages.length})
+                {t("template.pages", "Pages")} ({pages.length})
               </h3>
               <button
                 onClick={handleAddPage}
                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
                 <Plus className="size-3" />
-                <span>Add page</span>
+                <span>{t("template.addPage", "Add page")}</span>
               </button>
             </div>
 
@@ -943,7 +946,7 @@ export default function AdminTemplatePage() {
                     </span>
                     <span>{page.title}</span>
                     <span className="text-[10px] font-normal text-slate-400">
-                      ({page.elements.length} items)
+                      ({page.elements.length} {t("template.items", "items")})
                     </span>
                   </div>
 
@@ -954,7 +957,7 @@ export default function AdminTemplatePage() {
                         handleDeletePage(idx);
                       }}
                       className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
-                      title="Delete this page"
+                      title={t("template.deletePage", "Delete this page")}
                     >
                       <X className="size-3.5" />
                     </button>
@@ -995,10 +998,10 @@ export default function AdminTemplatePage() {
                 {activePage.elements.length === 0 ? (
                   <div className="py-24 text-center border-2 border-dashed border-slate-200 rounded-2xl">
                     <p className="text-sm font-semibold text-slate-500">
-                      Page is empty
+                      {t("template.emptyPage", "Page is empty")}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
-                      Choose elements from the left palette to construct this page layout.
+                      {t("template.emptyPageDesc", "Choose elements from the left palette to construct this page layout.")}
                     </p>
                   </div>
                 ) : (
@@ -1040,7 +1043,7 @@ export default function AdminTemplatePage() {
                                 handleMoveElement(el.id, "up");
                               }}
                               className="p-1 hover:text-blue-300"
-                              title="Move up"
+                              title={t("template.moveUp", "Move up")}
                             >
                               <MoveUp className="size-3" />
                             </button>
@@ -1050,7 +1053,7 @@ export default function AdminTemplatePage() {
                                 handleMoveElement(el.id, "down");
                               }}
                               className="p-1 hover:text-blue-300"
-                              title="Move down"
+                              title={t("template.moveDown", "Move down")}
                             >
                               <MoveDown className="size-3" />
                             </button>
@@ -1061,7 +1064,7 @@ export default function AdminTemplatePage() {
                                 handleDeleteElement(el.id);
                               }}
                               className="p-1 hover:text-rose-400"
-                              title="Delete element"
+                              title={t("template.deleteElement", "Delete element")}
                             >
                               <Trash2 className="size-3" />
                             </button>
@@ -1216,7 +1219,7 @@ export default function AdminTemplatePage() {
           <div className="p-4 border-b border-slate-100 dark:border-zinc-800">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-2">
               <Sliders className="size-3.5" />
-              <span>Inspector</span>
+              <span>{t("template.inspector", "Inspector")}</span>
             </h3>
           </div>
 
@@ -1227,10 +1230,10 @@ export default function AdminTemplatePage() {
                   <Sliders className="size-5" />
                 </div>
                 <h4 className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                  No element selected
+                  {t("template.noElementSelected", "No element selected")}
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
-                  Select an element on the canvas to edit its properties, placeholder bindings, and styling.
+                  {t("template.noElementDesc", "Select an element on the canvas to edit its properties, placeholder bindings, and styling.")}
                 </p>
               </div>
             ) : (
@@ -1238,7 +1241,7 @@ export default function AdminTemplatePage() {
                 {/* Element Type Pill */}
                 <div className="flex items-center justify-between bg-slate-50 dark:bg-zinc-800/60 p-2 rounded-xl border border-slate-200/60 dark:border-zinc-700">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Element Type
+                    {t("template.elementType", "Element Type")}
                   </span>
                   <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 capitalize">
                     {selectedElement.type.replace("_", " ")}
@@ -1247,7 +1250,7 @@ export default function AdminTemplatePage() {
 
                 {/* Label Field with Auto Suggestions */}
                 <TemplateFieldAutocomplete
-                  label="Label / Title"
+                  label={t("template.labelTitle", "Label / Title")}
                   value={selectedElement.label || ""}
                   onChange={(val) =>
                     handleUpdateSelectedElement({ label: val })
@@ -1261,7 +1264,7 @@ export default function AdminTemplatePage() {
                 {/* Content field if applicable with Auto Suggestions */}
                 {selectedElement.type !== "divider" && (
                   <TemplateFieldAutocomplete
-                    label="Content / Subtitle"
+                    label={t("template.contentSubtitle", "Content / Subtitle")}
                     isTextarea
                     rows={2}
                     value={selectedElement.content || ""}
@@ -1279,7 +1282,7 @@ export default function AdminTemplatePage() {
                 {selectedElement.type === "field" && (
                   <div>
                     <TemplateFieldAutocomplete
-                      label="Placeholder Binding"
+                      label={t("template.placeholderBinding", "Placeholder Binding")}
                       mono
                       value={selectedElement.placeholder || ""}
                       onChange={(val) =>
@@ -1325,7 +1328,7 @@ export default function AdminTemplatePage() {
                             className="w-full py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800/80 text-[11px] font-semibold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <Sparkles className="size-3 text-blue-600 dark:text-blue-400" />
-                            <span>Browse all 67+ Form Fields...</span>
+                            <span>{t("template.browseFormFields", "Browse all 67+ Form Fields...")}</span>
                           </button>
                         </div>
                       }
@@ -1336,7 +1339,7 @@ export default function AdminTemplatePage() {
                 {/* Width Layout */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                    Element Width
+                    {t("template.elementWidth", "Element Width")}
                   </label>
                   <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl text-xs">
                     {(["full", "half", "third"] as const).map((w) => (
@@ -1362,7 +1365,7 @@ export default function AdminTemplatePage() {
                 {selectedElement.type === "photo_grid" && (
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                      Grid Columns
+                      {t("template.gridColumns", "Grid Columns")}
                     </label>
                     <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl text-xs">
                       {([2, 3, 4] as const).map((cols) => (
@@ -1393,14 +1396,14 @@ export default function AdminTemplatePage() {
                       className="flex-1 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-1"
                     >
                       <MoveUp className="size-3.5" />
-                      <span>Move Up</span>
+                      <span>{t("template.moveUp", "Move Up")}</span>
                     </button>
                     <button
                       onClick={() => handleMoveElement(selectedElement.id, "down")}
                       className="flex-1 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-1"
                     >
                       <MoveDown className="size-3.5" />
-                      <span>Move Down</span>
+                      <span>{t("template.moveDown", "Move Down")}</span>
                     </button>
                   </div>
 
@@ -1409,7 +1412,7 @@ export default function AdminTemplatePage() {
                     className="w-full py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Trash2 className="size-3.5" />
-                    <span>Delete this element</span>
+                    <span>{t("template.deleteThisElement", "Delete this element")}</span>
                   </button>
                 </div>
               </div>
@@ -1436,10 +1439,10 @@ export default function AdminTemplatePage() {
                 <Printer className="size-5 text-slate-700 dark:text-zinc-200" />
                 <div>
                   <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                    Print-Friendly Blank Checklist (Manual Notes)
+                    {t("template.blankPdfModal.title", "Print-Friendly Blank Checklist (Manual Notes)")}
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                    Includes blank ruled lines for field engineers to write on clipboard
+                    {t("template.blankPdfModal.desc", "Includes blank ruled lines for field engineers to write on clipboard")}
                   </p>
                 </div>
               </div>
@@ -1452,7 +1455,7 @@ export default function AdminTemplatePage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors"
                 >
                   <Printer className="size-3.5" />
-                  <span>Print Form</span>
+                  <span>{t("template.blankPdfModal.print", "Print Form")}</span>
                 </button>
                 <button
                   onClick={() => setIsBlankPdfModalOpen(false)}
@@ -1532,23 +1535,23 @@ export default function AdminTemplatePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl w-full max-w-sm shadow-2xl p-5">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-2">
-              Reset Template to Default?
+              {t("template.resetModal.title", "Reset Template to Default?")}
             </h3>
             <p className="text-xs text-slate-600 dark:text-zinc-400 mb-4">
-              This will discard all customizations and reload the original EC POWER factory template layout.
+              {t("template.resetModal.desc", "This will discard all customizations and reload the original EC POWER factory template layout.")}
             </p>
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setIsResetConfirmOpen(false)}
                 className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 onClick={handleConfirmReset}
                 className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700"
               >
-                Confirm Reset
+                {t("template.resetModal.confirm", "Confirm Reset")}
               </button>
             </div>
           </div>

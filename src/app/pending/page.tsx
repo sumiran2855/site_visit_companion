@@ -7,10 +7,12 @@ import { AlertCircle, Loader2, LogIn, RefreshCw } from "lucide-react";
 import { ROUTES } from "@/lib/constants";
 import { Navbar } from "@/components/layout/Navbar";
 import { AuthController } from "@/controllers/auth.controller";
+import { useTranslation } from "@/i18n";
 
 function PendingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const queryEmail = searchParams.get("email") || "";
   const [email, setEmail] = useState<string>(() => {
@@ -32,7 +34,7 @@ function PendingContent() {
   const [isChecking, setIsChecking] = useState(false);
   const [approvalState, setApprovalState] = useState<"pending" | "approved" | "rejected">("pending");
   const [statusMessage, setStatusMessage] = useState<string | null>(
-    "Your access request is still under review by your company administrator."
+    t("pending.statusReview", "Your access request is still under review by your company administrator.")
   );
 
   const checkStatus = useCallback(async () => {
@@ -60,26 +62,35 @@ function PendingContent() {
         }
         setApprovalState("approved");
         setStatusMessage(
-          "Your account has been approved by your administrator! Please sign in to access your dashboard."
+          t(
+            "pending.statusApproved",
+            "Your account has been approved by your administrator! Please sign in to access your dashboard."
+          )
         );
         return;
       }
 
       if (result.status === "rejected") {
         setApprovalState("rejected");
-        setStatusMessage("Your access request was rejected by an administrator.");
+        setStatusMessage(
+          t("pending.statusRejected", "Your access request was rejected by an administrator.")
+        );
         return;
       }
 
       setApprovalState("pending");
-      setStatusMessage("Your access request is still under review by your company administrator.");
+      setStatusMessage(
+        t("pending.statusReview", "Your access request is still under review by your company administrator.")
+      );
     } catch {
       setApprovalState("pending");
-      setStatusMessage("Your access request is still under review by your company administrator.");
+      setStatusMessage(
+        t("pending.statusReview", "Your access request is still under review by your company administrator.")
+      );
     } finally {
       setIsChecking(false);
     }
-  }, [email, requestedCompany, router]);
+  }, [email, requestedCompany, router, t]);
 
   const handleSignInRedirect = () => {
     const targetUrl = email
@@ -101,7 +112,7 @@ function PendingContent() {
       />
 
       {/* Top Navbar */}
-      <Navbar subtitle="Field Operations" />
+      <Navbar subtitle={t("pending.badge", "Field Operations")} />
 
       {/* Main Card */}
       <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -112,10 +123,13 @@ function PendingContent() {
               <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                    Registration Approved!
+                    {t("pending.statusApproved", "Registration Approved!")}
                   </h1>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                    Your account has been verified and approved by the company administrator.
+                    {t(
+                      "pending.statusApproved",
+                      "Your account has been verified and approved by the company administrator."
+                    )}
                   </p>
                 </div>
               </div>
@@ -128,20 +142,26 @@ function PendingContent() {
                 </div>
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                    Request Rejected
+                    {t("pending.statusRejected", "Request Rejected")}
                   </h1>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                    Your access request was rejected by an administrator. Please reach out to your team lead.
+                    {t(
+                      "pending.statusRejected",
+                      "Your access request was rejected by an administrator. Please reach out to your team lead."
+                    )}
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-2">
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                  Awaiting Approval
+                  {t("pending.title", "Awaiting Approval")}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                  Your account registration has been submitted and is waiting for administrator authorization.
+                  {t(
+                    "pending.description",
+                    "Your account registration has been submitted and is waiting for administrator authorization."
+                  )}
                 </p>
               </div>
             )}
@@ -152,7 +172,7 @@ function PendingContent() {
                 {requestedCompany ? (
                   <div>
                     <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                      Requested Company
+                      {t("pending.company", "Requested Company")}
                     </span>
                     <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
                       {requestedCompany}
@@ -162,7 +182,7 @@ function PendingContent() {
                 {email && (
                   <div className={requestedCompany ? "pt-1 border-t border-slate-200/60 dark:border-zinc-700/60" : ""}>
                     <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                      Account Email
+                      {t("pending.email", "Account Email")}
                     </span>
                     <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
                       {email}
@@ -196,7 +216,7 @@ function PendingContent() {
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-all cursor-pointer"
                 >
                   <LogIn className="size-4" />
-                  <span>Sign In to Dashboard</span>
+                  <span>{t("pending.signInButton", "Sign In to Dashboard")}</span>
                 </button>
               ) : (
                 <button
@@ -208,12 +228,12 @@ function PendingContent() {
                   {isChecking ? (
                     <>
                       <Loader2 className="size-4 animate-spin" />
-                      <span>Checking status...</span>
+                      <span>{t("pending.checking", "Checking status...")}</span>
                     </>
                   ) : (
                     <>
                       <RefreshCw className="size-4" />
-                      <span>Check now</span>
+                      <span>{t("pending.checkStatus", "Check now")}</span>
                     </>
                   )}
                 </button>
@@ -224,7 +244,7 @@ function PendingContent() {
                 onClick={() => router.push(ROUTES.AUTH)}
                 className="w-full text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200 py-1 transition-colors cursor-pointer"
               >
-                Sign out / Switch account
+                {t("accessDenied.signOutButton", "Sign out / Switch account")}
               </button>
             </div>
           </div>
@@ -239,16 +259,21 @@ function PendingContent() {
               href={ROUTES.PRIVACY}
               className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              Privacy Policy
+              {t("footer.privacyPolicy", "Privacy Policy")}
             </Link>
             <Link
               href={ROUTES.TERMS}
               className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              Terms of Service
+              {t("footer.termsOfService", "Terms of Service")}
             </Link>
           </div>
-          <span>&copy; {new Date().getFullYear()} EC POWER. All rights reserved.</span>
+          <span>
+            {t("footer.copyright", {
+              year: new Date().getFullYear(),
+              defaultValue: `© ${new Date().getFullYear()} EC POWER. All rights reserved.`,
+            })}
+          </span>
         </div>
       </footer>
     </div>

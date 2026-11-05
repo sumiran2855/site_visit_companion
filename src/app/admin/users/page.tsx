@@ -19,10 +19,12 @@ import {
   AccountsRequestsSkeleton,
   AccountsMembersTableSkeleton,
 } from "@/components/admin/AdminDashboardSkeleton";
+import { useTranslation } from "@/i18n";
 import type { PendingAccessRequest } from "@/types/admin";
 import type { User, UserRole } from "@/types/auth";
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const {
     user,
     isSuperAdmin,
@@ -137,10 +139,10 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
-            Accounts Management
+            {t("users.title", "Accounts Management")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Manage pending technician signups, role permissions, and company assignments
+            {t("users.subtitle", "Manage pending technician signups, role permissions, and company assignments")}
           </p>
         </div>
 
@@ -151,7 +153,7 @@ export default function AdminUsersPage() {
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-300 shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
         >
           <RotateCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span>Refresh</span>
+          <span>{t("common.refreshData", "Refresh")}</span>
         </button>
       </div>
 
@@ -169,7 +171,7 @@ export default function AdminUsersPage() {
                   : "text-slate-600 dark:text-zinc-400 hover:text-slate-900"
               }`}
             >
-              <span>Pending Requests</span>
+              <span>{t("users.tabs.requests", "Pending Requests")}</span>
               {isLoading ? (
                 <span className="inline-block w-4 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 animate-pulse" />
               ) : filteredRequests.length > 0 ? (
@@ -188,7 +190,7 @@ export default function AdminUsersPage() {
                   : "text-slate-600 dark:text-zinc-400 hover:text-slate-900"
               }`}
             >
-              <span>Approved Members</span>
+              <span>{t("users.tabs.members", "Approved Members")}</span>
               {isLoading ? (
                 <span className="inline-block w-4 h-4 rounded-full bg-slate-300 dark:bg-zinc-700 animate-pulse" />
               ) : (
@@ -204,7 +206,7 @@ export default function AdminUsersPage() {
             <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name, email, or company..."
+              placeholder={t("users.searchPlaceholder", "Search by name, email, or company...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
@@ -224,14 +226,14 @@ export default function AdminUsersPage() {
         {/* Company Filter Pills */}
         {isLoading ? (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Org:</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">{t("users.orgLabel", "Org:")}</span>
             <div className="h-6 w-24 bg-slate-200 dark:bg-zinc-800 rounded-xl animate-pulse" />
             <div className="h-6 w-28 bg-slate-100 dark:bg-zinc-800/60 rounded-xl animate-pulse" />
             <div className="h-6 w-20 bg-slate-100 dark:bg-zinc-800/60 rounded-xl animate-pulse" />
           </div>
         ) : companyPills.length > 1 ? (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Org:</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">{t("users.orgLabel", "Org:")}</span>
             <button
               type="button"
               onClick={() => setSelectedCompanyFilter("all")}
@@ -241,7 +243,7 @@ export default function AdminUsersPage() {
                   : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50"
               }`}
             >
-              All Organizations
+              {t("users.allCompanies", "All Organizations")}
             </button>
             {companyPills.map((cp) => (
               <button
@@ -272,10 +274,10 @@ export default function AdminUsersPage() {
               <Check className="size-6" />
             </div>
             <h3 className="text-base font-bold text-slate-800 dark:text-zinc-200">
-              No Pending Requests
+              {t("dashboard.pendingRequests.emptyTitle", "No Pending Requests")}
             </h3>
             <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-sm mx-auto">
-              There are currently no technician signups awaiting verification.
+              {t("dashboard.pendingRequests.emptyDesc", "There are currently no technician signups awaiting verification.")}
             </p>
           </div>
         ) : (
@@ -301,12 +303,12 @@ export default function AdminUsersPage() {
 
                   <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
                     <Building2 className="size-3.5 text-slate-400" />
-                    <span>Requested: <strong>{req.requestedCompany}</strong></span>
+                    <span>{t("dashboard.pendingRequests.requestedCompany", "Requested:")} <strong>{req.requestedCompany}</strong></span>
                   </div>
 
                   {req.note && (
                     <p className="text-xs text-slate-600 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-800/60 p-3 rounded-xl italic">
-                      "{req.note}"
+                      &ldquo;{req.note}&rdquo;
                     </p>
                   )}
                 </div>
@@ -318,7 +320,7 @@ export default function AdminUsersPage() {
                     onClick={() => setRejectTarget(req)}
                     className="flex-1 py-2 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                   >
-                    Reject
+                    {t("dashboard.pendingRequests.reject", "Reject")}
                   </button>
                   <button
                     type="button"
@@ -326,7 +328,7 @@ export default function AdminUsersPage() {
                     onClick={() => openApprove(req)}
                     className="flex-1 py-2 px-3 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
                   >
-                    Approve
+                    {t("dashboard.pendingRequests.approve", "Approve")}
                   </button>
                 </div>
               </div>
@@ -340,11 +342,11 @@ export default function AdminUsersPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 dark:text-zinc-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-zinc-800">
                 <tr>
-                  <th className="py-3 px-4">Member</th>
-                  <th className="py-3 px-4">Organization</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Status</th>
-                  {isSuperAdmin && <th className="py-3 px-4 text-right">Actions</th>}
+                  <th className="py-3 px-4">{t("users.table.user", "Member")}</th>
+                  <th className="py-3 px-4">{t("users.table.company", "Organization")}</th>
+                  <th className="py-3 px-4">{t("users.table.role", "Role")}</th>
+                  <th className="py-3 px-4">{t("common.status", "Status")}</th>
+                  {isSuperAdmin && <th className="py-3 px-4 text-right">{t("users.table.actions", "Actions")}</th>}
                 </tr>
               </thead>
               {isLoading ? (
@@ -358,8 +360,8 @@ export default function AdminUsersPage() {
                         className="py-12 text-center text-slate-400 dark:text-zinc-500"
                       >
                         {searchQuery || selectedCompanyFilter !== "all"
-                          ? "No members match the current search or filter criteria."
-                          : "No approved members found."}
+                          ? t("users.table.noMatchFilter", "No members match the current search or filter criteria.")
+                          : t("users.table.noMembersRegistered", "No approved members found.")}
                       </td>
                     </tr>
                   ) : (
@@ -386,7 +388,7 @@ export default function AdminUsersPage() {
                             <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
                               <Building2 className="size-3.5 text-slate-400" />
                               <span>
-                                {member.companyName || member.requestedCompany || "Unassigned"}
+                                {member.companyName || member.requestedCompany || t("accessDenied.unassigned", "Unassigned")}
                               </span>
                             </div>
                           </td>
@@ -402,8 +404,8 @@ export default function AdminUsersPage() {
                               <Shield className="size-3" />
                               <span>
                                 {member.role === "admin" || isSuper || isCoAdmin
-                                  ? "Administrator"
-                                  : "Technician"}
+                                  ? t("users.roles.admin", "Administrator")
+                                  : t("users.roles.technician", "Technician")}
                               </span>
                             </span>
                           </td>
@@ -411,7 +413,7 @@ export default function AdminUsersPage() {
                           <td className="py-3 px-4">
                             <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
                               <span className="size-1.5 rounded-full bg-emerald-500" />
-                              <span>Active</span>
+                              <span>{t("users.status.active", "Active")}</span>
                             </span>
                           </td>
 
@@ -422,23 +424,23 @@ export default function AdminUsersPage() {
                                   type="button"
                                   onClick={() => openChangeRole(member)}
                                   className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
-                                  title="Change Role"
+                                  title={t("users.table.changeRole", "Change Role")}
                                 >
-                                  Role
+                                  {t("common.role", "Role")}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => openMoveCompany(member)}
                                   className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold transition-colors cursor-pointer"
-                                  title="Move Organization"
+                                  title={t("users.table.moveCompany", "Move Organization")}
                                 >
-                                  Move
+                                  {t("users.table.moveButton", "Move")}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setPurgeTarget(member)}
                                   className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-colors cursor-pointer"
-                                  title="Purge User"
+                                  title={t("users.table.purgeUser", "Purge User")}
                                 >
                                   <Trash2 className="size-3.5" />
                                 </button>
@@ -464,7 +466,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center gap-2">
                 <UserCheck className="size-5 text-sky-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Approve Applicant
+                  {t("dashboard.approveModal.title", "Approve Access Request")}
                 </h3>
               </div>
               <button
@@ -482,14 +484,14 @@ export default function AdminUsersPage() {
               </p>
               <p className="text-slate-500">{approveTarget.email}</p>
               <p className="text-slate-500">
-                Requested Org: <strong>{approveTarget.requestedCompany}</strong>
+                {t("dashboard.pendingRequests.requestedCompany", "Requested:")} <strong>{approveTarget.requestedCompany}</strong>
               </p>
             </div>
 
             <div className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Assign Organization Unit
+                  {t("dashboard.approveModal.assignCompanyLabel", "Assign Organization Unit")}
                 </label>
                 <select
                   value={assignedCompanyId}
@@ -506,7 +508,7 @@ export default function AdminUsersPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Assign User Role
+                  {t("dashboard.approveModal.assignRoleLabel", "Assign User Role")}
                 </label>
                 <select
                   value={assignedRole}
@@ -514,10 +516,10 @@ export default function AdminUsersPage() {
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
                 >
                   <option value="user" className="dark:bg-zinc-900">
-                    Technician
+                    {t("dashboard.approveModal.roleUser", "Technician")}
                   </option>
                   <option value="admin" className="dark:bg-zinc-900">
-                    Administrator
+                    {t("dashboard.approveModal.roleAdmin", "Administrator")}
                   </option>
                 </select>
               </div>
@@ -529,7 +531,7 @@ export default function AdminUsersPage() {
                 onClick={() => setApproveTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -537,7 +539,9 @@ export default function AdminUsersPage() {
                 onClick={confirmApprove}
                 className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 disabled:opacity-60"
               >
-                {processingAction === "approving" ? "Approving..." : "Confirm & Approve"}
+                {processingAction === "approving"
+                  ? t("dashboard.approveModal.approving", "Approving...")
+                  : t("dashboard.approveModal.confirmButton", "Confirm & Approve")}
               </button>
             </div>
           </div>
@@ -552,7 +556,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="size-5 text-rose-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Reject Request?
+                  {t("dashboard.rejectModal.title", "Reject Request?")}
                 </h3>
               </div>
               <button
@@ -565,7 +569,7 @@ export default function AdminUsersPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-              Are you sure you want to reject the access request for{" "}
+              {t("dashboard.rejectModal.warning", "Are you sure you want to reject the access request for")}{" "}
               <strong>
                 {rejectTarget.firstName} {rejectTarget.lastName}
               </strong>{" "}
@@ -578,7 +582,7 @@ export default function AdminUsersPage() {
                 onClick={() => setRejectTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -586,7 +590,9 @@ export default function AdminUsersPage() {
                 onClick={confirmReject}
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 disabled:opacity-60"
               >
-                {processingAction === "rejecting" ? "Rejecting..." : "Reject & Purge"}
+                {processingAction === "rejecting"
+                  ? t("dashboard.rejectModal.rejecting", "Rejecting...")
+                  : t("dashboard.rejectModal.confirmButton", "Reject & Purge")}
               </button>
             </div>
           </div>
@@ -601,7 +607,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center gap-2">
                 <Shield className="size-5 text-sky-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Change Role
+                  {t("users.modals.changeRoleTitle", "Change Role")}
                 </h3>
               </div>
               <button
@@ -614,7 +620,8 @@ export default function AdminUsersPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400">
-              Update authorization tier for <strong>{roleTarget.name}</strong> ({roleTarget.email}):
+              {t("users.modals.changeRoleDesc", "Update authorization tier for")}{" "}
+              <strong>{roleTarget.name}</strong> ({roleTarget.email}):
             </p>
 
             <div className="space-y-2">
@@ -637,12 +644,14 @@ export default function AdminUsersPage() {
                   />
                   <div>
                     <span className="text-xs font-bold block">
-                      {r === "user" ? "Technician" : "Administrator"}
+                      {r === "user"
+                        ? t("dashboard.approveModal.roleUser", "Technician")
+                        : t("dashboard.approveModal.roleAdmin", "Administrator")}
                     </span>
                     <span className="text-[11px] text-slate-500 dark:text-zinc-400 block font-normal mt-0.5">
                       {r === "user"
-                        ? "Can perform field inspections, capture site media and submit visits"
-                        : "Full access to web admin portal, companies, template and reviews"}
+                        ? t("users.roles.technicianDesc", "Can perform field inspections, capture site media and submit visits")
+                        : t("users.roles.adminDesc", "Full access to web admin portal, companies, template and reviews")}
                     </span>
                   </div>
                 </label>
@@ -655,14 +664,14 @@ export default function AdminUsersPage() {
                 onClick={() => setRoleTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
                 onClick={confirmRole}
                 className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700"
               >
-                Save Role
+                {t("users.modals.saveRole", "Save Role")}
               </button>
             </div>
           </div>
@@ -677,7 +686,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="size-5 text-sky-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Move Organization
+                  {t("users.modals.moveCompanyTitle", "Move Organization")}
                 </h3>
               </div>
               <button
@@ -690,12 +699,12 @@ export default function AdminUsersPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400">
-              Transfer <strong>{moveTarget.name}</strong> to a different company branch:
+              {t("users.modals.transferUserDesc", `Transfer ${moveTarget.name} to a different company branch:`, { name: moveTarget.name })}
             </p>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                Target Organization
+                {t("users.modals.targetOrgLabel", "Target Organization")}
               </label>
               <select
                 value={newCompanyId}
@@ -716,14 +725,14 @@ export default function AdminUsersPage() {
                 onClick={() => setMoveTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
                 onClick={confirmMove}
                 className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700"
               >
-                Confirm Move
+                {t("users.modals.confirmMove", "Confirm Move")}
               </button>
             </div>
           </div>
@@ -738,7 +747,7 @@ export default function AdminUsersPage() {
               <div className="flex items-center gap-2">
                 <Trash2 className="size-5 text-rose-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Purge User Account?
+                  {t("users.modals.purgeUserTitle", "Purge User Account?")}
                 </h3>
               </div>
               <button
@@ -751,8 +760,8 @@ export default function AdminUsersPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-              Are you sure you want to permanently delete the account for{" "}
-              <strong>{purgeTarget.name}</strong> ({purgeTarget.email})? This action cannot be undone.
+              {t("users.modals.purgeWarning", "Are you sure you want to permanently delete the account for")}{" "}
+              <strong>{purgeTarget.name}</strong> ({purgeTarget.email})? {t("users.modals.purgeWarningAction", "This action cannot be undone.")}
             </p>
 
             <div className="flex gap-2 pt-2">
@@ -761,14 +770,14 @@ export default function AdminUsersPage() {
                 onClick={() => setPurgeTarget(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
                 onClick={confirmPurge}
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700"
               >
-                Purge Account
+                {t("users.modals.confirmPurge", "Purge Account")}
               </button>
             </div>
           </div>

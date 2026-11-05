@@ -7,8 +7,11 @@ import { AlertCircle, Building2, CheckCircle2, Loader2, LogIn, RefreshCw, Zap } 
 import { useAuthCallback } from "@/hooks/useAuthCallback";
 import { AuthController } from "@/controllers/auth.controller";
 import { ROUTES } from "@/lib/constants";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { useTranslation } from "@/i18n";
 
 function AuthCallbackContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const {
     status,
@@ -116,7 +119,7 @@ function AuthCallbackContent() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[320px] bg-sky-100/40 dark:bg-sky-950/20 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Header */}
-      <header className="relative z-10 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md">
+      <header className="relative z-30 w-full border-b border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href={ROUTES.HOME} className="flex items-center gap-2.5 group">
             <div className="flex items-center justify-center size-8 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm transition-transform group-hover:scale-105">
@@ -127,10 +130,12 @@ function AuthCallbackContent() {
                 EC POWER
               </span>
               <span className="text-[10px] tracking-wider font-medium text-slate-500 dark:text-zinc-400 uppercase">
-                Field Operations
+                {t("header.fieldOperations", "Field Operations")}
               </span>
             </div>
           </Link>
+
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -148,10 +153,10 @@ function AuthCallbackContent() {
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-                    {status === "loading" ? "Connecting to Google..." : "Authenticating session..."}
+                    {status === "loading" ? t("callback.connectingGoogle", "Connecting to Google...") : t("callback.authenticatingSession", "Authenticating session...")}
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-xs mx-auto">
-                    Verifying your credentials with EC POWER servers. Please wait a moment.
+                    {t("callback.verifyingCredentials", "Verifying your credentials with EC POWER servers. Please wait a moment.")}
                   </p>
                 </div>
               </div>
@@ -177,10 +182,10 @@ function AuthCallbackContent() {
                     )}
                   </div>
                   <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-                    Complete your registration
+                    {t("callback.completeRegistration", "Complete your registration")}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-zinc-400">
-                    Signed in as <span className="font-semibold text-slate-700 dark:text-zinc-300">{googleUser?.fullName}</span> ({googleUser?.email})
+                    {t("callback.signedInAs", "Signed in as")} <span className="font-semibold text-slate-700 dark:text-zinc-300">{googleUser?.fullName}</span> ({googleUser?.email})
                   </p>
                 </div>
 
@@ -198,7 +203,7 @@ function AuthCallbackContent() {
                       htmlFor="company"
                       className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300"
                     >
-                      Your company or organization
+                      {t("callback.yourCompany", "Your company or organization")}
                     </label>
                     <div className="relative">
                       <input
@@ -206,7 +211,7 @@ function AuthCallbackContent() {
                         type="text"
                         required
                         autoFocus
-                        placeholder="e.g. EC POWER or ACME INC"
+                        placeholder={t("callback.companyPlaceholder", "e.g. EC POWER or ACME INC")}
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors pr-10"
@@ -214,7 +219,7 @@ function AuthCallbackContent() {
                       <Building2 className="absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400 dark:text-zinc-500 pointer-events-none" />
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
-                      Technicians and contractors require company administrator approval before checklist access is granted.
+                      {t("callback.companyHint", "Technicians and contractors require company administrator approval before checklist access is granted.")}
                     </p>
                   </div>
 
@@ -227,10 +232,10 @@ function AuthCallbackContent() {
                       {status === "submitting_company" ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          <span>Submitting access request...</span>
+                          <span>{t("callback.submittingRequest", "Submitting access request...")}</span>
                         </>
                       ) : (
-                        <span>Submit Access Request</span>
+                        <span>{t("callback.submitAccessRequest", "Submit Access Request")}</span>
                       )}
                     </button>
 
@@ -240,7 +245,7 @@ function AuthCallbackContent() {
                       disabled={status === "submitting_company"}
                       className="w-full text-center text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200 py-1 transition-colors cursor-pointer"
                     >
-                      Cancel / Switch account
+                      {t("callback.cancelSwitch", "Cancel / Switch account")}
                     </button>
                   </div>
                 </form>
@@ -257,10 +262,10 @@ function AuthCallbackContent() {
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-                    Authentication Successful
+                    {t("callback.authSuccess", "Authentication Successful")}
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400">
-                    Redirecting to your dashboard...
+                    {t("callback.redirecting", "Redirecting to your dashboard...")}
                   </p>
                 </div>
               </div>
@@ -278,10 +283,10 @@ function AuthCallbackContent() {
                     </div>
                     <div className="space-y-2">
                       <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                        Registration Approved!
+                        {t("callback.approvedTitle", "Registration Approved!")}
                       </h1>
                       <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                        Your account has been verified and approved by the company administrator.
+                        {t("callback.approvedDesc", "Your account has been verified and approved by the company administrator.")}
                       </p>
                     </div>
                   </div>
@@ -294,20 +299,20 @@ function AuthCallbackContent() {
                     </div>
                     <div className="space-y-2">
                       <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                        Request Rejected
+                        {t("callback.rejectedTitle", "Request Rejected")}
                       </h1>
                       <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                        Your access request was rejected by an administrator. Please reach out to your team lead.
+                        {t("callback.rejectedDesc", "Your access request was rejected by an administrator. Please reach out to your team lead.")}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                      Awaiting Approval
+                      {t("callback.awaitingTitle", "Awaiting Approval")}
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
-                      Your account registration has been submitted and is waiting for administrator authorization.
+                      {t("callback.awaitingDesc", "Your account registration has been submitted and is waiting for administrator authorization.")}
                     </p>
                   </div>
                 )}
@@ -318,7 +323,7 @@ function AuthCallbackContent() {
                     {targetCompany ? (
                       <div>
                         <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                          Requested Company
+                          {t("callback.requestedCompany", "Requested Company")}
                         </span>
                         <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
                           {targetCompany}
@@ -328,7 +333,7 @@ function AuthCallbackContent() {
                     {targetEmail && (
                       <div className={targetCompany ? "pt-1 border-t border-slate-200/60 dark:border-zinc-700/60" : ""}>
                         <span className="text-[11px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">
-                          Account Email
+                          {t("callback.accountEmail", "Account Email")}
                         </span>
                         <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">
                           {targetEmail}
@@ -362,7 +367,7 @@ function AuthCallbackContent() {
                       className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-3 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 transition-all cursor-pointer"
                     >
                       <LogIn className="size-4" />
-                      <span>Sign In to Dashboard</span>
+                      <span>{t("callback.signInDashboard", "Sign In to Dashboard")}</span>
                     </button>
                   ) : (
                     <button
@@ -374,12 +379,12 @@ function AuthCallbackContent() {
                       {isChecking ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          <span>Checking status...</span>
+                          <span>{t("callback.checkingStatus", "Checking status...")}</span>
                         </>
                       ) : (
                         <>
                           <RefreshCw className="size-4" />
-                          <span>Check now</span>
+                          <span>{t("callback.checkNow", "Check now")}</span>
                         </>
                       )}
                     </button>
@@ -390,7 +395,7 @@ function AuthCallbackContent() {
                     onClick={goToLogin}
                     className="w-full text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200 py-1 transition-colors cursor-pointer"
                   >
-                    Sign out / Switch account
+                    {t("callback.signOutSwitch", "Sign out / Switch account")}
                   </button>
                 </div>
               </div>
@@ -406,10 +411,10 @@ function AuthCallbackContent() {
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-                    Authentication Notice
+                    {t("callback.noticeTitle", "Authentication Notice")}
                   </h2>
                   <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-3.5 text-xs sm:text-sm text-red-700 dark:text-red-400 text-left leading-relaxed">
-                    {error || "An unexpected error occurred during authentication."}
+                    {error || t("errors.unknown", "An unexpected error occurred during authentication.")}
                   </div>
                 </div>
 
@@ -420,7 +425,7 @@ function AuthCallbackContent() {
                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-zinc-200 shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="size-4" />
-                    <span>Try again</span>
+                    <span>{t("callback.tryAgain", "Try again")}</span>
                   </button>
 
                   <button
@@ -428,7 +433,7 @@ function AuthCallbackContent() {
                     onClick={goToLogin}
                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-white dark:text-zinc-900 shadow-md hover:bg-slate-800 dark:hover:bg-white transition-colors cursor-pointer"
                   >
-                    Back to Sign In
+                    {t("callback.backToSignIn", "Back to Sign In")}
                   </button>
                 </div>
               </div>
@@ -445,16 +450,16 @@ function AuthCallbackContent() {
               href={ROUTES.PRIVACY}
               className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              Privacy Policy
+              {t("privacy.title", "Privacy Policy")}
             </Link>
             <Link
               href={ROUTES.TERMS}
               className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              Terms of Service
+              {t("terms.title", "Terms of Service")}
             </Link>
           </div>
-          <span>&copy; {new Date().getFullYear()} EC POWER. All rights reserved.</span>
+          <span>&copy; {new Date().getFullYear()} EC POWER. {t("footer.rights", "All rights reserved.")}</span>
         </div>
       </footer>
     </div>

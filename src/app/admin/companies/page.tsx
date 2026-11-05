@@ -19,9 +19,11 @@ import {
 } from "lucide-react";
 import { useAdminCompanies } from "@/hooks/useAdminCompanies";
 import { CompaniesTreeSkeleton } from "@/components/admin/AdminDashboardSkeleton";
+import { useTranslation } from "@/i18n";
 import type { Company } from "@/types/admin";
 
 export default function AdminCompaniesPage() {
+  const { t } = useTranslation();
   const {
     isSuperAdmin,
     searchQuery,
@@ -159,7 +161,7 @@ export default function AdminCompaniesPage() {
                 </h3>
                 {depth === 0 && (
                   <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
-                    Primary Org
+                    {t("companies.primaryOrg", "Primary Org")}
                   </span>
                 )}
               </div>
@@ -188,10 +190,20 @@ export default function AdminCompaniesPage() {
             <div className="flex items-center gap-3 text-xs">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 font-bold border border-sky-200 dark:border-sky-800">
                 <Users className="size-3.5" />
-                <span>{company.memberCount ?? 0} members</span>
+                <span>
+                  {company.memberCount ?? 0}{" "}
+                  {company.memberCount === 1
+                    ? t("companies.member", "member")
+                    : t("companies.members", "members")}
+                </span>
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold">
-                <span>{company.visitCount ?? 0} visits</span>
+                <span>
+                  {company.visitCount ?? 0}{" "}
+                  {company.visitCount === 1
+                    ? t("companies.visit", "visit")
+                    : t("companies.visits", "visits")}
+                </span>
               </span>
             </div>
 
@@ -202,7 +214,7 @@ export default function AdminCompaniesPage() {
                   type="button"
                   onClick={() => openAddSubCompany(company.id)}
                   className="p-2 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs transition-colors cursor-pointer"
-                  title="Add Branch / Subsidiary"
+                  title={t("companies.addSubCompany", "Add Branch / Subsidiary")}
                 >
                   <Plus className="size-3.5" />
                 </button>
@@ -210,7 +222,7 @@ export default function AdminCompaniesPage() {
                   type="button"
                   onClick={() => handleOpenEdit(company)}
                   className="p-2 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 transition-colors cursor-pointer"
-                  title="Edit Company"
+                  title={t("companies.editCompany", "Edit Company")}
                 >
                   <Edit2 className="size-3.5" />
                 </button>
@@ -218,7 +230,7 @@ export default function AdminCompaniesPage() {
                   type="button"
                   onClick={() => setDeleteCompanyTarget(company)}
                   className="p-2 rounded-xl border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 transition-colors cursor-pointer"
-                  title="Delete Company"
+                  title={t("companies.deleteCompany", "Delete Company")}
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -251,10 +263,10 @@ export default function AdminCompaniesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">
-            Companies & Hierarchy Tree
+            {t("companies.title", "Companies & Hierarchy Tree")}
           </h1>
           <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Organize root enterprises, partner branches, and allowed email domains
+            {t("companies.subtitle", "Organize root enterprises, partner branches, and allowed email domains")}
           </p>
         </div>
 
@@ -266,7 +278,7 @@ export default function AdminCompaniesPage() {
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-300 shadow-xs transition-colors cursor-pointer"
           >
             <RotateCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
+            <span>{t("common.refreshData", "Refresh")}</span>
           </button>
 
           {isSuperAdmin && (
@@ -276,7 +288,7 @@ export default function AdminCompaniesPage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="size-4" />
-              <span>Add Company</span>
+              <span>{t("companies.addCompany", "Add Company")}</span>
             </button>
           )}
         </div>
@@ -287,7 +299,7 @@ export default function AdminCompaniesPage() {
         <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          placeholder="Search companies by name or domain..."
+          placeholder={t("companies.searchPlaceholder", "Search companies by name or domain...")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
@@ -312,12 +324,19 @@ export default function AdminCompaniesPage() {
             <Building2 className="size-6" />
           </div>
           <h3 className="text-base font-bold text-slate-800 dark:text-zinc-200">
-            No Companies Found
+            {t("companies.noCompanies", "No Companies Found")}
           </h3>
           <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-sm mx-auto">
             {searchQuery
-              ? `No organizations matched "${searchQuery}".`
-              : "No organization units registered yet."}
+              ? t(
+                  "companies.noMatchForQuery",
+                  `No organizations matched "${searchQuery}".`,
+                  { query: searchQuery }
+                )
+              : t(
+                  "companies.noCompaniesRegistered",
+                  "No organization units registered yet."
+                )}
           </p>
         </div>
       ) : (
@@ -332,7 +351,9 @@ export default function AdminCompaniesPage() {
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                {createParentId ? "Add Sub-Company / Branch" : "Create New Organization"}
+                {createParentId
+                  ? t("companies.addSubCompanyTitle", "Add Sub-Company / Branch")
+                  : t("companies.createNewOrgTitle", "Create New Organization")}
               </h3>
               <button
                 type="button"
@@ -346,12 +367,15 @@ export default function AdminCompaniesPage() {
             <form onSubmit={submitCreate} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Company Name *
+                  {t("companies.nameLabel", "Company Name")} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Nordic Service Partner A/S"
+                  placeholder={t(
+                    "companies.companyNamePlaceholder",
+                    "e.g. Nordic Service Partner A/S"
+                  )}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -360,11 +384,14 @@ export default function AdminCompaniesPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Allowed Email Domains (comma-separated)
+                  {t("companies.domainsLabel", "Allowed Email Domains (comma-separated)")}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. ecpower.dk, partner.com"
+                  placeholder={t(
+                    "companies.domainsPlaceholder",
+                    "e.g. ecpower.dk, partner.com"
+                  )}
                   value={domains}
                   onChange={(e) => setDomains(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -373,11 +400,14 @@ export default function AdminCompaniesPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Contact Email (Optional)
+                  {t("companies.emailLabel", "Contact Email")}
                 </label>
                 <input
                   type="email"
-                  placeholder="service@company.com"
+                  placeholder={t(
+                    "companies.contactEmailPlaceholder",
+                    "service@company.com"
+                  )}
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -386,11 +416,14 @@ export default function AdminCompaniesPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Contact Phone (Optional)
+                  {t("companies.phoneLabel", "Contact Phone")}
                 </label>
                 <input
                   type="text"
-                  placeholder="+45 12 34 56 78"
+                  placeholder={t(
+                    "companies.contactPhonePlaceholder",
+                    "+45 12 34 56 78"
+                  )}
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -403,13 +436,13 @@ export default function AdminCompaniesPage() {
                   onClick={closeCreateModal}
                   className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700"
                 >
-                  Create
+                  {t("companies.createButton", "Create")}
                 </button>
               </div>
             </form>
@@ -423,7 +456,7 @@ export default function AdminCompaniesPage() {
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                Edit Company
+                {t("companies.editCompanyModalTitle", "Edit Company")}
               </h3>
               <button
                 type="button"
@@ -437,7 +470,7 @@ export default function AdminCompaniesPage() {
             <form onSubmit={submitEdit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Company Name *
+                  {t("companies.nameLabel", "Company Name")} *
                 </label>
                 <input
                   type="text"
@@ -450,7 +483,7 @@ export default function AdminCompaniesPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Allowed Email Domains
+                  {t("companies.domainsLabelSimple", "Allowed Email Domains")}
                 </label>
                 <input
                   type="text"
@@ -462,7 +495,7 @@ export default function AdminCompaniesPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Contact Email
+                  {t("companies.emailLabel", "Contact Email")}
                 </label>
                 <input
                   type="email"
@@ -474,7 +507,7 @@ export default function AdminCompaniesPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Contact Phone
+                  {t("companies.phoneLabel", "Contact Phone")}
                 </label>
                 <input
                   type="text"
@@ -490,13 +523,13 @@ export default function AdminCompaniesPage() {
                   onClick={closeEditModal}
                   className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700"
                 >
-                  Save Changes
+                  {t("companies.saveChangesButton", "Save Changes")}
                 </button>
               </div>
             </form>
@@ -512,7 +545,7 @@ export default function AdminCompaniesPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="size-5 text-rose-600" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                  Delete Company?
+                  {t("companies.deleteModalTitle", "Delete Company?")}
                 </h3>
               </div>
               <button
@@ -525,7 +558,8 @@ export default function AdminCompaniesPage() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-              Are you sure you want to delete <strong>{deleteCompanyTarget.name}</strong>? Any child branches will also be removed.
+              {t("companies.confirmDelete", "Are you sure you want to delete this company?")}{" "}
+              (<strong>{deleteCompanyTarget.name}</strong>)
             </p>
 
             <div className="flex gap-2 pt-2">
@@ -534,14 +568,14 @@ export default function AdminCompaniesPage() {
                 onClick={closeDeleteModal}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </button>
               <button
                 type="button"
                 onClick={submitDelete}
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700"
               >
-                Delete Company
+                {t("companies.deleteConfirmButton", "Delete Company")}
               </button>
             </div>
           </div>

@@ -6,8 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { ROUTES } from "@/lib/constants";
 import { Zap } from "lucide-react";
+import { useTranslation } from "@/i18n";
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const router = useRouter();
 
@@ -45,7 +47,7 @@ export default function HomePage() {
           EC POWER
         </h2>
         <p className="text-[11px] font-bold tracking-widest uppercase text-amber-400 mb-6">
-          Admin Console
+          {t("navbar.adminConsole", "Admin Console")}
         </p>
         <div className="size-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
       </div>

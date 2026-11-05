@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { SubmissionMedia } from "@/types/submission";
+import { useTranslation } from "@/i18n";
 
 export interface MediaViewerModalProps {
   media: SubmissionMedia | null;
@@ -28,6 +29,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
   onPrev,
   hasMultiple,
 }) => {
+  const { t } = useTranslation();
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -74,7 +76,9 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               ) : (
                 <ImageIcon size={13} />
               )}
-              {media.type}
+              {media.type === "video"
+                ? t("modals.mediaViewer.video", "Video")
+                : t("modals.mediaViewer.photo", "Photo")}
             </span>
             <div>
               <h4 className="text-sm font-semibold text-white">
@@ -94,13 +98,14 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
               target="_blank"
               rel="noreferrer"
               className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-              title="Download full media"
+              title={t("modals.mediaViewer.download", "Download Media")}
             >
               <Download size={18} />
             </a>
             <button
               onClick={onClose}
               className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              title={t("modals.mediaViewer.close", "Close Preview")}
             >
               <X size={20} />
             </button>

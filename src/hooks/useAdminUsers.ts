@@ -3,12 +3,14 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/admin.service";
+import { useTranslation } from "@/i18n";
 import type { PendingAccessRequest, Company } from "@/types/admin";
 import type { User, UserRole } from "@/types/auth";
 
 export type UsersTab = "members" | "requests";
 
 export function useAdminUsers() {
+  const { t } = useTranslation();
   const { user, isLoading: isAuthLoading } = useAuth();
   const loadRunId = useRef(0);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,7 +106,15 @@ export function useAdminUsers() {
   }, [isAuthLoading, user, isSuperAdmin]);
 
   useEffect(() => {
-    loadData();
+    let isCancelled = false;
+    Promise.resolve().then(() => {
+      if (!isCancelled) {
+        loadData();
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
   }, [loadData]);
 
   const onRefresh = useCallback(() => {
@@ -202,20 +212,20 @@ export function useAdminUsers() {
       try {
         const res = await AdminService.approveRequest(requestId, companyId, companyName, role);
         if (res.success) {
-          showToast("Applicant approved and account created");
+          showToast(t("users.toasts.applicantApproved", "Applicant approved and account created"));
         } else {
-          showToast("Failed to approve applicant");
+          showToast(t("users.toasts.applicantApproveFailed", "Failed to approve applicant"));
         }
         await loadData();
       } catch (e) {
         console.error("Approve failed:", e);
-        showToast("Failed to approve applicant");
+        showToast(t("users.toasts.applicantApproveFailed", "Failed to approve applicant"));
       } finally {
         setProcessingRequestId(null);
         setProcessingAction(null);
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const handleRejectConfirm = useCallback(
@@ -224,59 +234,59 @@ export function useAdminUsers() {
       setProcessingAction("rejecting");
       try {
         await AdminService.rejectRequest(requestId);
-        showToast("Access request rejected and purged");
+        showToast(t("users.toasts.requestRejected", "Access request rejected and purged"));
         await loadData();
       } catch (e) {
         console.error("Reject failed:", e);
-        showToast("Failed to reject request");
+        showToast(t("users.toasts.requestRejectFailed", "Failed to reject request"));
       } finally {
         setProcessingRequestId(null);
         setProcessingAction(null);
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const handleRoleConfirm = useCallback(
     async (userId: string, newRole: UserRole) => {
       try {
         await AdminService.updateUserRole(userId, newRole);
-        showToast("User role updated successfully");
+        showToast(t("users.toasts.roleUpdated", "User role updated successfully"));
         await loadData();
       } catch (e) {
         console.error("Update role failed:", e);
-        showToast("Failed to update user role");
+        showToast(t("users.toasts.roleUpdateFailed", "Failed to update user role"));
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const handleMoveConfirm = useCallback(
     async (userId: string, newCompanyId: string, newCompanyName: string) => {
       try {
         await AdminService.moveUserCompany(userId, newCompanyId, newCompanyName);
-        showToast("User transferred to new company successfully");
+        showToast(t("users.toasts.userMoved", "User transferred to new company successfully"));
         await loadData();
       } catch (e) {
         console.error("Move company failed:", e);
-        showToast("Failed to move user company");
+        showToast(t("users.toasts.userMoveFailed", "Failed to move user company"));
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const handlePurgeConfirm = useCallback(
     async (userId: string) => {
       try {
         await AdminService.purgeUser(userId);
-        showToast("User account permanently purged from directory");
+        showToast(t("users.toasts.userPurged", "User account permanently purged from directory"));
         await loadData();
       } catch (e) {
         console.error("Purge user failed:", e);
-        showToast("Failed to purge user");
+        showToast(t("users.toasts.userPurgeFailed", "Failed to purge user"));
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   return {

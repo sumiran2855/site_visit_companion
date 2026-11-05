@@ -14,6 +14,7 @@ import {
 import { SiteSubmission } from "@/types/submission";
 import { HttpClient } from "@/lib/api/httpClient";
 import { API_CONFIG } from "@/config/api.config";
+import { useTranslation } from "@/i18n";
 
 export interface ShareSiteModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
   submission,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
@@ -44,7 +46,9 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
           { expiresInDays: 30 }
         );
 
-        const token = (res?.data as any)?.token || (res as any)?.token;
+        const token =
+          (res?.data as { token?: string })?.token ||
+          (res as { token?: string })?.token;
         if (isMounted && token) {
           setShareToken(token);
           return;
@@ -152,10 +156,10 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
-                Share Inspection with Client
+                {t("modals.share.title", "Share Inspection with Client")}
               </h3>
               <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-                Generate read-only access link
+                {t("modals.share.subtitle", "Generate read-only access link")}
               </p>
             </div>
           </div>
@@ -182,7 +186,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
           {/* Security & Access Badge */}
           <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/60 text-[11px] text-slate-600 dark:text-zinc-300">
             <ShieldCheck size={15} className="text-emerald-500 shrink-0" />
-            <span>Read-only access • No account or login required for clients</span>
+            <span>{t("modals.share.readOnlyNotice", "Read-only access • No account or login required for clients")}</span>
           </div>
 
           {/* Share Link Preview Box */}
@@ -214,7 +218,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
             </div>
             {isGenerating && (
               <p className="text-[10px] text-sky-600 dark:text-sky-400">
-                Generating secure share token...
+                {t("modals.share.generating", "Generating secure share token...")}
               </p>
             )}
           </div>
@@ -234,12 +238,12 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
               {copied ? (
                 <>
                   <Check size={15} strokeWidth={2.5} />
-                  <span>Link Copied to Clipboard!</span>
+                  <span>{t("modals.share.copied", "Link Copied!")}</span>
                 </>
               ) : (
                 <>
                   <Copy size={15} />
-                  <span>Copy Secure Link</span>
+                  <span>{t("modals.share.copyLink", "Copy Public Link")}</span>
                 </>
               )}
             </button>
@@ -252,7 +256,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
                 className="py-2 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <ExternalLink size={13} className="text-slate-400" />
-                <span>Open in Web</span>
+                <span>{t("modals.share.openPreview", "Open Client View")}</span>
               </button>
 
               <button

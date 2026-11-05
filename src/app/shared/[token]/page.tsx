@@ -24,6 +24,8 @@ import {
 } from "@/services/shared-visit.service";
 import { CHECKLIST_SECTIONS_CONFIG } from "@/config/checklist.config";
 import { MediaViewerModal } from "@/components/submissions/MediaViewerModal";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { useTranslation } from "@/i18n";
 import type { SubmissionMedia } from "@/types/submission";
 
 interface PageProps {
@@ -31,6 +33,7 @@ interface PageProps {
 }
 
 export default function SharedVisitPage({ params }: PageProps) {
+  const { t } = useTranslation();
   const resolvedParams = use(params);
   const { token } = resolvedParams;
 
@@ -65,19 +68,56 @@ export default function SharedVisitPage({ params }: PageProps) {
     try {
       const payload = await SharedVisitService.getSharedVisit(token);
       setData(payload);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[SharedVisitPage] Error loading visit:", err);
-      setErrorMessage(
-        err?.message || "Shared site visit not found or link has expired."
-      );
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Shared site visit not found or link has expired.";
+      setErrorMessage(msg);
     } finally {
       setIsLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isCancelled = false;
+
+    Promise.resolve().then(async () => {
+      if (!token) {
+        if (!isCancelled) {
+          setErrorMessage("Missing share token in link.");
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const payload = await SharedVisitService.getSharedVisit(token);
+        if (!isCancelled) {
+          setData(payload);
+          setErrorMessage(null);
+        }
+      } catch (err: unknown) {
+        if (!isCancelled) {
+          console.error("[SharedVisitPage] Error loading visit:", err);
+          const msg =
+            err instanceof Error
+              ? err.message
+              : "Shared site visit not found or link has expired.";
+          setErrorMessage(msg);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [token]);
 
   const toggleSection = (sectionId: string) => {
     setOpenSections((prev) => ({
@@ -103,7 +143,7 @@ export default function SharedVisitPage({ params }: PageProps) {
     if (!data) return "";
     if (data.service?.sections) {
       const sec = data.service.sections.find(
-        (s) => s.section_id === sectionId || (s as any).id === sectionId
+        (s) => s.section_id === sectionId || (s as { id?: string; section_id?: string }).id === sectionId
       );
       if (sec?.fields && sec.fields[fieldId] !== undefined) {
         const raw = sec.fields[fieldId];
@@ -136,7 +176,7 @@ export default function SharedVisitPage({ params }: PageProps) {
     if (!data) return null;
     if (data.service?.sections) {
       const sec = data.service.sections.find(
-        (s) => s.section_id === sectionId || (s as any).id === sectionId
+        (s) => s.section_id === sectionId || (s as { id?: string; section_id?: string }).id === sectionId
       );
       if (sec?.fields) {
         const note = sec.fields[`${fieldId}_notes`];
@@ -153,13 +193,15 @@ export default function SharedVisitPage({ params }: PageProps) {
     return data.media.filter((m) => m.sectionId === sectionId);
   };
 
-  const handleOpenMedia = (mediaItem: any) => {
+  const handleOpenMedia = (
+    mediaItem: NonNullable<SharedVisitPayload["media"]>[number]
+  ) => {
     setActiveMedia({
       id: mediaItem.id,
       type: mediaItem.type === "video" ? "video" : "photo",
       title: mediaItem.fileName || "Evidence Media",
-      url: mediaItem.signedUrl || mediaItem.url,
-      thumbnailUrl: mediaItem.signedUrl || mediaItem.url,
+      url: mediaItem.signedUrl,
+      thumbnailUrl: mediaItem.signedUrl,
       fieldId: mediaItem.fieldId || "",
       takenAt: data?.visit.updatedAt || new Date().toISOString(),
       notes: mediaItem.notes || undefined,
@@ -195,10 +237,10 @@ export default function SharedVisitPage({ params }: PageProps) {
           <Zap className="size-7 sm:size-8 text-amber-400 fill-current animate-pulse" />
         </div>
         <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mb-1">
-          Loading Site Visit Report...
+          {t("shared.loadingTitle", "Loading Site Visit Report...")}
         </h2>
         <p className="text-[11px] sm:text-xs text-slate-400 dark:text-zinc-500 mb-4 text-center">
-          Retrieving verified inspection records and high-resolution media
+          {t("shared.loadingSubtitle", "Retrieving verified inspection records and high-resolution media")}
         </p>
         <Loader2 className="size-5 sm:size-6 text-sky-600 animate-spin" />
       </div>
@@ -213,18 +255,18 @@ export default function SharedVisitPage({ params }: PageProps) {
           <AlertCircle className="size-6 sm:size-7 text-rose-600 dark:text-rose-400" />
         </div>
         <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2">
-          Unable to Open Inspection Report
+          {t("shared.errorTitle", "Unable to Open Inspection Report")}
         </h1>
         <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mb-5 leading-relaxed">
           {errorMessage ||
-            "This share link is invalid or may have expired. Please request a new link from your service technician or administrator."}
+            t("shared.errorDefault", "This share link is invalid or may have expired. Please request a new link from your service technician or administrator.")}
         </p>
         <button
           type="button"
           onClick={loadData}
           className="py-2 px-4 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-sky-600 hover:bg-slate-800 dark:hover:bg-sky-500 shadow-sm transition-all cursor-pointer"
         >
-          Retry Loading
+          {t("shared.retry", "Retry Loading")}
         </button>
       </div>
     );
@@ -259,34 +301,36 @@ export default function SharedVisitPage({ params }: PageProps) {
                   EC POWER
                 </span>
                 <span className="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shrink-0">
-                  Audit Report
+                  {t("shared.auditReport", "Audit Report")}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 dark:text-zinc-500 hidden sm:block truncate">
-                Technical Site Assessment & Feasibility
+                {t("shared.headerSubtitle", "Technical Site Assessment & Feasibility")}
               </p>
             </div>
           </div>
 
           {/* Header Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <LanguageSwitcher />
+
             <button
               type="button"
               onClick={handleCopyLink}
               className="py-1.5 px-2.5 sm:px-3 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Copy link"
+              title={t("shared.share", "Share")}
             >
               {copySuccess ? (
                 <>
                   <Check size={13} className="text-emerald-500 shrink-0" />
                   <span className="text-emerald-600 font-bold text-[11px] sm:text-xs">
-                    Copied
+                    {t("shared.copied", "Copied")}
                   </span>
                 </>
               ) : (
                 <>
                   <Share2 size={13} className="shrink-0" />
-                  <span className="hidden sm:inline text-xs">Share</span>
+                  <span className="hidden sm:inline text-xs">{t("shared.share", "Share")}</span>
                 </>
               )}
             </button>
@@ -301,12 +345,12 @@ export default function SharedVisitPage({ params }: PageProps) {
               {isDownloadingPdf ? (
                 <>
                   <Loader2 size={13} className="animate-spin" />
-                  <span>Preparing PDF...</span>
+                  <span>{t("shared.preparingPdf", "Preparing PDF...")}</span>
                 </>
               ) : (
                 <>
                   <Download size={13} />
-                  <span>Download PDF</span>
+                  <span>{t("shared.downloadPdf", "Download PDF")}</span>
                 </>
               )}
             </button>
@@ -321,11 +365,11 @@ export default function SharedVisitPage({ params }: PageProps) {
           <div className="flex items-center gap-2 min-w-0">
             <ShieldCheck size={17} className="text-sky-600 dark:text-sky-400 shrink-0" />
             <p className="text-[11px] sm:text-xs text-sky-900 dark:text-sky-200 leading-snug truncate">
-              <span className="font-bold">Authorized Audit:</span> Read-only technical verification with photo evidence.
+              <span className="font-bold">{t("shared.authorizedAudit", "Authorized Audit:")}</span> {t("shared.authorizedAuditDesc", "Read-only technical verification with photo evidence.")}
             </p>
           </div>
           <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-sky-700 dark:text-sky-300 shrink-0 bg-sky-100 dark:bg-sky-900/60 px-2 py-0.5 rounded-full">
-            Verified
+            {t("shared.verified", "Verified")}
           </span>
         </div>
 
@@ -336,10 +380,10 @@ export default function SharedVisitPage({ params }: PageProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                   {visit.status === "completed"
-                    ? "✓ Audit Completed"
+                    ? t("shared.auditCompleted", "✓ Audit Completed")
                     : visit.status === "in_progress"
-                    ? "In Progress"
-                    : "Verified"}
+                    ? t("shared.inProgress", "In Progress")
+                    : t("shared.verified", "Verified")}
                 </span>
                 <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
                   REF: {visit.id.substring(0, 8)}
@@ -369,7 +413,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                 ) : (
                   <Download size={13} />
                 )}
-                <span>Download Report PDF</span>
+                <span>{t("shared.downloadReportPdf", "Download Report PDF")}</span>
               </button>
             </div>
           </div>
@@ -379,7 +423,7 @@ export default function SharedVisitPage({ params }: PageProps) {
             <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-800 space-y-0.5">
               <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                 <Calendar size={11} className="shrink-0" />
-                Date
+                {t("shared.date", "Date")}
               </span>
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {meetingDateStr || new Date(visit.createdAt).toLocaleDateString()}
@@ -389,7 +433,7 @@ export default function SharedVisitPage({ params }: PageProps) {
             <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-800 space-y-0.5">
               <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                 <User size={11} className="shrink-0" />
-                Technician
+                {t("shared.technician", "Technician")}
               </span>
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {visit.technicianName || "Certified Field Technician"}
@@ -399,7 +443,7 @@ export default function SharedVisitPage({ params }: PageProps) {
             <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-800 space-y-0.5">
               <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                 <Building2 size={11} className="shrink-0" />
-                Partner
+                {t("shared.partner", "Partner")}
               </span>
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {visit.companyName || "EC POWER Inc."}
@@ -409,10 +453,10 @@ export default function SharedVisitPage({ params }: PageProps) {
             <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-800 space-y-0.5">
               <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                 <ImageIcon size={11} className="shrink-0" />
-                Evidence
+                {t("shared.evidence", "Evidence")}
               </span>
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                {data.media.length} item{data.media.length === 1 ? "" : "s"}
+                {data.media.length} {t("submissions.mediaCount", "{{count}} files", { count: data.media.length })}
               </p>
             </div>
           </div>
@@ -421,7 +465,7 @@ export default function SharedVisitPage({ params }: PageProps) {
           <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-zinc-800">
             <div className="flex items-center justify-between text-[11px] font-bold mb-1">
               <span className="text-slate-600 dark:text-zinc-400">
-                Checklist Audit Progress
+                {t("shared.auditProgress", "Checklist Audit Progress")}
               </span>
               <span className="text-slate-900 dark:text-white font-mono">
                 {visit.completedFields} / {visit.totalFields} verified ({visit.completionPercentage}%)
@@ -440,10 +484,10 @@ export default function SharedVisitPage({ params }: PageProps) {
         <div className="flex items-center justify-between px-1">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-              Inspection Sections
+              {t("shared.sectionsTitle", "Inspection Sections")}
             </h2>
             <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-              Audit data, compliance checks, and attached media
+              {t("shared.sectionsSubtitle", "Audit data, compliance checks, and attached media")}
             </p>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -452,7 +496,7 @@ export default function SharedVisitPage({ params }: PageProps) {
               onClick={handleExpandAll}
               className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
             >
-              Expand all
+              {t("shared.expandAll", "Expand all")}
             </button>
             <span className="text-slate-300 dark:text-zinc-700">•</span>
             <button
@@ -460,7 +504,7 @@ export default function SharedVisitPage({ params }: PageProps) {
               onClick={handleCollapseAll}
               className="text-xs font-semibold text-slate-500 dark:text-zinc-400 hover:underline cursor-pointer"
             >
-              Collapse all
+              {t("shared.collapseAll", "Collapse all")}
             </button>
           </div>
         </div>
@@ -601,6 +645,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                               onClick={() => handleOpenMedia(mediaItem)}
                               className="group relative aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:border-sky-500 transition-all cursor-pointer shadow-xs active:scale-95"
                             >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={mediaItem.signedUrl}
                                 alt={mediaItem.fileName}
@@ -627,10 +672,10 @@ export default function SharedVisitPage({ params }: PageProps) {
         {/* Bottom Card for Desktop */}
         <div className="hidden sm:block p-6 rounded-3xl bg-slate-900 text-white text-center space-y-2.5 shadow-md">
           <h3 className="text-base font-bold">
-            Download Official Inspection PDF Report
+            {t("shared.downloadCardTitle", "Download Official Inspection PDF Report")}
           </h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-            Compiled multi-section audit specification with verified technical tables, notes, and evidence media.
+            {t("shared.downloadCardDesc", "Compiled multi-section audit specification with verified technical tables, notes, and evidence media.")}
           </p>
           <div className="pt-1">
             <button
@@ -644,7 +689,7 @@ export default function SharedVisitPage({ params }: PageProps) {
               ) : (
                 <Download size={14} />
               )}
-              <span>Download Official Report PDF</span>
+              <span>{t("shared.downloadReportPdf", "Download Official Report PDF")}</span>
             </button>
           </div>
         </div>
@@ -668,12 +713,12 @@ export default function SharedVisitPage({ params }: PageProps) {
           {isDownloadingPdf ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              <span>Generating Official PDF...</span>
+              <span>{t("shared.preparingPdf", "Generating Official PDF...")}</span>
             </>
           ) : (
             <>
               <Download size={16} />
-              <span>Download Report PDF</span>
+              <span>{t("shared.downloadReportPdf", "Download Report PDF")}</span>
             </>
           )}
         </button>

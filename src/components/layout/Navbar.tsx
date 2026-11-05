@@ -22,6 +22,8 @@ import {
 import { ROUTES } from "@/lib/constants";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthService } from "@/services/auth.service";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { useTranslation } from "@/i18n";
 
 export interface NavbarProps {
   subtitle?: string;
@@ -40,6 +42,7 @@ export function Navbar({
 }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useTranslation();
   const {
     user,
     logout,
@@ -51,7 +54,6 @@ export function Navbar({
   } = useAuth();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showMobileNav, setShowMobileNav] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Edit Name Modal State
@@ -61,14 +63,6 @@ export function Navbar({
   const [middleName, setMiddleName] = useState(user?.middleName || "");
   const [isSavingName, setIsSavingName] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName || "");
-      setLastName(user.lastName || "");
-      setMiddleName(user.middleName || "");
-    }
-  }, [user]);
 
   // Click outside to close user dropdown
   useEffect(() => {
@@ -84,7 +78,6 @@ export function Navbar({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setShowUserMenu(false);
-        setShowMobileNav(false);
       }
     }
 
@@ -109,53 +102,52 @@ export function Navbar({
   };
 
   const defaultSubtitle = isSuperAdmin
-    ? "Super Admin Hub"
+    ? t("navbar.superAdminHub", "Super Admin Hub")
     : isCompanyAdmin
-    ? "Company Admin Portal"
-    : "Admin Console";
+    ? t("navbar.companyAdminPortal", "Company Admin Portal")
+    : t("navbar.adminConsole", "Admin Console");
   const displaySubtitle = subtitle || defaultSubtitle;
-  const userCompany = user?.requestedCompany || user?.companyName || "";
 
   // Admin Navigation Links
   const navItems = [
     {
       href: ROUTES.ADMIN,
-      label: "Dashboard",
+      label: t("navbar.dashboard", "Dashboard"),
       icon: LayoutDashboard,
       isActive: pathname === ROUTES.ADMIN,
       show: true,
     },
     {
       href: ROUTES.ADMIN_SUBMISSIONS,
-      label: "Submissions",
+      label: t("navbar.submissions", "Submissions"),
       icon: Inbox,
       isActive: pathname.startsWith(ROUTES.ADMIN_SUBMISSIONS),
       show: true,
     },
     {
       href: ROUTES.ADMIN_USERS,
-      label: "Accounts",
+      label: t("navbar.accounts", "Accounts"),
       icon: Users,
       isActive: pathname.startsWith(ROUTES.ADMIN_USERS),
       show: true,
     },
     {
       href: ROUTES.ADMIN_COMPANIES,
-      label: "Companies",
+      label: t("navbar.companies", "Companies"),
       icon: FolderTree,
       isActive: pathname.startsWith(ROUTES.ADMIN_COMPANIES),
       show: true,
     },
     {
       href: ROUTES.ADMIN_TEMPLATES,
-      label: "PDF Template",
+      label: t("navbar.pdfTemplate", "PDF Template"),
       icon: FileCode,
       isActive: pathname.startsWith(ROUTES.ADMIN_TEMPLATES),
       show: true,
     },
     {
       href: ROUTES.ADMIN_RETENTION,
-      label: "Retention",
+      label: t("navbar.retention", "Retention"),
       icon: Trash2,
       isActive: pathname.startsWith(ROUTES.ADMIN_RETENTION),
       show: true,
@@ -175,11 +167,12 @@ export function Navbar({
     "A"
   ).toUpperCase();
 
-  const roleLabel = isAdmin ? "Administrator" : "Technician";
+  const roleLabel = isAdmin
+    ? t("navbar.administrator", "Administrator")
+    : t("navbar.technician", "Technician");
 
   const handleLogout = async () => {
     setShowUserMenu(false);
-    setShowMobileNav(false);
     await logout();
     router.replace(ROUTES.AUTH);
   };
@@ -205,7 +198,9 @@ export function Navbar({
       });
 
       setShowEditNameModal(false);
-      showToast("Profile name updated successfully");
+      showToast(
+        t("navbar.profileNameUpdated", "Profile name updated successfully")
+      );
     } finally {
       setIsSavingName(false);
     }
@@ -280,6 +275,9 @@ export function Navbar({
                 <div className="flex items-center gap-2">{actions}</div>
               )}
 
+              {/* Language Switcher */}
+              <LanguageSwitcher align="right" />
+
               {/* Authenticated Admin Badge + Dropdown */}
               {isAuthenticated && (
                 <div className="relative" ref={userMenuRef}>
@@ -344,13 +342,16 @@ export function Navbar({
                       <button
                         type="button"
                         onClick={() => {
+                          setFirstName(user?.firstName || "");
+                          setLastName(user?.lastName || "");
+                          setMiddleName(user?.middleName || "");
                           setShowUserMenu(false);
                           setShowEditNameModal(true);
                         }}
                         className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-left"
                       >
                         <User className="size-4 text-slate-400" />
-                        <span>Edit Profile Name</span>
+                        <span>{t("navbar.editProfileName", "Edit Profile Name")}</span>
                       </button>
 
                       {/* Sign Out */}
@@ -361,7 +362,7 @@ export function Navbar({
                           className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
                         >
                           <LogOut className="size-4" />
-                          <span>Sign Out</span>
+                          <span>{t("navbar.signOut", "Sign Out")}</span>
                         </button>
                       </div>
                     </div>
@@ -379,7 +380,7 @@ export function Navbar({
           <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                Edit Profile Name
+                {t("navbar.editProfileName", "Edit Profile Name")}
               </h3>
               <button
                 type="button"
@@ -393,7 +394,7 @@ export function Navbar({
             <form onSubmit={handleSaveName} className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                  First Name
+                  {t("navbar.firstName", "First Name")}
                 </label>
                 <input
                   type="text"
@@ -406,7 +407,7 @@ export function Navbar({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                  Middle Name (Optional)
+                  {t("navbar.middleName", "Middle Name (Optional)")}
                 </label>
                 <input
                   type="text"
@@ -418,7 +419,7 @@ export function Navbar({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                  Last Name
+                  {t("navbar.lastName", "Last Name")}
                 </label>
                 <input
                   type="text"
@@ -435,14 +436,14 @@ export function Navbar({
                   onClick={() => setShowEditNameModal(false)}
                   className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingName}
                   className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 disabled:opacity-60"
                 >
-                  {isSavingName ? "Saving..." : "Save Changes"}
+                  {isSavingName ? t("common.saving", "Saving...") : t("common.save", "Save Changes")}
                 </button>
               </div>
             </form>

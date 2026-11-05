@@ -3,9 +3,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/admin.service";
+import { useTranslation } from "@/i18n";
 import type { Company, CreateCompanyInput, UpdateCompanyInput } from "@/types/admin";
 
 export function useAdminCompanies() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin" || user?.role === "admin";
   const isCompanyAdmin = user?.role === "company_admin";
@@ -54,8 +56,26 @@ export function useAdminCompanies() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isCancelled = false;
+    AdminService.listCompaniesWithCounts()
+      .then((data) => {
+        if (!isCancelled) {
+          setCompanies(data);
+        }
+      })
+      .catch((e) => {
+        console.error("[useAdminCompanies] Failed to load companies:", e);
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -113,42 +133,56 @@ export function useAdminCompanies() {
     async (input: CreateCompanyInput) => {
       try {
         await AdminService.createCompany(input);
-        showToast(input.parentId ? "Sub-company added successfully" : "Company created");
+        showToast(
+          input.parentId
+            ? t("companies.toastSubCompanyAdded", "Sub-company added successfully")
+            : t("companies.toastCompanyCreated", "Company created")
+        );
         await loadData();
       } catch (err: unknown) {
         console.error("Create company failed:", err);
-        showToast(input.parentId ? "Failed to add sub-company" : "Failed to create company");
+        showToast(
+          input.parentId
+            ? t("companies.toastSubCompanyFailed", "Failed to add sub-company")
+            : t("companies.toastCompanyCreateFailed", "Failed to create company")
+        );
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const handleEditConfirm = useCallback(
     async (id: string, input: UpdateCompanyInput) => {
       try {
         await AdminService.updateCompany(id, input);
-        showToast("Company updated successfully");
+        showToast(
+          t("companies.toastCompanyUpdated", "Company updated successfully")
+        );
         await loadData();
       } catch (err: unknown) {
         console.error("Update company failed:", err);
-        showToast("Failed to update company");
+        showToast(
+          t("companies.toastCompanyUpdateFailed", "Failed to update company")
+        );
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const handleDeleteConfirm = useCallback(
     async (id: string) => {
       try {
         await AdminService.deleteCompany(id);
-        showToast("Company removed");
+        showToast(t("companies.toastCompanyRemoved", "Company removed"));
         await loadData();
       } catch (err: unknown) {
         console.error("Delete company failed:", err);
-        showToast("Failed to remove company");
+        showToast(
+          t("companies.toastCompanyRemoveFailed", "Failed to remove company")
+        );
       }
     },
-    [loadData, showToast]
+    [loadData, showToast, t]
   );
 
   const openAddSubCompany = useCallback((parentId: string) => {

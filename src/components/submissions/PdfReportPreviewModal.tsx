@@ -7,18 +7,16 @@ import {
   Printer,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
-  FileText,
   FileCheck2,
   Loader2,
   CheckCircle2,
-  ExternalLink,
   AlertCircle,
   Eye,
 } from "lucide-react";
 import type { SiteSubmission } from "@/types/submission";
 import type { PDFTemplate } from "@/types/admin";
 import { PdfService } from "@/services/pdf.service";
+import { useTranslation } from "@/i18n";
 
 export interface PdfReportPreviewModalProps {
   isOpen: boolean;
@@ -31,6 +29,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
   onClose,
   submission,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"preview" | "pdf">("preview");
   const [zoom, setZoom] = useState<number>(100);
   const [htmlContent, setHtmlContent] = useState<string>("");
@@ -66,17 +65,19 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
     } catch {}
   };
 
-  // Compile and fetch on open
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // Reset view state
+  const handleClose = useCallback(() => {
     setZoom(100);
     setActiveTab("preview");
     setPdfBlob(null);
     setPdfBlobUrl(null);
     setIsDownloading(false);
     setNotice(null);
+    onClose();
+  }, [onClose]);
+
+  // Compile and fetch on open
+  useEffect(() => {
+    if (!isOpen) return;
 
     // 1. Instant HTML preview compilation with currently available data
     const reportData = PdfService.extractReportData(submission);
@@ -89,7 +90,9 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
       notes: reportData.notes,
       photos: reportData.photos,
     });
-    setHtmlContent(instantHtml);
+    Promise.resolve().then(() => {
+      setHtmlContent(instantHtml);
+    });
 
     // 2. Fetch full raw checklist values from Supabase visit_records
     PdfService.fetchRawChecklistValues(submission.id)
@@ -147,22 +150,24 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
       .catch(() => {});
 
     // 4. Start background generation of official high-res PDF binary
-    setIsGeneratingPdf(true);
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    PdfService.fetchReportPdfBlob(
-      {
-        visitId: submission.id,
-        siteName: submission.siteName,
-        companyName: submission.customer,
-        technicianName: submission.sentBy,
-        values: reportData.values,
-        notes: reportData.notes,
-        photos: reportData.photos,
-      },
-      controller.signal
-    )
+    Promise.resolve().then(() => {
+      setIsGeneratingPdf(true);
+      return PdfService.fetchReportPdfBlob(
+        {
+          visitId: submission.id,
+          siteName: submission.siteName,
+          companyName: submission.customer,
+          technicianName: submission.sentBy,
+          values: reportData.values,
+          notes: reportData.notes,
+          photos: reportData.photos,
+        },
+        controller.signal
+      );
+    })
       .then((blob) => {
         if (blob) {
           setPdfBlob(blob);
@@ -193,14 +198,14 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
         return null;
       });
     };
-  }, [isOpen, submission]);
+  }, [isOpen, submission, activeTemplate]);
 
   // Keyboard shortcut for Escape & Body lock
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     },
-    [onClose]
+    [handleClose]
   );
 
   useEffect(() => {
@@ -292,7 +297,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative w-full max-w-6xl h-[94vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
@@ -308,7 +313,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white truncate">
-                  PDF Report Preview
+                  {t("modals.pdfPreview.title", "Site Inspection Report")}
                 </h3>
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                   {activeTemplate ? activeTemplate.name : "Standard Template"}
@@ -332,7 +337,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
               }`}
             >
               <Eye size={13} />
-              <span>Interactive Preview</span>
+              <span>{t("modals.pdfPreview.previewTab", "HTML Preview")}</span>
             </button>
 
             <button
@@ -345,7 +350,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
               }`}
             >
               <FileCheck2 size={13} />
-              <span>Official PDF</span>
+              <span>{t("modals.pdfPreview.pdfTab", "Rendered PDF")}</span>
               {isGeneratingPdf ? (
                 <Loader2 size={11} className="animate-spin text-sky-300 ml-0.5" />
               ) : pdfBlobUrl ? (
@@ -364,7 +369,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   onClick={handleZoomOut}
                   disabled={zoom <= 60}
                   className="p-1.5 hover:text-white disabled:opacity-30 transition-colors cursor-pointer"
-                  title="Zoom Out"
+                  title={t("modals.pdfPreview.zoomOut", "Zoom Out")}
                 >
                   <ZoomOut size={13} />
                 </button>
@@ -372,7 +377,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   type="button"
                   onClick={handleResetZoom}
                   className="px-2 py-0.5 font-mono text-[11px] font-semibold hover:text-white transition-colors cursor-pointer"
-                  title="Reset Zoom to 100%"
+                  title={t("modals.pdfPreview.resetZoom", "Reset Zoom")}
                 >
                   {zoom}%
                 </button>
@@ -381,7 +386,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   onClick={handleZoomIn}
                   disabled={zoom >= 150}
                   className="p-1.5 hover:text-white disabled:opacity-30 transition-colors cursor-pointer"
-                  title="Zoom In"
+                  title={t("modals.pdfPreview.zoomIn", "Zoom In")}
                 >
                   <ZoomIn size={13} />
                 </button>
@@ -396,7 +401,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
               title="Print document or Save via Print"
             >
               <Printer size={13} className="text-slate-400" />
-              <span className="hidden sm:inline">Print</span>
+              <span className="hidden sm:inline">{t("modals.pdfPreview.print", "Print")}</span>
             </button>
 
             {/* Download PDF Button */}
@@ -413,17 +418,17 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
               )}
               <span>
                 {isDownloading
-                  ? "Preparing PDF..."
-                  : "Download PDF"}
+                  ? t("modals.pdfPreview.generating", "Rendering PDF Report...")
+                  : t("modals.pdfPreview.download", "Download Report (PDF)")}
               </span>
             </button>
 
             {/* Close Button */}
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors ml-1 cursor-pointer"
-              title="Close Preview (Esc)"
+              title={t("modals.pdfPreview.close", "Close")}
             >
               <X size={18} />
             </button>

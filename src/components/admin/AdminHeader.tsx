@@ -16,7 +16,7 @@ export interface AdminHeaderProps {
  * Delegates directly to Navbar to ensure DRY principle.
  */
 export function AdminHeader({
-  subtitle = "Admin Console",
+  subtitle,
   actions,
   backHref,
   backLabel,

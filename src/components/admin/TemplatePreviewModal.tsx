@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   X,
   Printer,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { PDFTemplate, TemplatePage } from "@/types/template";
 import { PdfService, ReportPhotoItem } from "@/services/pdf.service";
+import { useTranslation } from "@/i18n";
 
 interface TemplatePreviewModalProps {
   isOpen: boolean;
@@ -42,10 +43,15 @@ export function TemplatePreviewModal({
   pages,
   templateMeta,
 }: TemplatePreviewModalProps) {
+  const { t } = useTranslation();
   const [zoom, setZoom] = useState<number>(100);
-  const [htmlContent, setHtmlContent] = useState<string>("");
   const [iframeHeight, setIframeHeight] = useState<number>(1800);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  const handleClose = () => {
+    setZoom(100);
+    onClose();
+  };
 
   // Measure and adjust iframe height to display all pages without clipping
   const handleIframeLoad = () => {
@@ -62,10 +68,8 @@ export function TemplatePreviewModal({
     } catch {}
   };
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    setZoom(100);
+  const htmlContent = useMemo(() => {
+    if (!isOpen) return "";
 
     // Thoroughly strip any "§" (Section sign) from all page titles, labels, placeholders & contents
     const stripSection = (s?: string) =>
@@ -204,7 +208,7 @@ export function TemplatePreviewModal({
       },
     });
 
-    setHtmlContent(compiledHtml);
+    return compiledHtml;
   }, [isOpen, pages, templateMeta]);
 
   const handlePrint = () => {
@@ -243,14 +247,14 @@ export function TemplatePreviewModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                  PDF Report Preview
+                  {t("template.previewModal.title", "PDF Report Preview")}
                 </h3>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-                  {pages.length} {pages.length === 1 ? "Page" : "Pages"} Formatted
+                  {pages.length} {pages.length === 1 ? t("template.previewModal.page", "Page") : t("template.previewModal.pages", "Pages")} {t("template.previewModal.formatted", "Formatted")}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                Full multi-page report rendered exactly according to your active template.
+                {t("template.previewModal.desc", "Full multi-page report rendered exactly according to your active template.")}
               </p>
             </div>
           </div>
@@ -262,7 +266,7 @@ export function TemplatePreviewModal({
                 type="button"
                 onClick={() => setZoom((z) => Math.max(z - 10, 50))}
                 className="p-1 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
-                title="Zoom Out"
+                title={t("template.previewModal.zoomOut", "Zoom Out")}
               >
                 <ZoomOut className="size-3.5" />
               </button>
@@ -273,7 +277,7 @@ export function TemplatePreviewModal({
                 type="button"
                 onClick={() => setZoom((z) => Math.min(z + 10, 150))}
                 className="p-1 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
-                title="Zoom In"
+                title={t("template.previewModal.zoomIn", "Zoom In")}
               >
                 <ZoomIn className="size-3.5" />
               </button>
@@ -281,7 +285,7 @@ export function TemplatePreviewModal({
                 type="button"
                 onClick={() => setZoom(100)}
                 className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors ml-0.5"
-                title="Reset Zoom"
+                title={t("template.previewModal.resetZoom", "Reset Zoom")}
               >
                 <RotateCcw className="size-3" />
               </button>
@@ -292,10 +296,10 @@ export function TemplatePreviewModal({
               type="button"
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors shadow-2xs"
-              title="Print full multi-page report"
+              title={t("template.previewModal.printTitle", "Print full multi-page report")}
             >
               <Printer className="size-3.5 text-slate-500 dark:text-zinc-400" />
-              <span className="hidden sm:inline">Print</span>
+              <span className="hidden sm:inline">{t("template.previewModal.print", "Print")}</span>
             </button>
 
             {/* Download PDF Button */}
@@ -303,15 +307,15 @@ export function TemplatePreviewModal({
               type="button"
               onClick={handleDownload}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md active:scale-95"
-              title="Download or save as PDF"
+              title={t("template.previewModal.downloadTitle", "Download or save as PDF")}
             >
               <Download className="size-3.5" />
-              <span>Download PDF</span>
+              <span>{t("template.previewModal.downloadPdf", "Download PDF")}</span>
             </button>
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ml-1"
             >
               <X className="size-5" />

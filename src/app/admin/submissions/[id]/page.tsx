@@ -22,12 +22,14 @@ import { MediaViewerModal } from "@/components/submissions/MediaViewerModal";
 import { PdfReportPreviewModal } from "@/components/submissions/PdfReportPreviewModal";
 import { ShareSiteModal } from "@/components/submissions/ShareSiteModal";
 import { RequestMoreModal } from "@/components/submissions/RequestMoreModal";
+import { useTranslation } from "@/i18n";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function SubmissionDetailPage({ params }: PageProps) {
+  const { t } = useTranslation();
   const resolvedParams = use(params);
   const { id } = resolvedParams;
 
@@ -78,17 +80,17 @@ export default function SubmissionDetailPage({ params }: PageProps) {
     return (
       <div className="max-w-4xl mx-auto py-16 text-center">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white">
-          Inspection not found
+          {t("submissionDetail.notFoundTitle", "Inspection not found")}
         </h2>
         <p className="text-xs text-slate-500 mt-1 mb-4">
-          The requested site inspection does not exist or has been removed.
+          {t("submissionDetail.notFoundDesc", "The requested site inspection does not exist or has been removed.")}
         </p>
         <Link
           href="/admin/submissions"
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
         >
           <ChevronLeft size={16} />
-          Back to Submissions
+          {t("submissionDetail.backToSubmissions", "Back to Submissions")}
         </Link>
       </div>
     );
@@ -99,20 +101,20 @@ export default function SubmissionDetailPage({ params }: PageProps) {
       case "completed":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-            Completed
+            {t("submissionDetail.status.completed", "Completed")}
           </span>
         );
       case "in_progress":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
-            In progress
+            {t("submissionDetail.status.in_progress", "In Progress")}
           </span>
         );
       case "draft":
       default:
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
-            Draft
+            {t("submissionDetail.status.draft", "Draft")}
           </span>
         );
     }
@@ -140,7 +142,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
           className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
         >
           <ChevronLeft size={14} />
-          Submissions
+          {t("submissions.title", "Submissions")}
         </Link>
       </div>
 
@@ -154,9 +156,15 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             {renderStatusBadge(submission.status)}
           </div>
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
-            {submission.customer} · Inspected by {submission.sentBy} on{" "}
-            {submission.formattedDate} · {submission.mediaCount.photos} photos,{" "}
-            {submission.mediaCount.videos} videos
+            {submission.customer} ·{" "}
+            {t(
+              "submissionDetail.inspectedByOn",
+              `Inspected by ${submission.sentBy} on ${submission.formattedDate}`,
+              { technician: submission.sentBy, date: submission.formattedDate }
+            )}{" "}
+            · {submission.mediaCount.photos}{" "}
+            {t("submissions.table.photos", "photos")},{" "}
+            {submission.mediaCount.videos} {t("submissions.table.videos", "videos")}
           </p>
         </div>
 
@@ -168,7 +176,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
           >
             <Share2 size={14} className="text-slate-500 dark:text-zinc-400" />
-            <span>Share site</span>
+            <span>{t("submissionDetail.shareSite", "Share site")}</span>
           </button>
           <button
             type="button"
@@ -176,7 +184,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
           >
             <Download size={14} className="text-slate-500 dark:text-zinc-400" />
-            <span>Download ZIP</span>
+            <span>{t("submissionDetail.downloadZip", "Download ZIP")}</span>
           </button>
           <button
             type="button"
@@ -184,7 +192,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-2xs cursor-pointer"
           >
             <FileText size={14} className="text-slate-500 dark:text-zinc-400" />
-            <span>PDF report</span>
+            <span>{t("submissionDetail.exportPdfReport", "PDF report")}</span>
           </button>
         </div>
       </div>
@@ -195,7 +203,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
         <div className="lg:col-span-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-xs p-4 flex flex-col justify-between min-h-[460px]">
           <div>
             <h2 className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-              Survey Areas
+              {t("submissionDetail.areasTitle", "Survey Areas")}
             </h2>
             <div className="space-y-1">
               {submission.areas.map((area) => {
@@ -219,13 +227,13 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                       {isAreaOk && (
                         <span
                           className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
-                          title="Area OK"
+                          title={t("submissionDetail.areaOk", "Area OK")}
                         />
                       )}
                       {isMoreRequested && (
                         <span
                           className="w-2 h-2 rounded-full bg-amber-500 shrink-0"
-                          title="Updates Requested"
+                          title={t("submissionDetail.updatesRequested", "Updates Requested")}
                         />
                       )}
                       {!isAreaOk && !isMoreRequested && (
@@ -251,7 +259,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                 className="text-emerald-600 dark:text-emerald-400 shrink-0"
               />
               <span className="text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
-                All areas verified OK
+                {t("submissionDetail.allAreasOk", "All areas verified OK")}
               </span>
             </div>
           )}
@@ -270,16 +278,16 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                     </h3>
                     {activeArea.status === "ok" && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        <Check size={10} /> Area OK
+                        <Check size={10} /> {t("submissionDetail.markAreaOk", "Area OK")}
                       </span>
                     )}
                     {activeArea.status === "more_requested" && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                        <AlertCircle size={10} /> Request Pending
+                        <AlertCircle size={10} /> {t("submissionDetail.requestPending", "Request Pending")}
                       </span>
                     )}
                     <span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                      · {activeArea.media?.length || 0} media item(s)
+                      · {activeArea.media?.length || 0} {t("submissionDetail.mediaItems", "media item(s)")}
                     </span>
                   </div>
 
@@ -291,7 +299,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
                     >
                       <AlertCircle size={12} />
-                      <span>Request more</span>
+                      <span>{t("submissionDetail.requestUpdates", "Request more")}</span>
                     </button>
                     <button
                       type="button"
@@ -303,7 +311,11 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                       }`}
                     >
                       <Check size={12} />
-                      <span>{activeArea.status === "ok" ? "Area OK" : "Mark area OK"}</span>
+                      <span>
+                        {activeArea.status === "ok"
+                          ? t("submissionDetail.markAreaOk", "Area OK")
+                          : t("submissionDetail.markAreaOk", "Mark area OK")}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -335,6 +347,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                               </div>
                             </div>
                           ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={item.url}
                               alt={item.title}
@@ -359,7 +372,9 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                               ) : (
                                 <ImageIcon size={10} />
                               )}
-                              {item.type === "video" ? "Video" : "Photo"}
+                              {item.type === "video"
+                                ? t("modals.mediaViewer.video", "Video")
+                                : t("modals.mediaViewer.photo", "Photo")}
                             </span>
 
                             {item.duration && (
@@ -380,12 +395,12 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                     </div>
                   ) : (
                     <div className="py-12 text-center text-xs text-slate-400">
-                      No photos or videos uploaded for this area.
+                      {t("submissionDetail.noMedia", "No photos or videos uploaded for this area.")}
                     </div>
                   )}
 
                   <p className="mt-3 text-[11px] text-slate-400 dark:text-zinc-500">
-                    Click a photo or video to view full size.
+                    {t("submissionDetail.viewMedia", "Click a photo or video to view full size.")}
                   </p>
                 </div>
               </div>
@@ -394,7 +409,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               {Object.keys(activeArea.specs).length > 0 && (
                 <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-xs p-5 space-y-3">
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Specifications
+                    {t("submissionDetail.specifications", "Specifications")}
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                     {Object.entries(activeArea.specs).map(([label, val]) => (
@@ -416,7 +431,12 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                 <div className="bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-900/60 p-4 space-y-1">
                   <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
                     <AlertCircle size={13} />
-                    <span>Active Request for Technician:</span>
+                    <span>
+                      {t(
+                        "submissionDetail.activeRequestForTechnician",
+                        "Active Request for Technician:"
+                      )}
+                    </span>
                   </div>
                   <p className="text-xs text-amber-900 dark:text-amber-200 whitespace-pre-wrap pl-4">
                     {activeArea.customerNote}
@@ -439,7 +459,12 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
                         <CheckCircle2 size={13} />
-                        <span>Request Resolved by Technician</span>
+                        <span>
+                          {t(
+                            "submissionDetail.requestResolvedByTech",
+                            "Request Resolved by Technician"
+                          )}
+                        </span>
                       </div>
                       {resolvedReq.resolvedAt && (
                         <span className="text-[10px] text-emerald-700/80 dark:text-emerald-400 font-medium">
@@ -449,12 +474,12 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                     </div>
                     {resolvedReq.text && (
                       <div className="text-[11px] text-slate-500 dark:text-zinc-400 pl-4 border-l-2 border-emerald-300 dark:border-emerald-700">
-                        Requested: &ldquo;{resolvedReq.text}&rdquo;
+                        {t("submissionDetail.requestedLabel", "Requested:")} &ldquo;{resolvedReq.text}&rdquo;
                       </div>
                     )}
                     {resolvedReq.technicianResponse && (
                       <p className="text-xs text-emerald-950 dark:text-emerald-100 whitespace-pre-wrap pl-4 font-medium">
-                        Technician: {resolvedReq.technicianResponse}
+                        {t("submissionDetail.technicianLabel", "Technician:")} {resolvedReq.technicianResponse}
                       </p>
                     )}
                   </div>
@@ -470,17 +495,17 @@ export default function SubmissionDetailPage({ params }: PageProps) {
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Requests & Responses ({(submission.customerRequests || []).length})
+                {t("submissionDetail.requestsAndResponses", "Requests & Responses")} ({(submission.customerRequests || []).length})
               </h3>
               {(submission.customerRequests || []).some((r) => !r.resolved) && (
                 <button
                   type="button"
                   onClick={handleSendRequestsToCustomer}
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:text-amber-800 transition-colors cursor-pointer"
-                  title="Dispatch queued requests to technician app"
+                  title={t("submissionDetail.dispatchTitle", "Dispatch queued requests to technician app")}
                 >
                   <Send size={11} />
-                  <span>Dispatch</span>
+                  <span>{t("submissionDetail.dispatch", "Dispatch")}</span>
                 </button>
               )}
             </div>
@@ -504,11 +529,11 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                       <div className="flex items-center gap-1.5 shrink-0">
                         {req.resolved ? (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                            <CheckCircle2 size={10} /> Resolved
+                            <CheckCircle2 size={10} /> {t("submissionDetail.resolved", "Resolved")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                            <Clock size={10} /> Pending
+                            <Clock size={10} /> {t("submissionDetail.pending", "Pending")}
                           </span>
                         )}
                         {!req.resolved && (
@@ -516,7 +541,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                             type="button"
                             onClick={() => handleRemoveRequest(req.id)}
                             className="text-slate-400 hover:text-rose-600 transition-colors p-0.5 cursor-pointer"
-                            title="Remove request"
+                            title={t("submissionDetail.removeRequest", "Remove request")}
                           >
                             <Trash2 size={12} />
                           </button>
@@ -527,7 +552,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                     {/* Admin Request Text */}
                     <div className="text-xs text-slate-600 dark:text-zinc-400 bg-white dark:bg-zinc-800 p-2 rounded border border-slate-100 dark:border-zinc-700/80">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                        Admin Note:
+                        {t("submissionDetail.adminNoteLabel", "Admin Note:")}
                       </span>
                       {req.text}
                     </div>
@@ -537,7 +562,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                       <div className="text-xs text-emerald-900 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded border border-emerald-200/70 dark:border-emerald-900/50">
                         <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-0.5">
                           <MessageSquare size={10} />
-                          <span>Technician Response:</span>
+                          <span>{t("submissionDetail.techResponseLabel", "Technician Response:")}</span>
                         </div>
                         <p className="whitespace-pre-wrap">{req.technicianResponse}</p>
                       </div>
@@ -547,14 +572,16 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                     {req.responsePhotos && req.responsePhotos.length > 0 && (
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                          Submitted Photos ({req.responsePhotos.length}):
+                          {t("submissionDetail.submittedPhotos", "Submitted Photos")} ({req.responsePhotos.length}):
                         </span>
                         <div className="grid grid-cols-3 gap-1.5">
                           {req.responsePhotos.map((photo, idx) => {
                             const photoSrc =
                               photo.url ||
-                              (photo as any).remoteUrl ||
-                              (photo as any).uri ||
+                              (photo as { remoteUrl?: string; uri?: string })
+                                .remoteUrl ||
+                              (photo as { remoteUrl?: string; uri?: string })
+                                .uri ||
                               "";
                             return (
                               <button
@@ -572,6 +599,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                                 }
                                 className="relative aspect-square rounded-md overflow-hidden border border-slate-200 dark:border-zinc-700 hover:opacity-90 group cursor-pointer"
                               >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={photoSrc}
                                   alt={photo.fileName || "Technician Photo"}
@@ -589,7 +617,10 @@ export default function SubmissionDetailPage({ params }: PageProps) {
             ) : (
               <div className="p-3 text-center rounded-lg bg-slate-50 dark:bg-zinc-800/40 border border-dashed border-slate-200 dark:border-zinc-700/80">
                 <p className="text-[11px] text-slate-400 dark:text-zinc-500">
-                  No requests sent for this site inspection. Use &quot;Request more&quot; on any area to ask the technician for clearer photos or information.
+                  {t(
+                    "submissionDetail.noRequestsSent",
+                    'No requests sent for this site inspection. Use "Request more" on any area to ask the technician for clearer photos or information.'
+                  )}
                 </p>
               </div>
             )}
@@ -598,12 +629,12 @@ export default function SubmissionDetailPage({ params }: PageProps) {
           {/* 2. Overview Metadata Card */}
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-xs p-4 space-y-3">
             <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Site Overview
+              {t("submissionDetail.siteOverview", "Site Overview")}
             </h3>
             <div className="space-y-2 text-xs">
               <div>
                 <span className="text-slate-400 dark:text-zinc-500 block text-[11px]">
-                  Site Name
+                  {t("common.name", "Site Name")}
                 </span>
                 <span className="font-semibold text-slate-800 dark:text-zinc-200">
                   {submission.siteName}
@@ -611,7 +642,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <span className="text-slate-400 dark:text-zinc-500 block text-[11px]">
-                  Customer / Organization
+                  {t("submissionDetail.customer", "Customer / Organization")}
                 </span>
                 <span className="font-semibold text-slate-800 dark:text-zinc-200">
                   {submission.customer}
@@ -619,7 +650,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <span className="text-slate-400 dark:text-zinc-500 block text-[11px]">
-                  Inspector
+                  {t("submissionDetail.inspector", "Inspector")}
                 </span>
                 <span className="font-semibold text-slate-800 dark:text-zinc-200">
                   {submission.sentBy}
@@ -627,7 +658,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <span className="text-slate-400 dark:text-zinc-500 block text-[11px]">
-                  Date Recorded
+                  {t("submissionDetail.inspectionDate", "Date Recorded")}
                 </span>
                 <span className="font-semibold text-slate-800 dark:text-zinc-200">
                   {submission.formattedDate}
@@ -640,7 +671,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 shadow-xs p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                Internal Note
+                {t("submissionDetail.internalNotesTitle", "Internal Note")}
               </h3>
               {internalNotes !== (submission.internalNotes || "") && (
                 <button
@@ -649,7 +680,9 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                   disabled={isSavingNotes}
                   className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
                 >
-                  {isSavingNotes ? "Saving..." : "Save note"}
+                  {isSavingNotes
+                    ? t("submissionDetail.savingNotes", "Saving...")
+                    : t("submissionDetail.saveNotes", "Save note")}
                 </button>
               )}
             </div>
@@ -657,7 +690,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
               rows={3}
               value={internalNotes}
               onChange={(e) => setInternalNotes(e.target.value)}
-              placeholder="Internal notes visible to internal team only"
+              placeholder={t("submissionDetail.internalNotesPlaceholder", "Internal notes visible to internal team only")}
               className="w-full text-xs rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-2.5 text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-900"
             />
           </div>

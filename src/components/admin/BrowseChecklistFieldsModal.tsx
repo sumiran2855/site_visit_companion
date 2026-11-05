@@ -10,6 +10,7 @@ import {
   Layers,
 } from "lucide-react";
 import { CHECKLIST_SECTIONS_CONFIG } from "@/config/checklist.config";
+import { useTranslation } from "@/i18n";
 
 export interface SelectedFieldPayload {
   id: string;
@@ -32,6 +33,7 @@ export function BrowseChecklistFieldsModal({
   onSelectField,
   currentPlaceholder,
 }: BrowseChecklistFieldsModalProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeSectionId, setActiveSectionId] = useState<string>("all");
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
@@ -90,14 +92,13 @@ export function BrowseChecklistFieldsModal({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Site Visit Form Fields</span>
+                <span>{t("template.fieldsModal.title", "Site Visit Form Fields")}</span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-                  {totalMatchingFields} Available
+                  {totalMatchingFields} {t("template.fieldsModal.available", "Available")}
                 </span>
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                Click any field to bind its dynamic token and label to the
-                selected PDF template element.
+                {t("template.fieldsModal.desc", "Click any field to bind its dynamic token and label to the selected PDF template element.")}
               </p>
             </div>
           </div>
@@ -118,7 +119,7 @@ export function BrowseChecklistFieldsModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by field name, ID (e.g. mc_site_name), section, or type..."
+              placeholder={t("template.fieldsModal.searchPlaceholder", "Search by field name, ID (e.g. mc_site_name), section, or type...")}
               className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               autoFocus
             />
@@ -127,7 +128,7 @@ export function BrowseChecklistFieldsModal({
                 onClick={() => setSearch("")}
                 className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
               >
-                Clear
+                {t("common.clear", "Clear")}
               </button>
             )}
           </div>
@@ -142,7 +143,7 @@ export function BrowseChecklistFieldsModal({
                   : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200"
               }`}
             >
-              All Sections (11)
+              {t("template.fieldsModal.allSections", "All Sections (11)")}
             </button>
             {CHECKLIST_SECTIONS_CONFIG.map((sec) => (
               <button
@@ -154,7 +155,7 @@ export function BrowseChecklistFieldsModal({
                     : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200"
                 }`}
               >
-                Sec {sec.number}: {sec.title.split("(")[0].trim()}
+                {t("template.fieldsModal.sec", "Sec")} {sec.number}: {sec.title.split("(")[0].trim()}
               </button>
             ))}
           </div>
@@ -166,11 +167,10 @@ export function BrowseChecklistFieldsModal({
             <div className="py-16 text-center">
               <Layers className="size-8 mx-auto text-slate-300 dark:text-zinc-600 mb-2" />
               <p className="text-xs font-semibold text-slate-600 dark:text-zinc-400">
-                No fields match &quot;{search}&quot;
+                {t("template.fieldsModal.noMatch", "No fields match \"{{query}}\"", { query: search })}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Try searching for broader keywords like &quot;boiler&quot;,
-                &quot;meter&quot;, or &quot;date&quot;.
+                {t("template.fieldsModal.trySearching", "Try searching for broader keywords like \"boiler\", \"meter\", or \"date\".")}
               </p>
             </div>
           ) : (
@@ -186,7 +186,7 @@ export function BrowseChecklistFieldsModal({
                     </h3>
                   </div>
                   <span className="text-[10px] text-slate-400 font-medium">
-                    {sec.fields.length} items
+                    {sec.fields.length} {t("template.fieldsModal.items", "items")}
                   </span>
                 </div>
 
@@ -239,7 +239,7 @@ export function BrowseChecklistFieldsModal({
                             <button
                               type="button"
                               onClick={(e) => handleCopy(token, e)}
-                              title="Copy placeholder token"
+                              title={t("template.fieldsModal.copyToken", "Copy placeholder token")}
                               className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors"
                             >
                               {copiedToken === token ? (
@@ -250,7 +250,7 @@ export function BrowseChecklistFieldsModal({
                             </button>
 
                             <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 group-hover:underline">
-                              Insert →
+                              {t("template.fieldsModal.insert", "Insert →")}
                             </span>
                           </div>
                         </div>
@@ -265,12 +265,12 @@ export function BrowseChecklistFieldsModal({
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-800/40 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
-          <span>Tip: selecting binds token to placeholder &amp; auto-fills label</span>
+          <span>{t("template.fieldsModal.tip", "Tip: selecting binds token to placeholder & auto-fills label")}</span>
           <button
             onClick={onClose}
             className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 font-semibold text-slate-700 dark:text-zinc-200 text-xs transition-colors"
           >
-            Close
+            {t("common.close", "Close")}
           </button>
         </div>
       </div>

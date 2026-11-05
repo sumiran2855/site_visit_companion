@@ -2,6 +2,7 @@
 
 import React from "react";
 import { SubmissionStatus } from "@/types/submission";
+import { useTranslation } from "@/i18n";
 
 export interface SubmissionsFilterPillsProps {
   activeStatus: SubmissionStatus;
@@ -19,11 +20,13 @@ export const SubmissionsFilterPills: React.FC<SubmissionsFilterPillsProps> = ({
   onChange,
   counts,
 }) => {
+  const { t } = useTranslation();
+
   const tabs: { id: SubmissionStatus; label: string; count?: number }[] = [
-    { id: "all", label: "All", count: counts.all },
-    { id: "completed", label: "Completed", count: counts.completed },
-    { id: "in_progress", label: "In progress", count: counts.in_progress },
-    { id: "draft", label: "Drafts", count: counts.draft },
+    { id: "all", label: t("submissions.filterPills.all", "All"), count: counts.all },
+    { id: "completed", label: t("submissions.filterPills.completed", "Completed"), count: counts.completed },
+    { id: "in_progress", label: t("submissions.filterPills.in_progress", "In progress"), count: counts.in_progress },
+    { id: "draft", label: t("submissions.filterPills.draft", "Drafts"), count: counts.draft },
   ];
 
   return (
