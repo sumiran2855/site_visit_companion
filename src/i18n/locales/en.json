@@ -2,7 +2,8 @@
   "header": {
     "brand": "EC POWER",
     "badge": "ADMIN",
-    "subtitle": "Administration Portal"
+    "subtitle": "Administration Portal",
+    "fieldOperations": "Field Operations"
   },
   "login": {
     "cardBadge": "Admin Portal",
@@ -24,7 +25,9 @@
     "continueWithGoogle": "Continue with Google",
     "connectingToGoogle": "Connecting to Google...",
     "needTechnicianAccess": "Need technician access?",
-    "requestAccount": "Request an account"
+    "requestAccount": "Request an account",
+    "email": "Email",
+    "password": "Password"
   },
   "errors": {
     "emailRequired": "Please enter your email address.",
@@ -38,13 +41,15 @@
     "specifyCompany": "Please specify the company or organization you work for.",
     "signupFailed": "Failed to submit signup request. Please try again.",
     "unexpectedSignupError": "An unexpected error occurred during signup.",
-    "googleSignupFailed": "Failed to initiate Google sign up"
+    "googleSignupFailed": "Failed to initiate Google sign up",
+    "unknown": "An unexpected error occurred during authentication."
   },
   "footer": {
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "copyright": "© {{year}} EC POWER. All rights reserved.",
-    "adminWebConsole": "Administrator Web Console"
+    "adminWebConsole": "Administrator Web Console",
+    "rights": "All rights reserved."
   },
   "language": {
     "select": "Select language",
@@ -100,7 +105,10 @@
     "profileNameUpdated": "Profile name updated successfully",
     "firstName": "First Name",
     "middleName": "Middle Name (Optional)",
-    "lastName": "Last Name"
+    "lastName": "Last Name",
+    "firstNamePlaceholder": "First name",
+    "middleNamePlaceholder": "Middle name (optional)",
+    "lastNamePlaceholder": "Last name"
   },
   "accessDenied": {
     "badge": "Administrator Access Required",
@@ -127,7 +135,11 @@
     "signInButton": "Sign in as Administrator",
     "statusReview": "Your access request is still under review by your company administrator.",
     "statusApproved": "Your account has been approved by your administrator! Please sign in to access your dashboard.",
-    "statusRejected": "Your access request was rejected by an administrator."
+    "statusRejected": "Your access request was rejected by an administrator.",
+    "approvedTitle": "Account Approved",
+    "approvedDesc": "Your access request has been approved. You can now sign in to your account.",
+    "rejectedTitle": "Access Request Declined",
+    "rejectedDesc": "Your access request has been declined. Please contact your company administrator for assistance."
   },
   "dashboard": {
     "superAdminTitle": "Super Admin Hub",
@@ -270,7 +282,8 @@
       "dispatchedSuccess": "Successfully dispatched request(s) to technician",
       "notesSaved": "Internal note saved",
       "zipDownloaded": "Media package manifest downloaded"
-    }
+    },
+    "technicianPhoto": "Technician Photo"
   },
   "modals": {
     "requestMore": {
@@ -303,7 +316,9 @@
       "description": "Share read-only access to \"{{site}}\" with facility managers, engineers, or clients. The link allows inspecting the verified checklist, photo evidence, and downloading the official report PDF.",
       "linkLabel": "Shareable Web Link",
       "copyTitle": "Copy link",
-      "draftEmail": "Draft Email"
+      "draftEmail": "Draft Email",
+      "emailSubject": "EC POWER Site Visit Inspection: {{siteName}}",
+      "emailBody": "Hello,\n\nPlease find the read-only inspection report for {{siteName}} at the link below:\n\n{{url}}\n\nThis secure report includes technical audit specifications, verified checklist answers, and high-resolution photo evidence.\n\nBest regards,\nEC POWER Team"
     },
     "mediaViewer": {
       "title": "Media Inspection",
@@ -588,7 +603,14 @@
     "blankPdfModal": {
       "title": "Print-Friendly Blank Checklist (Manual Notes)",
       "desc": "Includes blank ruled lines for field engineers to write on clipboard",
-      "print": "Print Form"
+      "print": "Print Form",
+      "worksheetTitle": "EC POWER • FIELD AUDIT WORKSHEET",
+      "worksheetSubtitle": "Fill out missing observations manually for later system entry",
+      "siteNameClientAddress": "Site Name & Client Address:",
+      "primaryContactPhone": "Primary Contact & On-Site Telephone:",
+      "boilerSerial": "Existing Boiler / Heat Pump Make & Serial:",
+      "gasReading": "Gas Flow / Static Pressure Reading (mbar):",
+      "fieldObservations": "Technician Field Observations & Access Obstacles:"
     },
     "resetModal": {
       "title": "Reset Template to Default?",
@@ -607,7 +629,8 @@
       "print": "Print",
       "printTitle": "Print full multi-page report",
       "downloadPdf": "Download PDF",
-      "downloadTitle": "Download or save as PDF"
+      "downloadTitle": "Download or save as PDF",
+      "iframeTitle": "Full Multi-Page PDF Preview"
     },
     "fieldsModal": {
       "title": "Site Visit Form Fields",
@@ -633,7 +656,8 @@
       "labelPlaceholder": "e.g. Site Name, Meeting date, Boiler room...",
       "contentPlaceholder": "Optional descriptive subtext or instructions",
       "contentSparkleHint": "Form guidance and section subtitles",
-      "placeholderSparkleHint": "Checklist field tokens (67+ available)"
+      "placeholderSparkleHint": "Checklist field tokens (67+ available)",
+      "tokenPlaceholder": "{{field:site_name}} or [value]"
     },
     "toasts": {
       "loadedDraft": "Loaded earlier edits — click Save to make them the active template",
@@ -642,12 +666,36 @@
       "pageAdded": "Added Page {{page}}",
       "templateSaved": "Template saved successfully",
       "templateSaveError": "Error saving template",
-      "factoryReset": "Factory layout loaded — save to make it active"
+      "factoryReset": "Factory layout loaded — save to make it active",
+      "undoneChange": "Undone last change.",
+      "redoneChange": "Redone change.",
+      "elementAddedToPage": "Added {{label}} to {{page}}.",
+      "elementRemovedCanvas": "Element removed.",
+      "appliedSuggestionWithPlaceholder": "Applied \"{{name}}\" with placeholder {{placeholder}}.",
+      "appliedSuggestion": "Applied \"{{name}}\".",
+      "updatedContentSubtext": "Updated content subtext.",
+      "boundToPlaceholder": "Bound to placeholder \"{{placeholder}}\".",
+      "boundElementToField": "Bound element to \"{{label}}\" ({{placeholder}}).",
+      "pageAddedNum": "Added Page {{pageNumber}}.",
+      "pageDeleted": "Page deleted.",
+      "templateSavedActive": "Template saved. It is now the active template for all PDFs.",
+      "templateSaveFailed": "Failed to save template. Please try again.",
+      "factoryResetActive": "Factory layout loaded. Save to make it the active template."
     },
     "pageLabel": "Page",
     "sectionLabel": "Section",
     "defaultFindingsHeading": "Additional Inspection Findings",
-    "elementFallback": "Element"
+    "elementFallback": "Element",
+    "minPagesAlert": "Template must contain at least one page.",
+    "specMarker": "EC POWER • FIELD AUDIT REPORT SPECIFICATION",
+    "pageOfPages": "PAGE {{current}} OF {{total}}",
+    "officialReport": "Official Report",
+    "photoSlot": "Photo {{slot}} slot",
+    "checklistItem": "Checklist Item",
+    "statusVerification": "Status / Verification",
+    "confidentialProprietary": "CONFIDENTIAL & PROPRIETARY",
+    "thirdWidth": "Third",
+    "colsCount": "{{count}} Cols"
   },
   "shared": {
     "loadingTitle": "Loading Site Visit Report...",
@@ -750,7 +798,12 @@
     "submitting": "Submitting...",
     "submitRequest": "Submit Access Request",
     "haveAccount": "Have an account?",
-    "signInInstead": "Sign in instead"
+    "signInInstead": "Sign in instead",
+    "companyPlaceholder": "EC POWER Partner / Heating Solutions Ltd",
+    "firstNamePlaceholder": "John",
+    "lastNamePlaceholder": "Doe",
+    "middleNamePlaceholder": "Optional",
+    "emailPlaceholder": "technician@ecpower.com"
   },
   "privacy": {
     "brand": "EC POWER",
@@ -818,6 +871,8 @@
         "tag": "SECTION 11",
         "title": "Additional Notes"
       }
-    }
+    },
+    "pass": "PASS",
+    "pending": "PENDING"
   }
 }

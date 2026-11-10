@@ -602,7 +602,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={photoSrc}
-                                  alt={photo.fileName || "Technician Photo"}
+                                  alt={photo.fileName || t("submissionDetail.technicianPhoto", "Technician Photo")}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                 />
                               </button>

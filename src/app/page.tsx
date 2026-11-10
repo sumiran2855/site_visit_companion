@@ -44,7 +44,7 @@ export default function HomePage() {
           <Zap className="size-8 text-amber-400 fill-current animate-pulse" />
         </div>
         <h2 className="text-xl font-black tracking-widest text-white mb-1">
-          EC POWER
+          {t("header.brand", "EC POWER")}
         </h2>
         <p className="text-[11px] font-bold tracking-widest uppercase text-amber-400 mb-6">
           {t("navbar.adminConsole", "Admin Console")}

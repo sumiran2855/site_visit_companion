@@ -131,10 +131,23 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
 
   const handleDraftEmail = () => {
     const subject = encodeURIComponent(
-      `Site Inspection Report: ${submission.siteName}`
+      t("modals.share.emailSubject", "Site Inspection Report: {{siteName}}", {
+        site: submission.siteName,
+        siteName: submission.siteName,
+      })
     );
     const body = encodeURIComponent(
-      `Hello,\n\nPlease review the preliminary site inspection and technical feasibility assessment for "${submission.siteName}".\n\nOfficial Audit Link: ${shareUrl}\n\nClient: ${submission.customer}\nAudited by: ${submission.sentBy}\n\nRegards,\nEC POWER Team`
+      t(
+        "modals.share.emailBody",
+        `Hello,\n\nPlease review the preliminary site inspection and technical feasibility assessment for "${submission.siteName}".\n\nOfficial Audit Link: ${shareUrl}\n\nClient: ${submission.customer}\nAudited by: ${submission.sentBy}\n\nRegards,\nEC POWER Team`,
+        {
+          site: submission.siteName,
+          siteName: submission.siteName,
+          url: shareUrl,
+          client: submission.customer,
+          auditor: submission.sentBy,
+        }
+      )
     );
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
   };

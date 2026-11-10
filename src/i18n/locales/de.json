@@ -2,7 +2,8 @@
   "header": {
     "brand": "EC POWER",
     "badge": "ADMIN",
-    "subtitle": "Verwaltungsportal"
+    "subtitle": "Verwaltungsportal",
+    "fieldOperations": "Feldeinsätze"
   },
   "login": {
     "cardBadge": "Admin-Portal",
@@ -24,7 +25,9 @@
     "continueWithGoogle": "Mit Google fortfahren",
     "connectingToGoogle": "Verbindung zu Google wird hergestellt...",
     "needTechnicianAccess": "Techniker-Zugang erforderlich?",
-    "requestAccount": "Konto anfordern"
+    "requestAccount": "Konto anfordern",
+    "email": "E-Mail",
+    "password": "Passwort"
   },
   "errors": {
     "emailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein.",
@@ -38,13 +41,15 @@
     "specifyCompany": "Bitte geben Sie das Unternehmen oder die Organisation an, für die Sie arbeiten.",
     "signupFailed": "Registrierungsanfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
     "unexpectedSignupError": "Bei der Registrierung ist ein unerwarteter Fehler aufgetreten.",
-    "googleSignupFailed": "Google-Registrierung konnte nicht gestartet werden"
+    "googleSignupFailed": "Google-Registrierung konnte nicht gestartet werden",
+    "unknown": "Ein unerwarteter Fehler ist bei der Authentifizierung aufgetreten."
   },
   "footer": {
     "privacyPolicy": "Datenschutzerklärung",
     "termsOfService": "Nutzungsbedingungen",
     "copyright": "© {{year}} EC POWER. Alle Rechte vorbehalten.",
-    "adminWebConsole": "Administrator-Webkonsole"
+    "adminWebConsole": "Administrator-Webkonsole",
+    "rights": "Alle Rechte vorbehalten."
   },
   "language": {
     "select": "Sprache auswählen",
@@ -100,7 +105,10 @@
     "profileNameUpdated": "Profilname erfolgreich aktualisiert",
     "firstName": "Vorname",
     "middleName": "Zweitname (Optional)",
-    "lastName": "Nachname"
+    "lastName": "Nachname",
+    "firstNamePlaceholder": "Vorname",
+    "middleNamePlaceholder": "Zweiter Vorname (optional)",
+    "lastNamePlaceholder": "Nachname"
   },
   "accessDenied": {
     "badge": "Administratorzugriff erforderlich",
@@ -127,7 +135,11 @@
     "signInButton": "Als Administrator anmelden",
     "statusReview": "Ihre Zugriffsanfrage wird derzeit noch von Ihrem Unternehmensadministrator geprüft.",
     "statusApproved": "Ihr Konto wurde von Ihrem Administrator genehmigt! Bitte melden Sie sich an, um auf Ihr Dashboard zuzugreifen.",
-    "statusRejected": "Ihre Zugriffsanfrage wurde von einem Administrator abgelehnt."
+    "statusRejected": "Ihre Zugriffsanfrage wurde von einem Administrator abgelehnt.",
+    "approvedTitle": "Konto genehmigt",
+    "approvedDesc": "Ihre Zugriffsanfrage wurde genehmigt. Sie können sich jetzt bei Ihrem Konto anmelden.",
+    "rejectedTitle": "Zugriffsanfrage abgelehnt",
+    "rejectedDesc": "Ihre Zugriffsanfrage wurde abgelehnt. Bitte wenden Sie sich an Ihren Unternehmensadministrator."
   },
   "dashboard": {
     "superAdminTitle": "Super-Admin-Zentrale",
@@ -270,7 +282,8 @@
       "dispatchedSuccess": "Anfrage(n) erfolgreich an Techniker gesendet",
       "notesSaved": "Interne Notiz gespeichert",
       "zipDownloaded": "Medienpaket-Manifest heruntergeladen"
-    }
+    },
+    "technicianPhoto": "Techniker-Foto"
   },
   "modals": {
     "requestMore": {
@@ -303,7 +316,9 @@
       "description": "Geben Sie schreibgeschützten Zugriff auf „{{site}}“ für Facility Manager, Ingenieure oder Kunden frei. Über den Link können die verifizierte Checkliste und Fotonachweise eingesehen sowie der offizielle Bericht als PDF heruntergeladen werden.",
       "linkLabel": "Freigabelink",
       "copyTitle": "Link kopieren",
-      "draftEmail": "E-Mail verfassen"
+      "draftEmail": "E-Mail verfassen",
+      "emailSubject": "EC POWER Vor-Ort-Besichtigung Inspektion: {{siteName}}",
+      "emailBody": "Hallo,\n\nden schreibgeschützten Inspektionsbericht für {{siteName}} finden Sie unter folgendem Link:\n\n{{url}}\n\nDieser sichere Bericht enthält technische Auditspezifikationen, verifizierte Checklisten-Antworten und hochauflösende Fotonachweise.\n\nMit freundlichen Grüßen\nIhr EC POWER Team"
     },
     "mediaViewer": {
       "title": "Medienansicht",
@@ -588,7 +603,14 @@
     "blankPdfModal": {
       "title": "Druckfreundliche leere Checkliste (Handschriftliche Notizen)",
       "desc": "Enthält linierte Zeilen für Außendiensttechniker zum Schreiben auf der Klemmmappe",
-      "print": "Formular drucken"
+      "print": "Formular drucken",
+      "worksheetTitle": "EC POWER • FELDAUDIT-ARBEITSBLATT",
+      "worksheetSubtitle": "Fehlende Beobachtungen für spätere Systemeingabe manuell ausfüllen",
+      "siteNameClientAddress": "Standortname & Kundenadresse:",
+      "primaryContactPhone": "Hauptansprechpartner & Vor-Ort-Telefon:",
+      "boilerSerial": "Vorhandener Kessel / Wärmepumpe Fabrikat & Seriennummer:",
+      "gasReading": "Gasdurchfluss / Ruhedruck-Messwert (mbar):",
+      "fieldObservations": "Feldbeobachtungen & Zugangshindernisse des Technikers:"
     },
     "resetModal": {
       "title": "Vorlage auf Standard zurücksetzen?",
@@ -607,7 +629,8 @@
       "print": "Drucken",
       "printTitle": "Vollständigen mehrseitigen Bericht drucken",
       "downloadPdf": "PDF herunterladen",
-      "downloadTitle": "Als PDF herunterladen oder speichern"
+      "downloadTitle": "Als PDF herunterladen oder speichern",
+      "iframeTitle": "Vollständige mehrseitige PDF-Vorschau"
     },
     "fieldsModal": {
       "title": "Felder des Vor-Ort-Formulars",
@@ -633,7 +656,8 @@
       "labelPlaceholder": "z. B. Standortname, Besprechungsdatum, Heizraum...",
       "contentPlaceholder": "Optionaler Beschreibungstext oder Anweisungen",
       "contentSparkleHint": "Formularhinweise und Abschnittsuntertitel",
-      "placeholderSparkleHint": "Checklisten-Feld-Token (67+ verfügbar)"
+      "placeholderSparkleHint": "Checklisten-Feld-Token (67+ verfügbar)",
+      "tokenPlaceholder": "{{field:site_name}} oder [value]"
     },
     "toasts": {
       "loadedDraft": "Frühere Bearbeitungen geladen — klicken Sie auf Speichern, um sie zur aktiven Vorlage zu machen",
@@ -642,12 +666,36 @@
       "pageAdded": "Seite {{page}} hinzugefügt",
       "templateSaved": "Vorlage erfolgreich gespeichert",
       "templateSaveError": "Fehler beim Speichern der Vorlage",
-      "factoryReset": "Standardlayout geladen — speichern Sie es, um es zu aktivieren"
+      "factoryReset": "Standardlayout geladen — speichern Sie es, um es zu aktivieren",
+      "undoneChange": "Letzte Änderung rückgängig gemacht.",
+      "redoneChange": "Änderung wiederholt.",
+      "elementAddedToPage": "{{label}} zu {{page}} hinzugefügt.",
+      "elementRemovedCanvas": "Element entfernt.",
+      "appliedSuggestionWithPlaceholder": "\"{{name}}\" mit Platzhalter {{placeholder}} angewendet.",
+      "appliedSuggestion": "\"{{name}}\" angewendet.",
+      "updatedContentSubtext": "Inhalts-Untertext aktualisiert.",
+      "boundToPlaceholder": "An Platzhalter \"{{placeholder}}\" gebunden.",
+      "boundElementToField": "Element an \"{{label}}\" ({{placeholder}}) gebunden.",
+      "pageAddedNum": "Seite {{pageNumber}} hinzugefügt.",
+      "pageDeleted": "Seite gelöscht.",
+      "templateSavedActive": "Vorlage gespeichert. Sie ist jetzt die aktive Vorlage für alle PDFs.",
+      "templateSaveFailed": "Fehler beim Speichern der Vorlage. Bitte versuchen Sie es erneut.",
+      "factoryResetActive": "Werkslayout geladen. Speichern, um es als aktive Vorlage festzulegen."
     },
     "pageLabel": "Seite",
     "sectionLabel": "Abschnitt",
     "defaultFindingsHeading": "Zusätzliche Inspektionsbefunde",
-    "elementFallback": "Element"
+    "elementFallback": "Element",
+    "minPagesAlert": "Die Vorlage muss mindestens eine Seite enthalten.",
+    "specMarker": "EC POWER • SPEZIFIKATION DES FELDAUDIT-BERICHTS",
+    "pageOfPages": "SEITE {{current}} VON {{total}}",
+    "officialReport": "Offizieller Bericht",
+    "photoSlot": "Foto-Platzhalter {{slot}}",
+    "checklistItem": "Checklisten-Punkt",
+    "statusVerification": "Status / Überprüfung",
+    "confidentialProprietary": "VERTRAULICH & EIGENTUMSRECHTLICH GESCHÜTZT",
+    "thirdWidth": "Ein Drittel",
+    "colsCount": "{{count}} Spalten"
   },
   "shared": {
     "loadingTitle": "Standortbesuchsbericht wird geladen...",
@@ -750,7 +798,12 @@
     "submitting": "Wird übermittelt...",
     "submitRequest": "Zugriffsanfrage absenden",
     "haveAccount": "Haben Sie bereits ein Konto?",
-    "signInInstead": "Stattdessen anmelden"
+    "signInInstead": "Stattdessen anmelden",
+    "companyPlaceholder": "EC POWER Partner / Heiztechnik GmbH",
+    "firstNamePlaceholder": "Max",
+    "lastNamePlaceholder": "Mustermann",
+    "middleNamePlaceholder": "Optional",
+    "emailPlaceholder": "techniker@ecpower.de"
   },
   "privacy": {
     "brand": "EC POWER",
@@ -818,6 +871,8 @@
         "tag": "ABSCHNITT 11",
         "title": "Zusätzliche Notizen"
       }
-    }
+    },
+    "pass": "BESTANDEN",
+    "pending": "AUSSTEHEND"
   }
 }

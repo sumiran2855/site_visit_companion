@@ -338,7 +338,7 @@ export function TemplatePreviewModal({
             <iframe
               ref={iframeRef}
               srcDoc={htmlContent}
-              title="Full Multi-Page PDF Preview"
+              title={t("template.previewModal.iframeTitle", "Full Multi-Page PDF Preview")}
               onLoad={handleIframeLoad}
               style={{
                 width: "100%",

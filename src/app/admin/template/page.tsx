@@ -303,7 +303,7 @@ export default function AdminTemplatePage() {
       const prevIndex = historyIndex - 1;
       setHistoryIndex(prevIndex);
       setPages(history[prevIndex]);
-      showToast("Undone last change.");
+      showToast(t("template.toasts.undoneChange", "Undone last change."));
     }
   };
 
@@ -312,7 +312,7 @@ export default function AdminTemplatePage() {
       const nextIndex = historyIndex + 1;
       setHistoryIndex(nextIndex);
       setPages(history[nextIndex]);
-      showToast("Redone change.");
+      showToast(t("template.toasts.redoneChange", "Redone change."));
     }
   };
 
@@ -412,7 +412,13 @@ export default function AdminTemplatePage() {
 
     updatePagesWithHistory(updatedPages);
     setSelectedElementId(id);
-    showToast(`Added ${newElement.label} to ${activePage.title}.`);
+    showToast(
+      t(
+        "template.toasts.elementAddedToPage",
+        "Added {{label}} to {{page}}.",
+        { label: newElement.label, page: activePage.title }
+      )
+    );
     // On mobile, jump to canvas to see the new element
     setMobileTab("canvas");
   };
@@ -455,7 +461,7 @@ export default function AdminTemplatePage() {
     if (selectedElementId === elementId) {
       setSelectedElementId(null);
     }
-    showToast("Element removed from canvas.");
+    showToast(t("template.toasts.elementRemovedCanvas", "Element removed from canvas."));
   };
 
   // Update selected element property
@@ -514,9 +520,18 @@ export default function AdminTemplatePage() {
 
     handleUpdateSelectedElement(updates);
     showToast(
-      `Applied "${suggestion.text}"${
-        updates.placeholder ? ` with placeholder ${updates.placeholder}` : ""
-      }.`
+      updates.placeholder
+        ? t(
+            "template.toasts.appliedSuggestionWithPlaceholder",
+            'Applied "{name}" with placeholder {placeholder}.',
+            {
+              name: suggestion.text,
+              placeholder: updates.placeholder,
+            }
+          )
+        : t("template.toasts.appliedSuggestion", 'Applied "{name}".', {
+            name: suggestion.text,
+          })
     );
   };
 
@@ -531,7 +546,7 @@ export default function AdminTemplatePage() {
       updates.label = suggestion.pairedLabel;
     }
     handleUpdateSelectedElement(updates);
-    showToast("Updated content subtext.");
+    showToast(t("template.toasts.updatedContentSubtext", "Updated content subtext."));
   };
 
   const handleSelectPlaceholderSuggestion = (
@@ -549,7 +564,13 @@ export default function AdminTemplatePage() {
       updates.label = suggestion.pairedLabel;
     }
     handleUpdateSelectedElement(updates);
-    showToast(`Bound to placeholder "${suggestion.text}".`);
+    showToast(
+      t(
+        "template.toasts.boundToPlaceholder",
+        'Bound to placeholder "{placeholder}".',
+        { placeholder: suggestion.text }
+      )
+    );
   };
 
   const handleSelectFieldFromBrowser = (payload: SelectedFieldPayload) => {
@@ -570,7 +591,14 @@ export default function AdminTemplatePage() {
     handleUpdateSelectedElement(updates);
     setIsBrowseFieldsOpen(false);
     showToast(
-      `Bound element to "${payload.label}" (${payload.placeholderToken}).`
+      t(
+        "template.toasts.boundElementToField",
+        'Bound element to "{label}" ({placeholder}).',
+        {
+          label: payload.label,
+          placeholder: payload.placeholderToken,
+        }
+      )
     );
   };
 
@@ -596,13 +624,17 @@ export default function AdminTemplatePage() {
     updatePagesWithHistory(updatedPages);
     setActivePageIndex(updatedPages.length - 1);
     setSelectedElementId(`el-heading-p${newPageNum}`);
-    showToast(`Added Page ${newPageNum}.`);
+    showToast(
+      t("template.toasts.pageAddedNum", "Added Page {pageNumber}.", {
+        pageNumber: newPageNum,
+      })
+    );
   };
 
   // Delete Page
   const handleDeletePage = (pageIndexToDelete: number) => {
     if (pages.length <= 1) {
-      alert("Template must contain at least one page.");
+      alert(t("template.minPagesAlert", "Template must contain at least one page."));
       return;
     }
 
@@ -613,7 +645,7 @@ export default function AdminTemplatePage() {
     updatePagesWithHistory(updatedPages);
     setActivePageIndex(0);
     setSelectedElementId(null);
-    showToast("Page deleted.");
+    showToast(t("template.toasts.pageDeleted", "Page deleted."));
   };
 
   // Save template action
@@ -627,10 +659,10 @@ export default function AdminTemplatePage() {
       });
       setTemplateMeta({ ...saved, pages: [] });
       setSaveStatus("saved");
-      showToast("Template saved. It is now the active template for all PDFs.");
+      showToast(t("template.toasts.templateSavedActive", "Template saved. It is now the active template for all PDFs."));
     } catch {
       setSaveStatus("unsaved");
-      showToast("Failed to save template. Please try again.");
+      showToast(t("template.toasts.templateSaveFailed", "Failed to save template. Please try again."));
     }
   };
 
@@ -643,7 +675,7 @@ export default function AdminTemplatePage() {
     setHistoryIndex(0);
     setSaveStatus("unsaved");
     setIsResetConfirmOpen(false);
-    showToast("Factory layout loaded. Save to make it the active template.");
+    showToast(t("template.toasts.factoryResetActive", "Factory layout loaded. Save to make it the active template."));
   };
 
   return (
@@ -987,9 +1019,12 @@ export default function AdminTemplatePage() {
             <div className="bg-white text-slate-900 rounded-lg shadow-2xl border border-slate-300/80 min-h-[1120px] p-8 sm:p-12 relative flex flex-col justify-between">
               {/* Top Page Header Marker */}
               <div className="border-b border-slate-200 pb-3 mb-6 flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                <span>EC POWER • FIELD AUDIT REPORT SPECIFICATION</span>
+                <span>{t("template.specMarker", "EC POWER • FIELD AUDIT REPORT SPECIFICATION")}</span>
                 <span>
-                  PAGE {activePage.pageNumber} OF {pages.length}
+                  {t("template.pageOfPages", "PAGE {current} OF {total}", {
+                    current: activePage.pageNumber,
+                    total: pages.length,
+                  })}
                 </span>
               </div>
 
@@ -1087,7 +1122,7 @@ export default function AdminTemplatePage() {
                                 </div>
                               </div>
                               <div className="text-right text-[10px] text-slate-300 uppercase tracking-wider font-semibold">
-                                <span>Official Report</span>
+                                <span>{t("template.officialReport", "Official Report")}</span>
                               </div>
                             </div>
                           )}
@@ -1135,7 +1170,7 @@ export default function AdminTemplatePage() {
                                   >
                                     <ImageIcon className="size-5 mb-1 text-slate-300" />
                                     <span className="text-[10px] font-medium">
-                                      Photo {num} slot
+                                      {t("template.photoSlot", "Photo {slot} slot", { slot: num })}
                                     </span>
                                   </div>
                                 ))}
@@ -1161,8 +1196,8 @@ export default function AdminTemplatePage() {
                           {el.type === "autoflow_checklist" && (
                             <div className="border border-slate-300 rounded-xl overflow-hidden text-xs">
                               <div className="bg-slate-100 px-3 py-2 font-bold text-slate-700 uppercase tracking-wider border-b border-slate-300 flex justify-between">
-                                <span>Checklist Item</span>
-                                <span>Status / Verification</span>
+                                <span>{t("template.checklistItem", "Checklist Item")}</span>
+                                <span>{t("template.statusVerification", "Status / Verification")}</span>
                               </div>
                               <div className="divide-y divide-slate-200 bg-white">
                                 <div className="px-3 py-2 flex items-center justify-between">
@@ -1170,7 +1205,7 @@ export default function AdminTemplatePage() {
                                     Gas supply isolation valve accessible
                                   </span>
                                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
-                                    PASS
+                                    {t("checklist.pass", "PASS")}
                                   </span>
                                 </div>
                                 <div className="px-3 py-2 flex items-center justify-between">
@@ -1178,7 +1213,7 @@ export default function AdminTemplatePage() {
                                     Adequate boiler room ventilation clearance
                                   </span>
                                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
-                                    PASS
+                                    {t("checklist.pass", "PASS")}
                                   </span>
                                 </div>
                                 <div className="px-3 py-2 flex items-center justify-between">
@@ -1186,7 +1221,7 @@ export default function AdminTemplatePage() {
                                     Secondary heat pump loop expansion vessel checked
                                   </span>
                                   <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-[10px]">
-                                    PENDING
+                                    {t("checklist.pending", "PENDING")}
                                   </span>
                                 </div>
                               </div>
@@ -1204,7 +1239,7 @@ export default function AdminTemplatePage() {
                 <div>
                   EC POWER A/S • Thorsvej 30, 8881 Thorsø, Denmark • www.ecpower.eu
                 </div>
-                <div>CONFIDENTIAL &amp; PROPRIETARY</div>
+                <div>{t("template.confidentialProprietary", "CONFIDENTIAL & PROPRIETARY")}</div>
               </div>
             </div>
           </div>
@@ -1290,7 +1325,7 @@ export default function AdminTemplatePage() {
                       }
                       onSelectSuggestion={handleSelectPlaceholderSuggestion}
                       suggestions={placeholderSuggestions}
-                      placeholder="{{field:site_name}} or [value]"
+                      placeholder={t("template.autocomplete.tokenPlaceholder", "{{field:site_name}} or [value]")}
                       sparkleHint={t("template.autocomplete.placeholderSparkleHint", "Checklist field tokens (67+ available)")}
                       rightBadge={
                         <span className="text-[10px] text-blue-500 font-mono">
@@ -1355,7 +1390,11 @@ export default function AdminTemplatePage() {
                             : "text-slate-600 dark:text-zinc-400 hover:text-slate-900"
                         }`}
                       >
-                        {w}
+                        {w === "full"
+                          ? t("template.fullWidth", "Full")
+                          : w === "half"
+                          ? t("template.halfWidth", "Half")
+                          : t("template.thirdWidth", "Third")}
                       </button>
                     ))}
                   </div>
@@ -1381,7 +1420,7 @@ export default function AdminTemplatePage() {
                               : "text-slate-600 dark:text-zinc-400 hover:text-slate-900"
                           }`}
                         >
-                          {cols} Cols
+                          {t("template.colsCount", "{count} Cols", { count: cols })}
                         </button>
                       ))}
                     </div>
@@ -1472,10 +1511,10 @@ export default function AdminTemplatePage() {
                 <div className="border-b-2 border-slate-900 pb-3 flex items-center justify-between">
                   <div>
                     <h2 className="font-bold text-base">
-                      EC POWER • FIELD AUDIT WORKSHEET
+                      {t("template.blankPdfModal.worksheetTitle", "EC POWER • FIELD AUDIT WORKSHEET")}
                     </h2>
                     <p className="text-xs text-slate-500">
-                      Fill out missing observations manually for later system entry
+                      {t("template.blankPdfModal.worksheetSubtitle", "Fill out missing observations manually for later system entry")}
                     </p>
                   </div>
                   <div className="size-8 rounded border border-slate-300 flex items-center justify-center font-bold text-xs text-slate-500">
@@ -1486,35 +1525,35 @@ export default function AdminTemplatePage() {
                 <div className="space-y-4 text-xs">
                   <div>
                     <div className="font-bold text-slate-700 mb-1">
-                      Site Name &amp; Client Address:
+                      {t("template.blankPdfModal.siteNameClientAddress", "Site Name & Client Address:")}
                     </div>
                     <div className="border-b border-dotted border-slate-400 h-6" />
                   </div>
 
                   <div>
                     <div className="font-bold text-slate-700 mb-1">
-                      Primary Contact &amp; On-Site Telephone:
+                      {t("template.blankPdfModal.primaryContactPhone", "Primary Contact & On-Site Telephone:")}
                     </div>
                     <div className="border-b border-dotted border-slate-400 h-6" />
                   </div>
 
                   <div>
                     <div className="font-bold text-slate-700 mb-1">
-                      Existing Boiler / Heat Pump Make &amp; Serial:
+                      {t("template.blankPdfModal.boilerSerial", "Existing Boiler / Heat Pump Make & Serial:")}
                     </div>
                     <div className="border-b border-dotted border-slate-400 h-6" />
                   </div>
 
                   <div>
                     <div className="font-bold text-slate-700 mb-1">
-                      Gas Flow / Static Pressure Reading (mbar):
+                      {t("template.blankPdfModal.gasReading", "Gas Flow / Static Pressure Reading (mbar):")}
                     </div>
                     <div className="border-b border-dotted border-slate-400 h-6" />
                   </div>
 
                   <div>
                     <div className="font-bold text-slate-700 mb-1">
-                      Technician Field Observations &amp; Access Obstacles:
+                      {t("template.blankPdfModal.fieldObservations", "Technician Field Observations & Access Obstacles:")}
                     </div>
                     <div className="space-y-4 pt-2">
                       <div className="border-b border-slate-300 h-5" />

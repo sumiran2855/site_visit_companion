@@ -2,7 +2,8 @@
   "header": {
     "brand": "EC POWER",
     "badge": "ADMIN",
-    "subtitle": "Administrationsportal"
+    "subtitle": "Administrationsportal",
+    "fieldOperations": "Feltoperationer"
   },
   "login": {
     "cardBadge": "Adminportal",
@@ -24,7 +25,9 @@
     "continueWithGoogle": "Fortsæt med Google",
     "connectingToGoogle": "Opretter forbindelse til Google...",
     "needTechnicianAccess": "Brug for teknikeradgang?",
-    "requestAccount": "Anmod om en konto"
+    "requestAccount": "Anmod om en konto",
+    "email": "E-mail",
+    "password": "Adgangskode"
   },
   "errors": {
     "emailRequired": "Indtast venligst din e-mailadresse.",
@@ -38,13 +41,15 @@
     "specifyCompany": "Angiv venligst den virksomhed eller organisation, du arbejder for.",
     "signupFailed": "Kunne ikke indsende registreringsanmodning. Prøv venligst igen.",
     "unexpectedSignupError": "Der opstod en uventet fejl under registreringen.",
-    "googleSignupFailed": "Kunne ikke starte Google-tilmelding"
+    "googleSignupFailed": "Kunne ikke starte Google-tilmelding",
+    "unknown": "Der opstod en uventet fejl under godkendelsen."
   },
   "footer": {
     "privacyPolicy": "Privatlivspolitik",
     "termsOfService": "Servicevilkår",
     "copyright": "© {{year}} EC POWER. Alle rettigheder forbeholdes.",
-    "adminWebConsole": "Administrator-webkonsol"
+    "adminWebConsole": "Administrator-webkonsol",
+    "rights": "Alle rettigheder forbeholdes."
   },
   "language": {
     "select": "Vælg sprog",
@@ -100,7 +105,10 @@
     "profileNameUpdated": "Profilnavn opdateret med succes",
     "firstName": "Fornavn",
     "middleName": "Mellemnavn (Valgfrit)",
-    "lastName": "Efternavn"
+    "lastName": "Efternavn",
+    "firstNamePlaceholder": "Fornavn",
+    "middleNamePlaceholder": "Mellemnavn (valgfrit)",
+    "lastNamePlaceholder": "Efternavn"
   },
   "accessDenied": {
     "badge": "Administratoradgang påkrævet",
@@ -127,7 +135,11 @@
     "signInButton": "Log ind som administrator",
     "statusReview": "Din anmodning om adgang er stadig under gennemgang af din virksomhedsadministrator.",
     "statusApproved": "Din konto er blevet godkendt af din administrator! Log venligst ind for at få adgang til dit dashboard.",
-    "statusRejected": "Din anmodning om adgang blev afvist af en administrator."
+    "statusRejected": "Din anmodning om adgang blev afvist af en administrator.",
+    "approvedTitle": "Konto godkendt",
+    "approvedDesc": "Din adgangsanmodning er blevet godkendt. Du kan nu logge ind på din konto.",
+    "rejectedTitle": "Adgangsanmodning afvist",
+    "rejectedDesc": "Din adgangsanmodning er blevet afvist. Kontakt venligst din virksomhedsadministrator for hjælp."
   },
   "dashboard": {
     "superAdminTitle": "Super-admin hub",
@@ -270,7 +282,8 @@
       "dispatchedSuccess": "Anmodning(er) sendt til tekniker med succes",
       "notesSaved": "Intern note gemt",
       "zipDownloaded": "Mediepakkemanifest downloadet"
-    }
+    },
+    "technicianPhoto": "Teknikerfoto"
   },
   "modals": {
     "requestMore": {
@@ -303,7 +316,9 @@
       "description": "Del skrivebeskyttet adgang til \"{{site}}\" med driftsledere, ingeniører eller kunder. Linket giver mulighed for at gennemse den verificerede tjekliste, fotodokumentation og downloade den officielle rapport-PDF.",
       "linkLabel": "Delbart weblink",
       "copyTitle": "Kopier link",
-      "draftEmail": "Opret e-mail"
+      "draftEmail": "Opret e-mail",
+      "emailSubject": "EC POWER Besigtigelsesinspektion: {{siteName}}",
+      "emailBody": "Hej,\n\nFind venligst den skrivebeskyttede inspektionsrapport for {{siteName}} på nedenstående link:\n\n{{url}}\n\nDenne sikre rapport indeholder tekniske revisionsspecifikationer, verificerede tjeklistesvar og fotodokumentation i høj opløsning.\n\nMed venlig hilsen\nEC POWER-teamet"
     },
     "mediaViewer": {
       "title": "Medievisning",
@@ -588,7 +603,14 @@
     "blankPdfModal": {
       "title": "Udskriftsvenlig tom tjekliste (Manuelle noter)",
       "desc": "Indeholder linjerede felter til feltteknikere til at skrive på udklipsholder",
-      "print": "Udskriv formular"
+      "print": "Udskriv formular",
+      "worksheetTitle": "EC POWER • ARBEJDSARK TIL FELTREVISION",
+      "worksheetSubtitle": "Udfyld manglende observationer manuelt til senere systemindtastning",
+      "siteNameClientAddress": "Stedsnavn & kundeadresse:",
+      "primaryContactPhone": "Primær kontakt & telefon på stedet:",
+      "boilerSerial": "Eksisterende kedel / varmepumpe fabrikat & serienummer:",
+      "gasReading": "Gasgennemstrømning / statisk trykaflæsning (mbar):",
+      "fieldObservations": "Teknikers feltobservationer & adgangshindringer:"
     },
     "resetModal": {
       "title": "Nulstil skabelon til standard?",
@@ -607,7 +629,8 @@
       "print": "Udskriv",
       "printTitle": "Udskriv komplet flersidet rapport",
       "downloadPdf": "Download PDF",
-      "downloadTitle": "Download eller gem som PDF"
+      "downloadTitle": "Download eller gem som PDF",
+      "iframeTitle": "Fuld flersidet PDF-forhåndsvisning"
     },
     "fieldsModal": {
       "title": "Felter fra besøgsformular",
@@ -633,7 +656,8 @@
       "labelPlaceholder": "f.eks. Stednavn, Mødedato, Kedelrum...",
       "contentPlaceholder": "Valgfri beskrivende undertekst eller instruktioner",
       "contentSparkleHint": "Formularvejledning og afsnitsundertekster",
-      "placeholderSparkleHint": "Tjeklistefelttokens (67+ tilgængelige)"
+      "placeholderSparkleHint": "Tjeklistefelttokens (67+ tilgængelige)",
+      "tokenPlaceholder": "{{field:site_name}} eller [value]"
     },
     "toasts": {
       "loadedDraft": "Tidligere ændringer indlæst — klik på Gem for at gøre dem til den aktive skabelon",
@@ -642,12 +666,36 @@
       "pageAdded": "Tilføjede side {{page}}",
       "templateSaved": "Skabelon gemt med succes",
       "templateSaveError": "Fejl ved lagring af skabelon",
-      "factoryReset": "Standardlayout indlæst — gem for at gøre det aktivt"
+      "factoryReset": "Standardlayout indlæst — gem for at gøre det aktivt",
+      "undoneChange": "Sidste ændring fortrudt.",
+      "redoneChange": "Gentog ændring.",
+      "elementAddedToPage": "Tilføjede {{label}} til {{page}}.",
+      "elementRemovedCanvas": "Element fjernet.",
+      "appliedSuggestionWithPlaceholder": "Anvendte \"{{name}}\" med pladsholder {{placeholder}}.",
+      "appliedSuggestion": "Anvendte \"{{name}}\".",
+      "updatedContentSubtext": "Indholdsundertekst opdateret.",
+      "boundToPlaceholder": "Bundet til pladsholder \"{{placeholder}}\".",
+      "boundElementToField": "Element bundet til \"{{label}}\" ({{placeholder}}).",
+      "pageAddedNum": "Tilføjede side {{pageNumber}}.",
+      "pageDeleted": "Side slettet.",
+      "templateSavedActive": "Skabelon gemt. Den er nu den aktive skabelon for alle PDF'er.",
+      "templateSaveFailed": "Kunne ikke gemme skabelon. Prøv venligst igen.",
+      "factoryResetActive": "Fabrikslayout indlæst. Gem for at gøre den til den aktive skabelon."
     },
     "pageLabel": "Side",
     "sectionLabel": "Afsnit",
     "defaultFindingsHeading": "Yderligere inspektionsfund",
-    "elementFallback": "Element"
+    "elementFallback": "Element",
+    "minPagesAlert": "Skabelonen skal indeholde mindst én side.",
+    "specMarker": "EC POWER • SPECIFIKATION FOR FELTREVISIONSRAPPORT",
+    "pageOfPages": "SIDE {{current}} AF {{total}}",
+    "officialReport": "Officiel rapport",
+    "photoSlot": "Fotoplads {{slot}}",
+    "checklistItem": "Tjeklistepunkt",
+    "statusVerification": "Status / Verifikation",
+    "confidentialProprietary": "FORTROLIGT & PROPRIETÆRT",
+    "thirdWidth": "Tredjedel",
+    "colsCount": "{{count}} kolonner"
   },
   "shared": {
     "loadingTitle": "Indlæser besøgsrapport...",
@@ -750,7 +798,12 @@
     "submitting": "Indsender...",
     "submitRequest": "Indsend adgangsanmodning",
     "haveAccount": "Har du allerede en konto?",
-    "signInInstead": "Log ind i stedet"
+    "signInInstead": "Log ind i stedet",
+    "companyPlaceholder": "EC POWER Partner / Varmeteknik ApS",
+    "firstNamePlaceholder": "Lars",
+    "lastNamePlaceholder": "Jensen",
+    "middleNamePlaceholder": "Valgfrit",
+    "emailPlaceholder": "tekniker@ecpower.dk"
   },
   "privacy": {
     "brand": "EC POWER",
@@ -818,6 +871,8 @@
         "tag": "SEKTION 11",
         "title": "Yderligere bemærkninger"
       }
-    }
+    },
+    "pass": "BESTÅET",
+    "pending": "AFVENTER"
   }
 }

@@ -129,7 +129,7 @@ export default function AdminRetentionPage() {
       )}
 
       {/* Policy Card & Last Cleanup Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Compliance Policy Card */}
         <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs space-y-2">
           <div className="flex items-center gap-2 text-slate-900 dark:text-zinc-100 font-bold text-sm">

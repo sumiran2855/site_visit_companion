@@ -399,6 +399,7 @@ export function Navbar({
                 <input
                   type="text"
                   required
+                  placeholder={t("navbar.firstNamePlaceholder", "First name")}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -411,6 +412,7 @@ export function Navbar({
                 </label>
                 <input
                   type="text"
+                  placeholder={t("navbar.middleNamePlaceholder", "Middle name (optional)")}
                   value={middleName}
                   onChange={(e) => setMiddleName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -424,6 +426,7 @@ export function Navbar({
                 <input
                   type="text"
                   required
+                  placeholder={t("navbar.lastNamePlaceholder", "Last name")}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"

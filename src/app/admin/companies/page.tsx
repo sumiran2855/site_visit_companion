@@ -475,6 +475,10 @@ export default function AdminCompaniesPage() {
                 <input
                   type="text"
                   required
+                  placeholder={t(
+                    "companies.companyNamePlaceholder",
+                    "e.g. Nordic Service Partner A/S"
+                  )}
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -487,6 +491,10 @@ export default function AdminCompaniesPage() {
                 </label>
                 <input
                   type="text"
+                  placeholder={t(
+                    "companies.domainsPlaceholder",
+                    "e.g. ecpower.dk, partner.com"
+                  )}
                   value={editDomains}
                   onChange={(e) => setEditDomains(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -499,6 +507,10 @@ export default function AdminCompaniesPage() {
                 </label>
                 <input
                   type="email"
+                  placeholder={t(
+                    "companies.contactEmailPlaceholder",
+                    "service@company.com"
+                  )}
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"
@@ -511,6 +523,10 @@ export default function AdminCompaniesPage() {
                 </label>
                 <input
                   type="text"
+                  placeholder={t(
+                    "companies.contactPhonePlaceholder",
+                    "+45 12 34 56 78"
+                  )}
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-sm bg-transparent"

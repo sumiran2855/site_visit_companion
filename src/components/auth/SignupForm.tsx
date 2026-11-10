@@ -115,7 +115,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
                 type="text"
                 required
                 autoComplete="given-name"
-                placeholder="John"
+                placeholder={t("signup.firstNamePlaceholder", "John")}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors"
@@ -134,7 +134,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
                 type="text"
                 required
                 autoComplete="family-name"
-                placeholder="Doe"
+                placeholder={t("signup.lastNamePlaceholder", "Doe")}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors"
@@ -154,7 +154,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
               id="middleName"
               type="text"
               autoComplete="additional-name"
-              placeholder=""
+              placeholder={t("signup.middleNamePlaceholder", "Optional")}
               value={middleName}
               onChange={(e) => setMiddleName(e.target.value)}
               className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors"
@@ -175,7 +175,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="technician@ecpower.com"
+                placeholder={t("signup.emailPlaceholder", "technician@ecpower.com")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors"
@@ -207,7 +207,11 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
                 type="button"
                 onClick={toggleShowPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showPassword
+                    ? t("login.hidePassword", "Hide password")
+                    : t("login.showPassword", "Show password")
+                }
               >
                 {showPassword ? (
                   <EyeOff className="size-4" />
@@ -244,7 +248,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
               type="text"
               required
               autoFocus
-              placeholder="e.g. TEST POWER INC"
+              placeholder={t("signup.companyPlaceholder", "e.g. EC POWER or ACME INC")}
               value={company}
               onChange={(e) => setCompany(e.target.value)}
               className="w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3.5 py-2.5 text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:border-zinc-300 dark:focus:ring-zinc-100/10 transition-colors"

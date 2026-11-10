@@ -123,11 +123,11 @@ function PendingContent() {
               <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                    {t("pending.statusApproved", "Registration Approved!")}
+                    {t("pending.approvedTitle", "Registration Approved!")}
                   </h1>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
                     {t(
-                      "pending.statusApproved",
+                      "pending.approvedDesc",
                       "Your account has been verified and approved by the company administrator."
                     )}
                   </p>
@@ -142,11 +142,11 @@ function PendingContent() {
                 </div>
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-50">
-                    {t("pending.statusRejected", "Request Rejected")}
+                    {t("pending.rejectedTitle", "Request Rejected")}
                   </h1>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
                     {t(
-                      "pending.statusRejected",
+                      "pending.rejectedDesc",
                       "Your access request was rejected by an administrator. Please reach out to your team lead."
                     )}
                   </p>
