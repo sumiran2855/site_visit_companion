@@ -118,7 +118,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             <button
               onClick={onPrev}
               className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/70 hover:bg-slate-800 text-white border border-slate-700/50 shadow-lg cursor-pointer transition-all z-10"
-              title="Previous file (Left Arrow)"
+              title={t("modals.mediaViewer.prev", "Previous file (Left Arrow)")}
             >
               <ChevronLeft size={24} />
             </button>
@@ -133,11 +133,12 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                 playsInline
                 className="w-full h-full max-h-[70vh] object-contain rounded-xl"
               >
-                Your browser does not support HTML5 video.
+                {t("modals.mediaViewer.videoNotSupported", "Your browser does not support HTML5 video.")}
               </video>
             </div>
           ) : (
             <div className="relative max-h-[65vh] flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={media.url}
                 alt={media.title}
@@ -150,7 +151,7 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
             <button
               onClick={onNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/70 hover:bg-slate-800 text-white border border-slate-700/50 shadow-lg cursor-pointer transition-all z-10"
-              title="Next file (Right Arrow)"
+              title={t("modals.mediaViewer.next", "Next file (Right Arrow)")}
             >
               <ChevronRight size={24} />
             </button>
@@ -160,12 +161,20 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
         {/* Footer Info */}
         <div className="px-6 py-3 border-t border-slate-800/80 bg-slate-900 text-xs text-slate-400 flex items-center justify-between">
           <span>
-            {media.resolution ? `Resolution: ${media.resolution}` : ""}{" "}
-            {media.fileSize ? `· Size: ${media.fileSize}` : ""}
+            {media.resolution
+              ? `${t("modals.mediaViewer.resolution", "Resolution:")} ${media.resolution}`
+              : ""}{" "}
+            {media.fileSize
+              ? `· ${t("modals.mediaViewer.size", "Size:")} ${media.fileSize}`
+              : ""}
           </span>
-          <span className="text-[11px] text-slate-500">
-            Linked to inspection field: {media.fieldId}
-          </span>
+          {media.fieldId ? (
+            <span className="text-[11px] text-slate-500">
+              {t("modals.mediaViewer.linkedField", "Linked to inspection field: {{field}}", {
+                field: media.fieldId,
+              })}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>

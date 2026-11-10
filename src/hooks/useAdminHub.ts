@@ -3,9 +3,15 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/admin.service";
-import { HttpClient } from "@/lib/api/httpClient";
+import { useTranslation } from "@/i18n";
 import type { PendingAccessRequest, Company, AdminDashboardMetrics } from "@/types/admin";
 import type { UserRole, UserProfile } from "@/types/auth";
+
+interface AdminVisitRecord {
+  companyId?: string | number | null;
+  companyName?: string | null;
+  createdAt: string | Date;
+}
 
 const INITIAL_METRICS: AdminDashboardMetrics = {
   pendingRequestsCount: 0,
@@ -29,6 +35,7 @@ export function resolveAdminCompanyName(
 }
 
 export function useAdminHub() {
+  const { t } = useTranslation();
   const { user, isLoading: isAuthLoading } = useAuth();
   const loadRunId = useRef(0);
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,15 +80,14 @@ export function useAdminHub() {
     if (isAuthLoading) return;
     const runId = ++loadRunId.current;
     try {
-      const http = HttpClient.getInstance();
-
       // Fetch the 4 core resources in parallel ONCE
-      const [comps, members, requests, visits] = await Promise.all([
+      const [comps, members, requests, rawVisits] = await Promise.all([
         AdminService.listCompanies(),
         AdminService.listMembers(),
         AdminService.listPendingRequests(),
         AdminService.listVisits().catch(() => []),
       ]);
+      const visits = rawVisits as AdminVisitRecord[];
 
       if (runId !== loadRunId.current) return;
 
@@ -99,7 +105,7 @@ export function useAdminHub() {
           return AdminService.matchesCompany(m.companyName || m.requestedCompany, comp.name, comp.id, comps);
         }).length;
 
-        const visitCount = visits.filter((v: any) => {
+        const visitCount = visits.filter((v: AdminVisitRecord) => {
           if (v.companyId) {
             return String(v.companyId).toLowerCase() === compId;
           }
@@ -119,7 +125,7 @@ export function useAdminHub() {
       const now = Date.now();
       const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-      const retentionWarningCount = visits.filter((v: any) => {
+      const retentionWarningCount = visits.filter((v: AdminVisitRecord) => {
         const created = new Date(v.createdAt);
         if (isNaN(created.getTime())) return false;
         const ageInDays = Math.floor((now - created.getTime()) / MS_PER_DAY);
@@ -145,10 +151,18 @@ export function useAdminHub() {
         setIsRefreshing(false);
       }
     }
-  }, [isAuthLoading, user?.id, isSuperAdmin]);
+  }, [isAuthLoading, isSuperAdmin]);
 
   useEffect(() => {
-    loadData();
+    let isCancelled = false;
+    Promise.resolve().then(() => {
+      if (!isCancelled) {
+        loadData();
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
   }, [loadData]);
 
   const onRefresh = useCallback(() => {
@@ -181,20 +195,20 @@ export function useAdminHub() {
       try {
         const res = await AdminService.approveRequest(requestId, companyId, companyName, role);
         if (res.success) {
-          showBanner("Applicant approved and assigned successfully");
+          showBanner(t("dashboard.toasts.applicantApproved", "Applicant approved and assigned successfully"));
         } else {
-          showBanner("Failed to approve request");
+          showBanner(t("dashboard.toasts.applicantApproveFailed", "Failed to approve request"));
         }
         await loadData();
       } catch (e) {
         console.error("Failed to approve request:", e);
-        showBanner("Failed to approve request");
+        showBanner(t("dashboard.toasts.applicantApproveFailed", "Failed to approve request"));
       } finally {
         setProcessingRequestId(null);
         setProcessingAction(null);
       }
     },
-    [loadData, showBanner]
+    [loadData, showBanner, t]
   );
 
   const handleRejectConfirm = useCallback(
@@ -203,17 +217,17 @@ export function useAdminHub() {
       setProcessingAction("rejecting");
       try {
         await AdminService.rejectRequest(requestId);
-        showBanner("Access request rejected and purged");
+        showBanner(t("dashboard.toasts.requestRejected", "Access request rejected and purged"));
         await loadData();
       } catch (e) {
         console.error("Failed to reject request:", e);
-        showBanner("Failed to reject request");
+        showBanner(t("dashboard.toasts.requestRejectFailed", "Failed to reject request"));
       } finally {
         setProcessingRequestId(null);
         setProcessingAction(null);
       }
     },
-    [loadData, showBanner]
+    [loadData, showBanner, t]
   );
 
   return {

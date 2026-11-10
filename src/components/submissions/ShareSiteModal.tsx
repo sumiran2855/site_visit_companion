@@ -175,12 +175,11 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
         {/* Content Body */}
         <div className="p-6 space-y-4">
           <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-            Share read-only access to{" "}
-            <strong className="text-slate-900 dark:text-white">
-              &ldquo;{submission.siteName}&rdquo;
-            </strong>{" "}
-            with facility managers, engineers, or clients. The link allows inspecting
-            the verified checklist, photo evidence, and downloading the official report PDF.
+            {t(
+              "modals.share.description",
+              `Share read-only access to "${submission.siteName}" with facility managers, engineers, or clients. The link allows inspecting the verified checklist, photo evidence, and downloading the official report PDF.`,
+              { site: submission.siteName }
+            )}
           </p>
 
           {/* Security & Access Badge */}
@@ -192,7 +191,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
           {/* Share Link Preview Box */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
-              Shareable Web Link
+              {t("modals.share.linkLabel", "Shareable Web Link")}
             </label>
             <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/60 flex items-center justify-between gap-2">
               <span className="flex-1 text-xs font-mono text-slate-700 dark:text-zinc-300 truncate">
@@ -206,7 +205,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
                   type="button"
                   onClick={handleCopy}
                   className="p-1.5 rounded-lg bg-white dark:bg-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-600 text-slate-600 dark:text-zinc-200 shadow-2xs transition-colors cursor-pointer shrink-0"
-                  title="Copy link"
+                  title={t("modals.share.copyTitle", "Copy link")}
                 >
                   {copied ? (
                     <Check size={14} className="text-emerald-600" />
@@ -265,7 +264,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
                 className="py-2 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <Mail size={13} className="text-slate-400" />
-                <span>Draft Email</span>
+                <span>{t("modals.share.draftEmail", "Draft Email")}</span>
               </button>
             </div>
           </div>

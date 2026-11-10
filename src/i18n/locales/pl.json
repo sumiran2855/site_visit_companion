@@ -32,7 +32,13 @@
     "loginFailed": "Logowanie nie powiodło się. Sprawdź swoje dane logowania.",
     "unexpectedError": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
     "googleAuthFailed": "Nie udało się zainicjować uwierzytelniania Google",
-    "demoLoginFailed": "Logowanie demo nie powiodło się"
+    "demoLoginFailed": "Logowanie demo nie powiodło się",
+    "fillRequired": "Proszę wypełnić wszystkie wymagane pola.",
+    "passwordMinLength": "Hasło musi mieć co najmniej 8 znaków.",
+    "specifyCompany": "Proszę podać firmę lub organizację, w której pracujesz.",
+    "signupFailed": "Nie udało się przesłać wniosku rejestracyjnego. Spróbuj ponownie.",
+    "unexpectedSignupError": "Podczas rejestracji wystąpił nieoczekiwany błąd.",
+    "googleSignupFailed": "Nie udało się zainicjować rejestracji przez Google"
   },
   "footer": {
     "privacyPolicy": "Polityka prywatności",
@@ -73,7 +79,9 @@
     "company": "Firma",
     "success": "Sukces",
     "error": "Błąd",
-    "saveChanges": "Zapisz zmiany"
+    "saveChanges": "Zapisz zmiany",
+    "yes": "Tak",
+    "no": "Nie"
   },
   "navbar": {
     "dashboard": "Pulpit",
@@ -162,6 +170,12 @@
       "cannotUndo": "Ten użytkownik nie otrzyma dostępu do systemu.",
       "confirmButton": "Odrzuć wniosek",
       "rejecting": "Odrzucanie..."
+    },
+    "toasts": {
+      "applicantApproved": "Wnioskodawca został pomyślnie zatwierdzony i przypisany",
+      "applicantApproveFailed": "Nie udało się zatwierdzić wniosku",
+      "requestRejected": "Wniosek o dostęp został odrzucony i usunięty",
+      "requestRejectFailed": "Nie udało się odrzucić wniosku"
     }
   },
   "submissions": {
@@ -267,7 +281,15 @@
       "quickPresetsLabel": "Szybkie szablony:",
       "cancel": "Anuluj",
       "send": "Dodaj do kolejki",
-      "sending": "Wysyłanie..."
+      "sending": "Wysyłanie...",
+      "notice": "To żądanie zostanie wyświetlone bezpośrednio w aplikacji mobilnej technika w sekcji „{{area}}”, z prośbą o dostarczenie dodatkowych zdjęć lub wyjaśnień.",
+      "presets": {
+        "clearerPhoto": "Wyraźniejsze zdjęcie tabliczki znamionowej / numeru seryjnego",
+        "retakeBlurry": "Powtórz niewyraźne zdjęcie przy lepszym oświetleniu / z lampą błyskową",
+        "widerAngle": "Zrób dodatkowe ujęcie pokazujące szerszy przebieg rurociągu",
+        "verifyModelSerial": "Sprawdź i zarejestruj model urządzenia oraz numer seryjny",
+        "measurePipe": "Zmierz i zanotuj średnicę rury / wymiary przyłącza"
+      }
     },
     "share": {
       "title": "Udostępnij inspekcję obiektu",
@@ -277,14 +299,24 @@
       "openPreview": "Otwórz widok klienta",
       "expiration": "Link jest aktywny przez 30 dni.",
       "readOnlyNotice": "Dostęp tylko do odczytu • Nie wymaga konta ani logowania klienta",
-      "generating": "Generowanie linku udostępniania..."
+      "generating": "Generowanie linku udostępniania...",
+      "description": "Udostępnij dostęp tylko do odczytu do „{{site}}” zarządcom obiektów, inżynierom lub klientom. Link umożliwia wgląd w zweryfikowaną listę kontrolną, dokumentację fotograficzną oraz pobranie oficjalnego raportu w formacie PDF.",
+      "linkLabel": "Link do udostępnienia",
+      "copyTitle": "Kopiuj link",
+      "draftEmail": "Utwórz wersję roboczą e-mail"
     },
     "mediaViewer": {
       "title": "Przeglądarka multimediów",
       "photo": "Zdjęcie",
       "video": "Wideo",
       "download": "Pobierz plik",
-      "close": "Zamknij podgląd"
+      "close": "Zamknij podgląd",
+      "prev": "Poprzedni plik (Strzałka w lewo)",
+      "next": "Następny plik (Strzałka w prawo)",
+      "videoNotSupported": "Twoja przeglądarka nie obsługuje wideo HTML5.",
+      "resolution": "Rozdzielczość:",
+      "size": "Rozmiar:",
+      "linkedField": "Powiązano z polem inspekcji: {{field}}"
     },
     "pdfPreview": {
       "title": "Raport z inspekcji obiektu",
@@ -297,7 +329,26 @@
       "download": "Pobierz raport (PDF)",
       "generating": "Generowanie raportu PDF...",
       "regenerate": "Wygeneruj ponownie",
-      "close": "Zamknij"
+      "close": "Zamknij",
+      "downloadSuccess": "Pomyślnie pobrano raport z inspekcji w formacie PDF.",
+      "generatingNotice": "Generowanie oficjalnego pliku PDF w wysokiej rozdzielczości...",
+      "printFallbackNotice": "Otwieranie okna drukowania — wybierz opcję 'Zapisz jako PDF', aby zapisać.",
+      "timeoutNotice": "Przekroczono limit czasu pobierania bezpośredniego. Otwieranie podglądu do druku.",
+      "standardTemplate": "Szablon standardowy",
+      "printTitle": "Drukuj dokument lub zapisz za pomocą funkcji drukowania",
+      "docTitle": "Dokument raportu z inspekcji",
+      "officialDocTitle": "Oficjalny dokument PDF",
+      "compilingTitle": "Kompilowanie oficjalnego raportu PDF",
+      "compilingDesc": "Renderowanie zdjęć w wysokiej rozdzielczości, danych wektorowych listy kontrolnej i zatwierdzeń inspektora za pomocą silnika Chromium. To zajmie kilka sekund...",
+      "viewInstantPreview": "Wyświetl natychmiastowy podgląd",
+      "offlineTitle": "Oficjalny moduł renderujący PDF jest offline",
+      "offlineDesc": "Usługa renderowania PDF Chromium trwała dłużej niż oczekiwano lub jest obecnie niedostępna. Możesz wyświetlić podgląd pełnego interaktywnego dokumentu lub bezpośrednio wydrukować / zapisać jako plik PDF.",
+      "openPreview": "Otwórz podgląd",
+      "printSavePdf": "Drukuj / Zapisz jako PDF",
+      "auditTemplateLabel": "Oficjalny szablon audytu EC POWER",
+      "photosEmbedded": "Dołączono {{count}} zdjęć",
+      "tipEsc": "Wskazówka: Naciśnij Esc, aby zamknąć",
+      "downloadFileName": "Pobierz PDF ({{file}})"
     }
   },
   "users": {
@@ -571,7 +622,32 @@
       "copyToken": "Kopiuj token zastępczy",
       "insert": "Wstaw →",
       "tip": "Wskazówka: wybór wiąże token z symbolem zastępczym i automatycznie uzupełnia etykietę"
-    }
+    },
+    "autocomplete": {
+      "sparkleHint": "Automatyczne podpowiedzi z formularza wizyty",
+      "toggleSuggestions": "Przełącz podpowiedzi pól",
+      "suggestionsTitle": "Podpowiedzi z formularza wizyty",
+      "labelPrefix": "Etykieta:",
+      "keyboardHint": "Naciśnij ↑↓, aby nawigować, Enter, aby zastosować",
+      "escHint": "Esc, aby zamknąć",
+      "labelPlaceholder": "np. Nazwa obiektu, Data spotkania, Kotłownia...",
+      "contentPlaceholder": "Opcjonalny tekst opisowy lub instrukcje",
+      "contentSparkleHint": "Wskazówki do formularza i podtytuły sekcji",
+      "placeholderSparkleHint": "Tokeny pól listy kontrolnej (dostępnych 67+)"
+    },
+    "toasts": {
+      "loadedDraft": "Wczytano wcześniejsze zmiany — kliknij Zapisz, aby uczynić je aktywnym szablonem",
+      "elementRemoved": "Element usunięty",
+      "elementAdded": "Dodano {{label}}",
+      "pageAdded": "Dodano stronę {{page}}",
+      "templateSaved": "Szablon zapisany pomyślnie",
+      "templateSaveError": "Błąd podczas zapisywania szablonu",
+      "factoryReset": "Wczytano układ fabryczny — zapisz, aby go aktywować"
+    },
+    "pageLabel": "Strona",
+    "sectionLabel": "Sekcja",
+    "defaultFindingsHeading": "Dodatkowe ustalenia z inspekcji",
+    "elementFallback": "Element"
   },
   "shared": {
     "loadingTitle": "Wczytywanie raportu z wizyty...",
@@ -601,7 +677,18 @@
     "collapseAll": "Zwiń wszystko",
     "downloadCardTitle": "Pobierz oficjalny raport inspekcji w formacie PDF",
     "downloadCardDesc": "Skompilowana wieloczęściowa specyfikacja audytu ze zweryfikowanymi tabelami technicznymi, notatkami i dokumentacją.",
-    "downloadReportPdf": "Pobierz raport PDF"
+    "downloadReportPdf": "Pobierz raport PDF",
+    "missingToken": "Brak tokenu udostępniania w linku.",
+    "defaultTechnician": "Certyfikowany technik serwisowy",
+    "evidenceMedia": "Materiały dowodowe",
+    "mediaCount": "{{count}} plików",
+    "progressRatio": "{{completed}} / {{total}} zweryfikowano ({{percent}}%)",
+    "notRecorded": "Nie zarejestrowano",
+    "noteLabel": "Uwaga:",
+    "attachedPhotos": "Załączone zdjęcia ({{count}})",
+    "viewMedia": "Zobacz",
+    "downloadPdfError": "W tej chwili nie można wygenerować raportu PDF. Spróbuj ponownie.",
+    "footerText": "Oficjalny asystent inspekcji EC POWER • Zweryfikowano przez Supabase i Cloudflare R2"
   },
   "callback": {
     "connectingGoogle": "Łączenie z Google...",
@@ -631,7 +718,21 @@
     "signOutSwitch": "Wyloguj / Zmień konto",
     "noticeTitle": "Komunikat uwierzytelniania",
     "tryAgain": "Spróbuj ponownie",
-    "backToSignIn": "Wróć do logowania"
+    "backToSignIn": "Wróć do logowania",
+    "errors": {
+      "submitFailed": "Nie udało się przesłać wniosku rejestracyjnego. Spróbuj ponownie.",
+      "registrationFailed": "Rejestracja nie powiodła się",
+      "googleCancelled": "Uwierzytelnianie Google zostało anulowane lub odrzucone",
+      "noCredentials": "Nie znaleziono danych uwierzytelniających w odpowiedzi OAuth",
+      "unableToComplete": "Nie można ukończyć uwierzytelniania",
+      "verificationFailed": "Weryfikacja nie powiodła się. Spróbuj zalogować się ponownie.",
+      "authFailed": "Uwierzytelnianie nie powiodło się",
+      "specifyCompany": "Proszę podać swoją firmę lub organizację wykonawcy.",
+      "missingGoogleDetails": "Brak danych konta Google. Zaloguj się ponownie."
+    },
+    "statusReview": "Twój wniosek o dostęp jest nadal sprawdzany przez administratora Twojej firmy.",
+    "statusApproved": "Twoje konto zostało zatwierdzone przez administratora! Zaloguj się, aby uzyskać dostęp do panelu.",
+    "statusRejected": "Twój wniosek o dostęp został odrzucony przez administratora."
   },
   "signup": {
     "createAccount": "Utwórz konto",
@@ -670,5 +771,53 @@
     "backToHome": "Powrót do strony głównej",
     "privacyLink": "Prywatność",
     "copyright": "© EC POWER"
+  },
+  "checklist": {
+    "sections": {
+      "sec-meeting": {
+        "tag": "SEKCJA 1 — 1/9",
+        "title": "Kontekst spotkania"
+      },
+      "sec-consumption": {
+        "tag": "SEKCJA 2 — 2/9",
+        "title": "Dane o zużyciu (1-3 lata)"
+      },
+      "sec-efficiency": {
+        "tag": "SEKCJA 3 — 3/9",
+        "title": "Planowane modernizacje efektywności"
+      },
+      "sec-path": {
+        "tag": "SEKCJA 4 — 4/9",
+        "title": "Ścieżka ogólna / z zewnątrz do kotłowni"
+      },
+      "sec-boiler-room": {
+        "tag": "SEKCJA 5",
+        "title": "Kotłownia / Pomieszczenie techniczne"
+      },
+      "sec-electric-room": {
+        "tag": "SEKCJA 6",
+        "title": "Rozdzielnia elektryczna"
+      },
+      "sec-gas-meter": {
+        "tag": "SEKCJA 7 — 7/9",
+        "title": "Lokalizacja głównego gazomierza"
+      },
+      "sec-adjacent": {
+        "tag": "SEKCJA 8 — 8/9",
+        "title": "Pomieszczenia przyległe (w razie braku miejsca)"
+      },
+      "sec-outdoors": {
+        "tag": "SEKCJA 9 — 9/9",
+        "title": "Teren zewnętrzny"
+      },
+      "sec-marketing": {
+        "tag": "SEKCJA 10",
+        "title": "Marketing i media społecznościowe (za zgodą klienta)"
+      },
+      "sec-notes": {
+        "tag": "SEKCJA 11",
+        "title": "Dodatkowe uwagi"
+      }
+    }
   }
 }

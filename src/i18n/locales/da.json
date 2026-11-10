@@ -32,7 +32,13 @@
     "loginFailed": "Login mislykkedes. Kontroller venligst dine oplysninger.",
     "unexpectedError": "Der opstod en uventet fejl. Prøv venligst igen.",
     "googleAuthFailed": "Kunne ikke starte Google-godkendelse",
-    "demoLoginFailed": "Demo-login mislykkedes"
+    "demoLoginFailed": "Demo-login mislykkedes",
+    "fillRequired": "Udfyld venligst alle påkrævede felter.",
+    "passwordMinLength": "Adgangskoden skal være på mindst 8 tegn.",
+    "specifyCompany": "Angiv venligst den virksomhed eller organisation, du arbejder for.",
+    "signupFailed": "Kunne ikke indsende registreringsanmodning. Prøv venligst igen.",
+    "unexpectedSignupError": "Der opstod en uventet fejl under registreringen.",
+    "googleSignupFailed": "Kunne ikke starte Google-tilmelding"
   },
   "footer": {
     "privacyPolicy": "Privatlivspolitik",
@@ -73,7 +79,9 @@
     "company": "Virksomhed",
     "success": "Succes",
     "error": "Fejl",
-    "saveChanges": "Gem ændringer"
+    "saveChanges": "Gem ændringer",
+    "yes": "Ja",
+    "no": "Nej"
   },
   "navbar": {
     "dashboard": "Dashboard",
@@ -162,6 +170,12 @@
       "cannotUndo": "Denne bruger vil ikke få adgang til systemet.",
       "confirmButton": "Afvis anmodning",
       "rejecting": "Afviser..."
+    },
+    "toasts": {
+      "applicantApproved": "Ansøger blev godkendt og tildelt",
+      "applicantApproveFailed": "Kunne ikke godkende anmodning",
+      "requestRejected": "Adgangsanmodning afvist og slettet",
+      "requestRejectFailed": "Kunne ikke afvise anmodning"
     }
   },
   "submissions": {
@@ -267,7 +281,15 @@
       "quickPresetsLabel": "Hurtige forslag:",
       "cancel": "Annuller",
       "send": "Sæt i kø",
-      "sending": "Indsender..."
+      "sending": "Indsender...",
+      "notice": "Denne anmodning vises direkte i teknikerens mobilapp under afsnittet \"{{area}}\" og beder dem om at levere yderligere fotos eller forklaringer.",
+      "presets": {
+        "clearerPhoto": "Tydeligere foto af typeskilt / serienummermærke",
+        "retakeBlurry": "Gentag sløret foto med mere lys / blitz",
+        "widerAngle": "Tag yderligere vinkel, der viser et bredere rørforløb",
+        "verifyModelSerial": "Bekræft og registrer udstyrsmodel og serienummer",
+        "measurePipe": "Mål og noter rørdiameter / tilslutningsstørrelse"
+      }
     },
     "share": {
       "title": "Del inspektion",
@@ -277,14 +299,24 @@
       "openPreview": "Åbn kundevisning",
       "expiration": "Linket forbliver aktivt i 30 dage.",
       "readOnlyNotice": "Skrivebeskyttet adgang • Ingen konto eller login krævet for kunder",
-      "generating": "Genererer delingslink..."
+      "generating": "Genererer delingslink...",
+      "description": "Del skrivebeskyttet adgang til \"{{site}}\" med driftsledere, ingeniører eller kunder. Linket giver mulighed for at gennemse den verificerede tjekliste, fotodokumentation og downloade den officielle rapport-PDF.",
+      "linkLabel": "Delbart weblink",
+      "copyTitle": "Kopier link",
+      "draftEmail": "Opret e-mail"
     },
     "mediaViewer": {
       "title": "Medievisning",
       "photo": "Foto",
       "video": "Video",
       "download": "Download medie",
-      "close": "Luk forhåndsvisning"
+      "close": "Luk forhåndsvisning",
+      "prev": "Forrige fil (Venstre piltast)",
+      "next": "Næste fil (Højre piltast)",
+      "videoNotSupported": "Din browser understøtter ikke HTML5-video.",
+      "resolution": "Opløsning:",
+      "size": "Størrelse:",
+      "linkedField": "Knyttet til inspektionsfelt: {{field}}"
     },
     "pdfPreview": {
       "title": "Inspektionsrapport",
@@ -297,7 +329,26 @@
       "download": "Download rapport (PDF)",
       "generating": "Genererer PDF-rapport...",
       "regenerate": "Generer igen",
-      "close": "Luk"
+      "close": "Luk",
+      "downloadSuccess": "Inspektionsrapport-PDF blev downloadet.",
+      "generatingNotice": "Genererer officiel PDF i høj opløsning...",
+      "printFallbackNotice": "Åbner udskriftsdialog — vælg 'Gem som PDF' for at gemme.",
+      "timeoutNotice": "Direkte download fik timeout. Åbner udskriftsvenlig forhåndsvisning.",
+      "standardTemplate": "Standard skabelon",
+      "printTitle": "Udskriv dokument eller gem via udskrivning",
+      "docTitle": "Inspektionsrapport dokument",
+      "officialDocTitle": "Officielt PDF-dokument",
+      "compilingTitle": "Kompilerer officiel PDF-rapport",
+      "compilingDesc": "Gengiver fotos i høj opløsning, vektortjeklistedata og inspektørunderskrifter via Chromium-motoren. Dette tager et par sekunder...",
+      "viewInstantPreview": "Vis øjeblikkelig forhåndsvisning",
+      "offlineTitle": "Officiel PDF-gengiver offline",
+      "offlineDesc": "Chromium PDF-gengivelsestjenesten tog længere tid end forventet eller er i øjeblikket offline. Du kan forhåndsvise hele det interaktive dokument eller udskrive / gemme som PDF direkte.",
+      "openPreview": "Åbn forhåndsvisning",
+      "printSavePdf": "Udskriv / Gem som PDF",
+      "auditTemplateLabel": "EC POWER Officiel Inspektionsskabelon",
+      "photosEmbedded": "{{count}} fotos indlejret",
+      "tipEsc": "Tip: Tryk på Esc for at lukke",
+      "downloadFileName": "Download PDF ({{file}})"
     }
   },
   "users": {
@@ -571,7 +622,32 @@
       "copyToken": "Kopier pladsholder-token",
       "insert": "Indsæt →",
       "tip": "Tip: Valg binder token til pladsholder og udfylder automatisk etiketten"
-    }
+    },
+    "autocomplete": {
+      "sparkleHint": "Autoforslag fra inspektionsformularen",
+      "toggleSuggestions": "Slå feltforslag til/fra",
+      "suggestionsTitle": "Forslag fra inspektionsformular",
+      "labelPrefix": "Etiket:",
+      "keyboardHint": "Tryk på ↑↓ for at navigere, Enter for at anvende",
+      "escHint": "Esc for at lukke",
+      "labelPlaceholder": "f.eks. Stednavn, Mødedato, Kedelrum...",
+      "contentPlaceholder": "Valgfri beskrivende undertekst eller instruktioner",
+      "contentSparkleHint": "Formularvejledning og afsnitsundertekster",
+      "placeholderSparkleHint": "Tjeklistefelttokens (67+ tilgængelige)"
+    },
+    "toasts": {
+      "loadedDraft": "Tidligere ændringer indlæst — klik på Gem for at gøre dem til den aktive skabelon",
+      "elementRemoved": "Element fjernet",
+      "elementAdded": "Tilføjede {{label}}",
+      "pageAdded": "Tilføjede side {{page}}",
+      "templateSaved": "Skabelon gemt med succes",
+      "templateSaveError": "Fejl ved lagring af skabelon",
+      "factoryReset": "Standardlayout indlæst — gem for at gøre det aktivt"
+    },
+    "pageLabel": "Side",
+    "sectionLabel": "Afsnit",
+    "defaultFindingsHeading": "Yderligere inspektionsfund",
+    "elementFallback": "Element"
   },
   "shared": {
     "loadingTitle": "Indlæser besøgsrapport...",
@@ -601,7 +677,18 @@
     "collapseAll": "Skjul alle",
     "downloadCardTitle": "Download officiel inspektionsrapport som PDF",
     "downloadCardDesc": "Kompileret flersidet rapportspecifikation med verificerede tekniske tabeller, noter og billeddokumentation.",
-    "downloadReportPdf": "Download rapport PDF"
+    "downloadReportPdf": "Download rapport PDF",
+    "missingToken": "Mangler delingstoken i linket.",
+    "defaultTechnician": "Certificeret servicetekniker",
+    "evidenceMedia": "Dokumentationsmedier",
+    "mediaCount": "{{count}} filer",
+    "progressRatio": "{{completed}} / {{total}} verificeret ({{percent}}%)",
+    "notRecorded": "Ikke registreret",
+    "noteLabel": "Bemærkning:",
+    "attachedPhotos": "Vedhæftede fotos ({{count}})",
+    "viewMedia": "Vis",
+    "downloadPdfError": "Kan ikke generere PDF-rapport i øjeblikket. Prøv venligst igen.",
+    "footerText": "EC POWER Officiel Inspektionsassistent • Verificeret via Supabase & Cloudflare R2"
   },
   "callback": {
     "connectingGoogle": "Forbinder til Google...",
@@ -631,7 +718,21 @@
     "signOutSwitch": "Log ud / Skift konto",
     "noticeTitle": "Godkendelsesmeddelelse",
     "tryAgain": "Prøv igen",
-    "backToSignIn": "Tilbage til login"
+    "backToSignIn": "Tilbage til login",
+    "errors": {
+      "submitFailed": "Kunne ikke indsende tilmeldingsanmodning. Prøv venligst igen.",
+      "registrationFailed": "Registrering mislykkedes",
+      "googleCancelled": "Google-godkendelse blev annulleret eller afvist",
+      "noCredentials": "Ingen godkendelsesoplysninger fundet i OAuth-svaret",
+      "unableToComplete": "Kunne ikke fuldføre godkendelsen",
+      "verificationFailed": "Verificering mislykkedes. Prøv venligst at logge ind igen.",
+      "authFailed": "Godkendelse mislykkedes",
+      "specifyCompany": "Angiv venligst din virksomhed eller entreprenørorganisation.",
+      "missingGoogleDetails": "Mangler Google-kontooplysninger. Log venligst ind igen."
+    },
+    "statusReview": "Din adgangsanmodning er stadig til gennemgang hos din virksomhedsadministrator.",
+    "statusApproved": "Din konto er blevet godkendt af din administrator! Log ind for at få adgang til dit dashboard.",
+    "statusRejected": "Din adgangsanmodning blev afvist af en administrator."
   },
   "signup": {
     "createAccount": "Opret en konto",
@@ -670,5 +771,53 @@
     "backToHome": "Tilbage til forsiden",
     "privacyLink": "Privatliv",
     "copyright": "© EC POWER"
+  },
+  "checklist": {
+    "sections": {
+      "sec-meeting": {
+        "tag": "SEKTION 1 — 1/9",
+        "title": "Mødekontekst"
+      },
+      "sec-consumption": {
+        "tag": "SEKTION 2 — 2/9",
+        "title": "Forbrugsdata (1-3 år)"
+      },
+      "sec-efficiency": {
+        "tag": "SEKTION 3 — 3/9",
+        "title": "Planlagte effektivitetsopgraderinger"
+      },
+      "sec-path": {
+        "tag": "SEKTION 4 — 4/9",
+        "title": "Generel / Udvendig til fyrrum sti"
+      },
+      "sec-boiler-room": {
+        "tag": "SEKTION 5",
+        "title": "Kedel- / Teknikrum"
+      },
+      "sec-electric-room": {
+        "tag": "SEKTION 6",
+        "title": "Elmålerrum"
+      },
+      "sec-gas-meter": {
+        "tag": "SEKTION 7 — 7/9",
+        "title": "Hovedgasmåler placering"
+      },
+      "sec-adjacent": {
+        "tag": "SEKTION 8 — 8/9",
+        "title": "Tilstødende rum (hvis pladsen er trang)"
+      },
+      "sec-outdoors": {
+        "tag": "SEKTION 9 — 9/9",
+        "title": "Udendørs"
+      },
+      "sec-marketing": {
+        "tag": "SEKTION 10",
+        "title": "Markedsføring & Sociale medier (med kundens godkendelse)"
+      },
+      "sec-notes": {
+        "tag": "SEKTION 11",
+        "title": "Yderligere bemærkninger"
+      }
+    }
   }
 }

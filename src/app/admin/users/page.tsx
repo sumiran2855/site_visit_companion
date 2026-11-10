@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Toast */}
       {toastMessage && (
         <div className="bg-emerald-600 text-white px-4 py-3 rounded-2xl flex items-center gap-2 text-sm font-semibold shadow-md animate-in fade-in">

@@ -5,6 +5,7 @@ import { AuthService } from "@/services/auth.service";
 import { TokenHelper } from "@/lib/helpers/token.helper";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/lib/constants";
+import { useTranslation } from "@/i18n";
 
 export type AuthCallbackStatus =
   | "loading"
@@ -53,6 +54,7 @@ function parseJwt(token: string): Record<string, unknown> | null {
 }
 
 export function useAuthCallback(): UseAuthCallbackReturn {
+  const { t } = useTranslation();
   const router = useRouter();
   const { setSession } = useAuth();
   const [status, setStatus] = useState<AuthCallbackStatus>("loading");
@@ -109,7 +111,10 @@ export function useAuthCallback(): UseAuthCallbackReturn {
 
         if (!signupResult.success) {
           setStatus("requires_company");
-          setError(signupResult.error || "Failed to submit signup request. Please try again.");
+          setError(
+            signupResult.error ||
+              t("callback.errors.submitFailed", "Failed to submit signup request. Please try again.")
+          );
           return;
         }
 
@@ -118,12 +123,15 @@ export function useAuthCallback(): UseAuthCallbackReturn {
           router.replace(`${ROUTES.PENDING}?company=${encodeURIComponent(companyName)}`);
         }, 600);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Signup registration failed";
+        const message =
+          err instanceof Error
+            ? err.message
+            : t("callback.errors.registrationFailed", "Signup registration failed");
         setStatus("requires_company");
         setError(message);
       }
     },
-    [controller, router]
+    [controller, router, t]
   );
 
   const processOAuth = useCallback(async () => {
@@ -131,7 +139,13 @@ export function useAuthCallback(): UseAuthCallbackReturn {
 
     if (urlError || errorDesc) {
       setStatus("error");
-      setError(decodeURIComponent(errorDesc || urlError || "Google authentication was cancelled or rejected"));
+      setError(
+        decodeURIComponent(
+          errorDesc ||
+            urlError ||
+            t("callback.errors.googleCancelled", "Google authentication was cancelled or rejected")
+        )
+      );
       return;
     }
 
@@ -152,7 +166,9 @@ export function useAuthCallback(): UseAuthCallbackReturn {
       }
 
       setStatus("error");
-      setError("No authentication credentials found in OAuth response");
+      setError(
+        t("callback.errors.noCredentials", "No authentication credentials found in OAuth response")
+      );
       return;
     }
 
@@ -174,7 +190,9 @@ export function useAuthCallback(): UseAuthCallbackReturn {
       }
 
       if (!result) {
-        throw new Error("Unable to complete authentication");
+        throw new Error(
+          t("callback.errors.unableToComplete", "Unable to complete authentication")
+        );
       }
 
       const finalToken = effectiveToken || TokenHelper.getToken();
@@ -263,13 +281,17 @@ export function useAuthCallback(): UseAuthCallbackReturn {
       }
 
       setStatus("error");
-      setError(errMsg || "Verification failed. Please try signing in again.");
+      setError(
+        errMsg ||
+          t("callback.errors.verificationFailed", "Verification failed. Please try signing in again.")
+      );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Authentication failed";
+      const message =
+        err instanceof Error ? err.message : t("callback.errors.authFailed", "Authentication failed");
       setStatus("error");
       setError(message);
     }
-  }, [controller, registerWithCompany, router, setSession]);
+  }, [controller, registerWithCompany, router, setSession, t]);
 
   useEffect(() => {
     if (processedRef.current) return;
@@ -281,12 +303,16 @@ export function useAuthCallback(): UseAuthCallbackReturn {
     e.preventDefault();
     const trimmed = company.trim();
     if (!trimmed) {
-      setError("Please specify your company or contractor organization.");
+      setError(
+        t("callback.errors.specifyCompany", "Please specify your company or contractor organization.")
+      );
       return;
     }
 
     if (!googleUser) {
-      setError("Missing Google account details. Please sign in again.");
+      setError(
+        t("callback.errors.missingGoogleDetails", "Missing Google account details. Please sign in again.")
+      );
       return;
     }
 

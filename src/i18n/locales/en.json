@@ -32,7 +32,13 @@
     "loginFailed": "Login failed. Please check your credentials.",
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "googleAuthFailed": "Failed to initiate Google authentication",
-    "demoLoginFailed": "Demo login failed"
+    "demoLoginFailed": "Demo login failed",
+    "fillRequired": "Please fill in all required fields.",
+    "passwordMinLength": "Password must be at least 8 characters long.",
+    "specifyCompany": "Please specify the company or organization you work for.",
+    "signupFailed": "Failed to submit signup request. Please try again.",
+    "unexpectedSignupError": "An unexpected error occurred during signup.",
+    "googleSignupFailed": "Failed to initiate Google sign up"
   },
   "footer": {
     "privacyPolicy": "Privacy Policy",
@@ -73,7 +79,9 @@
     "company": "Company",
     "success": "Success",
     "error": "Error",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "yes": "Yes",
+    "no": "No"
   },
   "navbar": {
     "dashboard": "Dashboard",
@@ -162,6 +170,12 @@
       "cannotUndo": "This user will not be granted access to the system.",
       "confirmButton": "Reject Request",
       "rejecting": "Rejecting..."
+    },
+    "toasts": {
+      "applicantApproved": "Applicant approved and assigned successfully",
+      "applicantApproveFailed": "Failed to approve request",
+      "requestRejected": "Access request rejected and purged",
+      "requestRejectFailed": "Failed to reject request"
     }
   },
   "submissions": {
@@ -267,7 +281,15 @@
       "quickPresetsLabel": "Quick Suggestion Presets:",
       "cancel": "Cancel",
       "send": "Queue Feedback",
-      "sending": "Submitting..."
+      "sending": "Submitting...",
+      "notice": "This request will be displayed directly on the technician's mobile app on the \"{{area}}\" section, prompting them to provide additional photos or explanations.",
+      "presets": {
+        "clearerPhoto": "Clearer photo of nameplate / serial tag",
+        "retakeBlurry": "Retake blurry photo with more light / flash",
+        "widerAngle": "Take additional angle showing wider pipe run",
+        "verifyModelSerial": "Verify and record equipment model and serial number",
+        "measurePipe": "Measure and note pipe diameter / connection sizing"
+      }
     },
     "share": {
       "title": "Share Site Inspection",
@@ -277,14 +299,24 @@
       "openPreview": "Open Client View",
       "expiration": "Link remains active for 30 days.",
       "readOnlyNotice": "Read-only access • No account or login required for clients",
-      "generating": "Generating share link..."
+      "generating": "Generating share link...",
+      "description": "Share read-only access to \"{{site}}\" with facility managers, engineers, or clients. The link allows inspecting the verified checklist, photo evidence, and downloading the official report PDF.",
+      "linkLabel": "Shareable Web Link",
+      "copyTitle": "Copy link",
+      "draftEmail": "Draft Email"
     },
     "mediaViewer": {
       "title": "Media Inspection",
       "photo": "Photo",
       "video": "Video",
       "download": "Download Media",
-      "close": "Close Preview"
+      "close": "Close Preview",
+      "prev": "Previous file (Left Arrow)",
+      "next": "Next file (Right Arrow)",
+      "videoNotSupported": "Your browser does not support HTML5 video.",
+      "resolution": "Resolution:",
+      "size": "Size:",
+      "linkedField": "Linked to inspection field: {{field}}"
     },
     "pdfPreview": {
       "title": "Site Inspection Report",
@@ -297,7 +329,26 @@
       "download": "Download Report (PDF)",
       "generating": "Rendering PDF Report...",
       "regenerate": "Regenerate",
-      "close": "Close"
+      "close": "Close",
+      "downloadSuccess": "Inspection report PDF downloaded successfully.",
+      "generatingNotice": "Generating high-resolution official PDF...",
+      "printFallbackNotice": "Opening print dialog — select 'Save as PDF' to save.",
+      "timeoutNotice": "Direct download timed out. Opening printable preview.",
+      "standardTemplate": "Standard Template",
+      "printTitle": "Print document or Save via Print",
+      "docTitle": "Inspection Report Document",
+      "officialDocTitle": "Official PDF Document",
+      "compilingTitle": "Compiling Official PDF Report",
+      "compilingDesc": "Rendering high-resolution photos, vector checklist data, and inspector sign-offs via Chromium engine. This takes a few seconds...",
+      "viewInstantPreview": "View Instant Preview",
+      "offlineTitle": "Official PDF Renderer Offline",
+      "offlineDesc": "The Chromium PDF rendering service took longer than expected or is currently offline. You can preview the full interactive document or print / save as PDF directly.",
+      "openPreview": "Open Preview",
+      "printSavePdf": "Print / Save as PDF",
+      "auditTemplateLabel": "EC POWER Official Audit Template",
+      "photosEmbedded": "{{count}} photos embedded",
+      "tipEsc": "Tip: Press Esc to close",
+      "downloadFileName": "Download PDF ({{file}})"
     }
   },
   "users": {
@@ -571,7 +622,32 @@
       "copyToken": "Copy placeholder token",
       "insert": "Insert →",
       "tip": "Tip: selecting binds token to placeholder & auto-fills label"
-    }
+    },
+    "autocomplete": {
+      "sparkleHint": "Auto-suggest from site visit form",
+      "toggleSuggestions": "Toggle field suggestions",
+      "suggestionsTitle": "Site Visit Form Suggestions",
+      "labelPrefix": "Label:",
+      "keyboardHint": "Press ↑↓ to navigate, Enter to apply",
+      "escHint": "Esc to close",
+      "labelPlaceholder": "e.g. Site Name, Meeting date, Boiler room...",
+      "contentPlaceholder": "Optional descriptive subtext or instructions",
+      "contentSparkleHint": "Form guidance and section subtitles",
+      "placeholderSparkleHint": "Checklist field tokens (67+ available)"
+    },
+    "toasts": {
+      "loadedDraft": "Loaded earlier edits — click Save to make them the active template",
+      "elementRemoved": "Element removed",
+      "elementAdded": "Added {{label}}",
+      "pageAdded": "Added Page {{page}}",
+      "templateSaved": "Template saved successfully",
+      "templateSaveError": "Error saving template",
+      "factoryReset": "Factory layout loaded — save to make it active"
+    },
+    "pageLabel": "Page",
+    "sectionLabel": "Section",
+    "defaultFindingsHeading": "Additional Inspection Findings",
+    "elementFallback": "Element"
   },
   "shared": {
     "loadingTitle": "Loading Site Visit Report...",
@@ -601,7 +677,18 @@
     "collapseAll": "Collapse all",
     "downloadCardTitle": "Download Official Inspection PDF Report",
     "downloadCardDesc": "Compiled multi-section audit specification with verified technical tables, notes, and evidence media.",
-    "downloadReportPdf": "Download Report PDF"
+    "downloadReportPdf": "Download Report PDF",
+    "missingToken": "Missing share token in link.",
+    "defaultTechnician": "Certified Field Technician",
+    "evidenceMedia": "Evidence Media",
+    "mediaCount": "{{count}} files",
+    "progressRatio": "{{completed}} / {{total}} verified ({{percent}}%)",
+    "notRecorded": "Not recorded",
+    "noteLabel": "Note:",
+    "attachedPhotos": "Attached Photos ({{count}})",
+    "viewMedia": "View",
+    "downloadPdfError": "Unable to generate PDF report at this moment. Please try again.",
+    "footerText": "EC POWER Official Field Inspection Companion • Verified via Supabase & Cloudflare R2"
   },
   "callback": {
     "connectingGoogle": "Connecting to Google...",
@@ -631,7 +718,21 @@
     "signOutSwitch": "Sign out / Switch account",
     "noticeTitle": "Authentication Notice",
     "tryAgain": "Try again",
-    "backToSignIn": "Back to Sign In"
+    "backToSignIn": "Back to Sign In",
+    "errors": {
+      "submitFailed": "Failed to submit signup request. Please try again.",
+      "registrationFailed": "Signup registration failed",
+      "googleCancelled": "Google authentication was cancelled or rejected",
+      "noCredentials": "No authentication credentials found in OAuth response",
+      "unableToComplete": "Unable to complete authentication",
+      "verificationFailed": "Verification failed. Please try signing in again.",
+      "authFailed": "Authentication failed",
+      "specifyCompany": "Please specify your company or contractor organization.",
+      "missingGoogleDetails": "Missing Google account details. Please sign in again."
+    },
+    "statusReview": "Your access request is still under review by your company administrator.",
+    "statusApproved": "Your account has been approved by your administrator! Please sign in to access your dashboard.",
+    "statusRejected": "Your access request was rejected by an administrator."
   },
   "signup": {
     "createAccount": "Create an account",
@@ -670,5 +771,53 @@
     "backToHome": "Back to Home",
     "privacyLink": "Privacy",
     "copyright": "© EC POWER"
+  },
+  "checklist": {
+    "sections": {
+      "sec-meeting": {
+        "tag": "SECTION 1 — 1/9",
+        "title": "Meeting Context"
+      },
+      "sec-consumption": {
+        "tag": "SECTION 2 — 2/9",
+        "title": "Consumption Data (1-3 years)"
+      },
+      "sec-efficiency": {
+        "tag": "SECTION 3 — 3/9",
+        "title": "Planned Efficiency Upgrades"
+      },
+      "sec-path": {
+        "tag": "SECTION 4 — 4/9",
+        "title": "General / Exterior-to-Boiler Room Path"
+      },
+      "sec-boiler-room": {
+        "tag": "SECTION 5",
+        "title": "Boiler / Mechanical Room"
+      },
+      "sec-electric-room": {
+        "tag": "SECTION 6",
+        "title": "Electric Meter Room"
+      },
+      "sec-gas-meter": {
+        "tag": "SECTION 7 — 7/9",
+        "title": "Main Gas Meter Location"
+      },
+      "sec-adjacent": {
+        "tag": "SECTION 8 — 8/9",
+        "title": "Adjacent Rooms (if space is limited)"
+      },
+      "sec-outdoors": {
+        "tag": "SECTION 9 — 9/9",
+        "title": "Outdoors"
+      },
+      "sec-marketing": {
+        "tag": "SECTION 10",
+        "title": "Marketing & Social Media (with customer approval)"
+      },
+      "sec-notes": {
+        "tag": "SECTION 11",
+        "title": "Additional Notes"
+      }
+    }
   }
 }

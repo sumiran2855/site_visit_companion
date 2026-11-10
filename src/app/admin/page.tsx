@@ -82,7 +82,7 @@ export default function AdminHubPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Banner */}
       {bannerMessage && (
         <div className="bg-emerald-600 text-white px-4 py-3 rounded-2xl flex items-center justify-between text-sm font-semibold shadow-md animate-in fade-in">

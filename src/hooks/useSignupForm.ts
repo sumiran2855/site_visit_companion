@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./useAuth";
 import { ROUTES } from "@/lib/constants";
+import { useTranslation } from "@/i18n";
 
 export function useSignupForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { signup, loginWithGoogle } = useAuth();
 
@@ -31,12 +33,12 @@ export function useSignupForm() {
     setError(null);
 
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
-      setError("Please fill in all required fields.");
+      setError(t("errors.fillRequired", "Please fill in all required fields."));
       return;
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+      setError(t("errors.passwordMinLength", "Password must be at least 8 characters long."));
       return;
     }
 
@@ -49,7 +51,7 @@ export function useSignupForm() {
 
     const trimmedCompany = company.trim();
     if (!trimmedCompany) {
-      setError("Please specify the company or organization you work for.");
+      setError(t("errors.specifyCompany", "Please specify the company or organization you work for."));
       return;
     }
 
@@ -66,7 +68,7 @@ export function useSignupForm() {
       });
 
       if (!result.success) {
-        setError(result.error || "Failed to submit signup request. Please try again.");
+        setError(result.error || t("errors.signupFailed", "Failed to submit signup request. Please try again."));
         setIsLoading(false);
         return;
       }
@@ -80,7 +82,7 @@ export function useSignupForm() {
         `${ROUTES.PENDING}?company=${encodeURIComponent(trimmedCompany)}&email=${encodeURIComponent(email.trim())}`
       );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An unexpected error occurred during signup.";
+      const message = err instanceof Error ? err.message : t("errors.unexpectedSignupError", "An unexpected error occurred during signup.");
       setError(message);
     } finally {
       setIsLoading(false);
@@ -96,7 +98,7 @@ export function useSignupForm() {
       }
       loginWithGoogle();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to initiate Google sign up";
+      const message = err instanceof Error ? err.message : t("errors.googleSignupFailed", "Failed to initiate Google sign up");
       setError(message);
       setIsLoading(false);
     }

@@ -57,7 +57,7 @@ export default function SharedVisitPage({ params }: PageProps) {
 
   const loadData = useCallback(async () => {
     if (!token) {
-      setErrorMessage("Missing share token in link.");
+      setErrorMessage(t("shared.missingToken", "Missing share token in link."));
       setIsLoading(false);
       return;
     }
@@ -73,12 +73,12 @@ export default function SharedVisitPage({ params }: PageProps) {
       const msg =
         err instanceof Error
           ? err.message
-          : "Shared site visit not found or link has expired.";
+          : t("shared.errorDefault", "Shared site visit not found or link has expired.");
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -86,7 +86,7 @@ export default function SharedVisitPage({ params }: PageProps) {
     Promise.resolve().then(async () => {
       if (!token) {
         if (!isCancelled) {
-          setErrorMessage("Missing share token in link.");
+          setErrorMessage(t("shared.missingToken", "Missing share token in link."));
           setIsLoading(false);
         }
         return;
@@ -104,7 +104,7 @@ export default function SharedVisitPage({ params }: PageProps) {
           const msg =
             err instanceof Error
               ? err.message
-              : "Shared site visit not found or link has expired.";
+              : t("shared.errorDefault", "Shared site visit not found or link has expired.");
           setErrorMessage(msg);
         }
       } finally {
@@ -117,7 +117,7 @@ export default function SharedVisitPage({ params }: PageProps) {
     return () => {
       isCancelled = true;
     };
-  }, [token]);
+  }, [token, t]);
 
   const toggleSection = (sectionId: string) => {
     setOpenSections((prev) => ({
@@ -199,7 +199,7 @@ export default function SharedVisitPage({ params }: PageProps) {
     setActiveMedia({
       id: mediaItem.id,
       type: mediaItem.type === "video" ? "video" : "photo",
-      title: mediaItem.fileName || "Evidence Media",
+      title: mediaItem.fileName || t("shared.evidenceMedia", "Evidence Media"),
       url: mediaItem.signedUrl,
       thumbnailUrl: mediaItem.signedUrl,
       fieldId: mediaItem.fieldId || "",
@@ -215,7 +215,7 @@ export default function SharedVisitPage({ params }: PageProps) {
       await SharedVisitService.downloadPdfReport(data, token);
     } catch (err) {
       console.error("[SharedVisitPage] Failed to download PDF:", err);
-      alert("Unable to generate PDF report at this moment. Please try again.");
+      alert(t("shared.downloadPdfError", "Unable to generate PDF report at this moment. Please try again."));
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -436,7 +436,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                 {t("shared.technician", "Technician")}
               </span>
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                {visit.technicianName || "Certified Field Technician"}
+                {visit.technicianName || t("shared.defaultTechnician", "Certified Field Technician")}
               </p>
             </div>
 
@@ -456,7 +456,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                 {t("shared.evidence", "Evidence")}
               </span>
               <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                {data.media.length} {t("submissions.mediaCount", "{{count}} files", { count: data.media.length })}
+                {t("shared.mediaCount", "{{count}} files", { count: data.media.length })}
               </p>
             </div>
           </div>
@@ -468,7 +468,11 @@ export default function SharedVisitPage({ params }: PageProps) {
                 {t("shared.auditProgress", "Checklist Audit Progress")}
               </span>
               <span className="text-slate-900 dark:text-white font-mono">
-                {visit.completedFields} / {visit.totalFields} verified ({visit.completionPercentage}%)
+                {t("shared.progressRatio", "{{completed}} / {{total}} verified ({{percent}}%)", {
+                  completed: visit.completedFields,
+                  total: visit.totalFields,
+                  percent: visit.completionPercentage,
+                })}
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
@@ -542,10 +546,10 @@ export default function SharedVisitPage({ params }: PageProps) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block truncate">
-                        {section.sectionTag}
+                        {t(`checklist.sections.${section.id}.tag`, section.sectionTag)}
                       </span>
                       <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                        {section.title}
+                        {t(`checklist.sections.${section.id}.title`, section.title)}
                       </h3>
                     </div>
                   </div>
@@ -600,11 +604,11 @@ export default function SharedVisitPage({ params }: PageProps) {
                                 {val ? (
                                   isYes ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white flex items-center gap-1 shrink-0 shadow-xs">
-                                      <Check size={9} /> Yes
+                                      <Check size={9} /> {t("common.yes", "Yes")}
                                     </span>
                                   ) : isNo ? (
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white flex items-center gap-1 shrink-0 shadow-xs">
-                                      <X size={9} /> No
+                                      <X size={9} /> {t("common.no", "No")}
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 shrink-0">
@@ -613,7 +617,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                                   )
                                 ) : (
                                   <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500 italic">
-                                    Not recorded
+                                    {t("shared.notRecorded", "Not recorded")}
                                   </span>
                                 )}
                               </div>
@@ -621,7 +625,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                               {note && (
                                 <p className="text-[11px] text-slate-600 dark:text-zinc-400 bg-white dark:bg-zinc-800/80 p-2 rounded-lg border border-slate-200/60 dark:border-zinc-700/60 mt-1 leading-snug">
                                   <span className="font-bold text-slate-800 dark:text-zinc-200">
-                                    Note:
+                                    {t("shared.noteLabel", "Note:")}
                                   </span>{" "}
                                   {note}
                                 </p>
@@ -635,7 +639,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                     {sectionMedia.length > 0 && (
                       <div className="pt-3 border-t border-slate-100 dark:border-zinc-800">
                         <span className="text-xs font-bold text-slate-900 dark:text-white block mb-2">
-                          Attached Photos ({sectionMedia.length})
+                          {t("shared.attachedPhotos", "Attached Photos ({{count}})", { count: sectionMedia.length })}
                         </span>
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                           {sectionMedia.map((mediaItem) => (
@@ -654,7 +658,7 @@ export default function SharedVisitPage({ params }: PageProps) {
                               />
                               <div className="absolute inset-0 bg-slate-950/25 group-hover:bg-slate-950/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                 <span className="p-1 rounded bg-white/90 text-slate-900 text-[9px] font-bold shadow-xs">
-                                  View
+                                  {t("shared.viewMedia", "View")}
                                 </span>
                               </div>
                             </button>
@@ -697,7 +701,7 @@ export default function SharedVisitPage({ params }: PageProps) {
         {/* Footer */}
         <footer className="pt-4 text-center text-[10px] text-slate-400 dark:text-zinc-500">
           <p>
-            EC POWER Official Field Inspection Companion • Verified via Supabase & Cloudflare R2
+            {t("shared.footerText", "EC POWER Official Field Inspection Companion • Verified via Supabase & Cloudflare R2")}
           </p>
         </footer>
       </main>

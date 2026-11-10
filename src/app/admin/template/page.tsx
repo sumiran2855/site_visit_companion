@@ -1257,8 +1257,8 @@ export default function AdminTemplatePage() {
                   }
                   onSelectSuggestion={handleSelectLabelSuggestion}
                   suggestions={labelSuggestions}
-                  placeholder="e.g. Site Name, Meeting date, Boiler room..."
-                  sparkleHint="Auto-suggestions from Site Visit Form"
+                  placeholder={t("template.autocomplete.labelPlaceholder", "e.g. Site Name, Meeting date, Boiler room...")}
+                  sparkleHint={t("template.autocomplete.sparkleHint", "Auto-suggestions from Site Visit Form")}
                 />
 
                 {/* Content field if applicable with Auto Suggestions */}
@@ -1273,8 +1273,8 @@ export default function AdminTemplatePage() {
                     }
                     onSelectSuggestion={handleSelectContentSuggestion}
                     suggestions={contentSuggestions}
-                    placeholder="Optional descriptive subtext or instructions"
-                    sparkleHint="Form guidance and section subtitles"
+                    placeholder={t("template.autocomplete.contentPlaceholder", "Optional descriptive subtext or instructions")}
+                    sparkleHint={t("template.autocomplete.contentSparkleHint", "Form guidance and section subtitles")}
                   />
                 )}
 
@@ -1291,7 +1291,7 @@ export default function AdminTemplatePage() {
                       onSelectSuggestion={handleSelectPlaceholderSuggestion}
                       suggestions={placeholderSuggestions}
                       placeholder="{{field:site_name}} or [value]"
-                      sparkleHint="Checklist field tokens (67+ available)"
+                      sparkleHint={t("template.autocomplete.placeholderSparkleHint", "Checklist field tokens (67+ available)")}
                       rightBadge={
                         <span className="text-[10px] text-blue-500 font-mono">
                           {"{{ }}"}

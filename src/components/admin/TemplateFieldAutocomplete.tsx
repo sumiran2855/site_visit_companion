@@ -6,6 +6,7 @@ import {
   TemplateSuggestion,
   filterSuggestions,
 } from "@/utils/template-suggestions";
+import { useTranslation } from "@/i18n";
 
 export interface TemplateFieldAutocompleteProps {
   label: string;
@@ -36,14 +37,19 @@ export function TemplateFieldAutocomplete({
   rightBadge,
   helperNode,
   className = "",
-  sparkleHint = "Auto-suggest from site visit form",
+  sparkleHint,
 }: TemplateFieldAutocompleteProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const id = useId();
+
+  const resolvedSparkleHint =
+    sparkleHint ??
+    t("template.autocomplete.sparkleHint", "Auto-suggest from site visit form");
 
   const filtered = filterSuggestions(suggestions, value, value, 10);
 
@@ -123,7 +129,7 @@ export function TemplateFieldAutocomplete({
         >
           <span>{label}</span>
           <span
-            title={sparkleHint}
+            title={resolvedSparkleHint}
             className="inline-flex items-center text-[10px] text-blue-600 dark:text-blue-400 cursor-pointer"
             onClick={() => {
               setIsOpen((prev) => !prev);
@@ -184,7 +190,7 @@ export function TemplateFieldAutocomplete({
             inputRef.current?.focus();
           }}
           className="absolute right-2 top-2.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-0.5 rounded transition-colors"
-          title="Toggle field suggestions"
+          title={t("template.autocomplete.toggleSuggestions", "Toggle field suggestions")}
           tabIndex={-1}
         >
           <ChevronDown
@@ -201,7 +207,7 @@ export function TemplateFieldAutocomplete({
           <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100/90 dark:bg-zinc-800/90 border-b border-slate-200/60 dark:border-zinc-700/60">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
               <Sparkles className="size-3 text-blue-500" />
-              <span>Site Visit Form Suggestions</span>
+              <span>{t("template.autocomplete.suggestionsTitle", "Site Visit Form Suggestions")}</span>
             </span>
             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
               {filtered.length}
@@ -261,7 +267,7 @@ export function TemplateFieldAutocomplete({
                       )}
                       {item.pairedLabel && !item.pairedPlaceholder && (
                         <span className="text-emerald-600 dark:text-emerald-400 shrink-0 ml-auto text-[9px]">
-                          Label: {item.pairedLabel}
+                          {t("template.autocomplete.labelPrefix", "Label:")} {item.pairedLabel}
                         </span>
                       )}
                     </div>
@@ -272,8 +278,8 @@ export function TemplateFieldAutocomplete({
           </ul>
 
           <div className="px-3 py-1 bg-slate-50 dark:bg-zinc-800/50 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-400 flex items-center justify-between">
-            <span>Press ↑↓ to navigate, Enter to apply</span>
-            <span>Esc to close</span>
+            <span>{t("template.autocomplete.keyboardHint", "Press ↑↓ to navigate, Enter to apply")}</span>
+            <span>{t("template.autocomplete.escHint", "Esc to close")}</span>
           </div>
         </div>
       )}

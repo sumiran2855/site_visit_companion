@@ -211,10 +211,10 @@ export function Navbar({
       <header
         className={`relative z-30 w-full border-b border-slate-200/90 dark:border-zinc-800/90 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md sticky top-0 ${className}`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
             {/* Left: Brand + Context */}
-            <div className="flex items-center gap-2.5 sm:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
               {backHref && (
                 <Link
                   href={backHref}
@@ -228,18 +228,18 @@ export function Navbar({
               {/* Logo & Brand text */}
               <Link
                 href={ROUTES.ADMIN}
-                className="flex items-center gap-2.5 select-none group"
+                className="flex items-center gap-2.5 select-none group shrink-0"
               >
-                <div className="flex items-center justify-center size-9 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm transition-transform group-hover:scale-105">
+                <div className="flex items-center justify-center size-9 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-sm transition-transform group-hover:scale-105 shrink-0">
                   <Zap className="size-4 fill-current text-amber-400 dark:text-slate-900" />
                 </div>
                 <div className="flex flex-col text-left">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
+                    <span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white leading-none whitespace-nowrap">
                       EC POWER
                     </span>
                   </div>
-                  <span className="text-[10px] tracking-wider font-semibold text-slate-500 dark:text-zinc-400 uppercase mt-0.5">
+                  <span className="text-[10px] tracking-wider font-semibold text-slate-500 dark:text-zinc-400 uppercase mt-0.5 whitespace-nowrap hidden sm:inline-block">
                     {displaySubtitle}
                   </span>
                 </div>
@@ -248,14 +248,14 @@ export function Navbar({
 
             {/* Center: Desktop Navigation Tabs */}
             {isAuthenticated && isAdmin && (
-              <nav className="hidden md:flex items-center gap-1 bg-slate-100/90 dark:bg-zinc-800/90 p-1 rounded-xl text-xs font-medium">
+              <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 bg-slate-100/90 dark:bg-zinc-800/90 p-1 rounded-xl text-xs font-medium shrink-0">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg transition-all whitespace-nowrap shrink-0 ${
                         item.isActive
                           ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white font-bold shadow-xs"
                           : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
@@ -270,7 +270,7 @@ export function Navbar({
             )}
 
             {/* Right: Actions & User Dropdown */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {actions && (
                 <div className="flex items-center gap-2">{actions}</div>
               )}
@@ -284,18 +284,18 @@ export function Navbar({
                   <button
                     type="button"
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer select-none border border-slate-200/80 dark:border-zinc-800"
+                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer select-none border border-slate-200/80 dark:border-zinc-800 shrink-0"
                     aria-expanded={showUserMenu}
                   >
-                    <div className="size-7 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold flex items-center justify-center text-xs shadow-xs">
+                    <div className="size-7 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold flex items-center justify-center text-xs shadow-xs shrink-0">
                       {userInitial}
                     </div>
                     <div className="hidden sm:flex flex-col text-left">
-                      <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 max-w-[120px] truncate leading-tight">
+                      <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 max-w-[100px] xl:max-w-[130px] truncate leading-tight">
                         {fullName}
                       </span>
                       <span
-                        className={`text-[10px] font-semibold leading-none mt-0.5 ${
+                        className={`text-[10px] font-semibold leading-none mt-0.5 whitespace-nowrap ${
                           isSuperAdmin
                             ? "text-amber-600 dark:text-amber-400"
                             : "text-sky-600 dark:text-sky-400"
@@ -304,7 +304,7 @@ export function Navbar({
                         {roleLabel}
                       </span>
                     </div>
-                    <ChevronDown className="size-3.5 text-slate-400" />
+                    <ChevronDown className="size-3.5 text-slate-400 shrink-0" />
                   </button>
 
                   {/* Dropdown Menu */}
@@ -324,7 +324,7 @@ export function Navbar({
                       </div>
 
                       {/* Mobile Navigation Links */}
-                      <div className="md:hidden py-1 border-b border-slate-100 dark:border-zinc-800">
+                      <div className="lg:hidden py-1 border-b border-slate-100 dark:border-zinc-800">
                         {navItems.map((item) => (
                           <Link
                             key={item.href}

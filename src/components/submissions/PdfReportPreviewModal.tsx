@@ -242,14 +242,14 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
     // 1. If PDF blob is already available, download immediately
     if (pdfBlob) {
       PdfService.downloadBlob(pdfBlob, fileName);
-      setNotice("Inspection report PDF downloaded successfully.");
+      setNotice(t("modals.pdfPreview.downloadSuccess", "Inspection report PDF downloaded successfully."));
       setTimeout(() => setNotice(null), 4000);
       return;
     }
 
     // 2. If backend generation is currently in progress, wait for it or fetch
     setIsDownloading(true);
-    setNotice("Generating high-resolution official PDF...");
+    setNotice(t("modals.pdfPreview.generatingNotice", "Generating high-resolution official PDF..."));
 
     try {
       const reportData = PdfService.extractReportData(submission);
@@ -274,15 +274,15 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
         const url = window.URL.createObjectURL(blob);
         setPdfBlobUrl(url);
         PdfService.downloadBlob(blob, fileName);
-        setNotice("Inspection report PDF downloaded successfully.");
+        setNotice(t("modals.pdfPreview.downloadSuccess", "Inspection report PDF downloaded successfully."));
       } else {
         // Fallback: trigger print dialog to save as PDF
-        setNotice("Opening print dialog — select 'Save as PDF' to save.");
+        setNotice(t("modals.pdfPreview.printFallbackNotice", "Opening print dialog — select 'Save as PDF' to save."));
         handlePrint();
       }
     } catch (err) {
       console.error("[PdfReportPreviewModal] Download error:", err);
-      setNotice("Direct download timed out. Opening printable preview.");
+      setNotice(t("modals.pdfPreview.timeoutNotice", "Direct download timed out. Opening printable preview."));
       handlePrint();
     } finally {
       setIsDownloading(false);
@@ -316,7 +316,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   {t("modals.pdfPreview.title", "Site Inspection Report")}
                 </h3>
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                  {activeTemplate ? activeTemplate.name : "Standard Template"}
+                  {activeTemplate ? activeTemplate.name : t("modals.pdfPreview.standardTemplate", "Standard Template")}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 truncate">
@@ -398,7 +398,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
               type="button"
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold hover:border-slate-600 transition-colors cursor-pointer"
-              title="Print document or Save via Print"
+              title={t("modals.pdfPreview.printTitle", "Print document or Save via Print")}
             >
               <Printer size={13} className="text-slate-400" />
               <span className="hidden sm:inline">{t("modals.pdfPreview.print", "Print")}</span>
@@ -465,7 +465,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                 <iframe
                   ref={iframeRef}
                   srcDoc={htmlContent}
-                  title="Inspection Report Document"
+                  title={t("modals.pdfPreview.docTitle", "Inspection Report Document")}
                   onLoad={handleIframeLoad}
                   className="w-full border-0 block"
                   style={{
@@ -484,7 +484,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   <iframe
                     ref={pdfIframeRef}
                     src={`${pdfBlobUrl}#view=FitH`}
-                    title="Official PDF Document"
+                    title={t("modals.pdfPreview.officialDocTitle", "Official PDF Document")}
                     className="w-full h-full border-0"
                   />
                 </div>
@@ -495,11 +495,10 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-white">
-                      Compiling Official PDF Report
+                      {t("modals.pdfPreview.compilingTitle", "Compiling Official PDF Report")}
                     </h4>
                     <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      Rendering high-resolution photos, vector checklist data, and
-                      inspector sign-offs via Chromium engine. This takes a few seconds...
+                      {t("modals.pdfPreview.compilingDesc", "Rendering high-resolution photos, vector checklist data, and inspector sign-offs via Chromium engine. This takes a few seconds...")}
                     </p>
                   </div>
                   <button
@@ -508,7 +507,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-xs font-semibold text-sky-300 border border-slate-700 transition-colors cursor-pointer"
                   >
                     <Eye size={13} />
-                    View Instant Preview
+                    {t("modals.pdfPreview.viewInstantPreview", "View Instant Preview")}
                   </button>
                 </div>
               ) : (
@@ -518,10 +517,10 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-white">
-                      Official PDF Renderer Offline
+                      {t("modals.pdfPreview.offlineTitle", "Official PDF Renderer Offline")}
                     </h4>
                     <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      The Chromium PDF rendering service took longer than expected or is currently offline. You can preview the full interactive document or print / save as PDF directly.
+                      {t("modals.pdfPreview.offlineDesc", "The Chromium PDF rendering service took longer than expected or is currently offline. You can preview the full interactive document or print / save as PDF directly.")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2.5">
@@ -531,7 +530,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition-colors cursor-pointer"
                     >
                       <Eye size={13} />
-                      Open Preview
+                      {t("modals.pdfPreview.openPreview", "Open Preview")}
                     </button>
                     <button
                       type="button"
@@ -539,7 +538,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors cursor-pointer"
                     >
                       <Printer size={13} />
-                      Print / Save as PDF
+                      {t("modals.pdfPreview.printSavePdf", "Print / Save as PDF")}
                     </button>
                   </div>
                 </div>
@@ -553,22 +552,28 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span className="font-medium text-slate-300">
-              EC POWER Official Audit Template
+              {t("modals.pdfPreview.auditTemplateLabel", "EC POWER Official Audit Template")}
             </span>
             <span className="text-slate-600">·</span>
-            <span>22 photos embedded</span>
+            <span>
+              {t("modals.pdfPreview.photosEmbedded", "{{count}} photos embedded", {
+                count: submission.mediaCount.photos,
+              })}
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-slate-500">
-              Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono text-[10px]">Esc</kbd> to close
+              {t("modals.pdfPreview.tipEsc", "Tip: Press Esc to close")}
             </span>
             <button
               type="button"
               onClick={handleDownloadPdf}
               className="text-sky-400 hover:text-sky-300 font-semibold cursor-pointer"
             >
-              Download PDF ({fileName})
+              {t("modals.pdfPreview.downloadFileName", "Download PDF ({{file}})", {
+                file: fileName,
+              })}
             </button>
           </div>
         </div>

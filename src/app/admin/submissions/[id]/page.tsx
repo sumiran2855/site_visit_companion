@@ -64,7 +64,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto py-12 text-center animate-pulse">
+      <div className="max-w-screen-2xl mx-auto py-12 text-center animate-pulse">
         <div className="h-6 bg-slate-200 dark:bg-zinc-800 rounded w-1/3 mx-auto mb-4"></div>
         <div className="h-4 bg-slate-100 dark:bg-zinc-800/60 rounded w-1/4 mx-auto mb-10"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -126,7 +126,7 @@ export default function SubmissionDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto p-4">
+    <div className="space-y-4 max-w-screen-2xl mx-auto p-4 sm:px-6 lg:px-8">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-slate-900 text-white shadow-xl text-xs font-medium flex items-center gap-2.5 border border-slate-700 animate-in fade-in slide-in-from-bottom-2">

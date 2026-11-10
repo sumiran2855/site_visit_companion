@@ -32,7 +32,13 @@
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
     "googleAuthFailed": "Google-Authentifizierung konnte nicht initiiert werden",
-    "demoLoginFailed": "Demo-Anmeldung fehlgeschlagen"
+    "demoLoginFailed": "Demo-Anmeldung fehlgeschlagen",
+    "fillRequired": "Bitte füllen Sie alle erforderlichen Felder aus.",
+    "passwordMinLength": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    "specifyCompany": "Bitte geben Sie das Unternehmen oder die Organisation an, für die Sie arbeiten.",
+    "signupFailed": "Registrierungsanfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    "unexpectedSignupError": "Bei der Registrierung ist ein unerwarteter Fehler aufgetreten.",
+    "googleSignupFailed": "Google-Registrierung konnte nicht gestartet werden"
   },
   "footer": {
     "privacyPolicy": "Datenschutzerklärung",
@@ -73,7 +79,9 @@
     "company": "Unternehmen",
     "success": "Erfolg",
     "error": "Fehler",
-    "saveChanges": "Änderungen speichern"
+    "saveChanges": "Änderungen speichern",
+    "yes": "Ja",
+    "no": "Nein"
   },
   "navbar": {
     "dashboard": "Dashboard",
@@ -162,6 +170,12 @@
       "cannotUndo": "Diesem Benutzer wird kein Zugriff auf das System gewährt.",
       "confirmButton": "Anfrage ablehnen",
       "rejecting": "Wird abgelehnt..."
+    },
+    "toasts": {
+      "applicantApproved": "Bewerber erfolgreich genehmigt und zugewiesen",
+      "applicantApproveFailed": "Fehler beim Genehmigen der Anfrage",
+      "requestRejected": "Zugriffsanfrage abgelehnt und gelöscht",
+      "requestRejectFailed": "Fehler beim Ablehnen der Anfrage"
     }
   },
   "submissions": {
@@ -267,7 +281,15 @@
       "quickPresetsLabel": "Schnellvorlagen:",
       "cancel": "Abbrechen",
       "send": "Rückmeldung einreihen",
-      "sending": "Wird eingereicht..."
+      "sending": "Wird eingereicht...",
+      "notice": "Diese Anfrage wird direkt in der mobilen App des Technikers im Bereich „{{area}}“ angezeigt und fordert ihn auf, zusätzliche Fotos oder Erklärungen bereitzustellen.",
+      "presets": {
+        "clearerPhoto": "Klareres Foto des Typenschilds / Seriennummernetiketts",
+        "retakeBlurry": "Unscharfes Foto mit mehr Licht / Blitz erneut aufnehmen",
+        "widerAngle": "Zusätzlichen Winkel aufnehmen, der den breiteren Rohrverlauf zeigt",
+        "verifyModelSerial": "Gerätemodell und Seriennummer überprüfen und erfassen",
+        "measurePipe": "Rohrdurchmesser / Anschlussmaße messen und notieren"
+      }
     },
     "share": {
       "title": "Standortbesichtigung teilen",
@@ -277,14 +299,24 @@
       "openPreview": "Kundenansicht öffnen",
       "expiration": "Link bleibt 30 Tage lang gültig.",
       "readOnlyNotice": "Nur Lesezugriff • Kein Konto oder Login für Kunden erforderlich",
-      "generating": "Freigabelink wird generiert..."
+      "generating": "Freigabelink wird generiert...",
+      "description": "Geben Sie schreibgeschützten Zugriff auf „{{site}}“ für Facility Manager, Ingenieure oder Kunden frei. Über den Link können die verifizierte Checkliste und Fotonachweise eingesehen sowie der offizielle Bericht als PDF heruntergeladen werden.",
+      "linkLabel": "Freigabelink",
+      "copyTitle": "Link kopieren",
+      "draftEmail": "E-Mail verfassen"
     },
     "mediaViewer": {
       "title": "Medienansicht",
       "photo": "Foto",
       "video": "Video",
       "download": "Medium herunterladen",
-      "close": "Vorschau schließen"
+      "close": "Vorschau schließen",
+      "prev": "Vorherige Datei (Pfeiltaste links)",
+      "next": "Nächste Datei (Pfeiltaste rechts)",
+      "videoNotSupported": "Ihr Browser unterstützt HTML5-Videos nicht.",
+      "resolution": "Auflösung:",
+      "size": "Größe:",
+      "linkedField": "Verknüpft mit Inspektionsfeld: {{field}}"
     },
     "pdfPreview": {
       "title": "Besichtigungsbericht",
@@ -297,7 +329,26 @@
       "download": "Bericht herunterladen (PDF)",
       "generating": "PDF-Bericht wird gerendert...",
       "regenerate": "Neu generieren",
-      "close": "Schließen"
+      "close": "Schließen",
+      "downloadSuccess": "Prüfbericht-PDF erfolgreich heruntergeladen.",
+      "generatingNotice": "Offizielles hochauflösendes PDF wird erstellt...",
+      "printFallbackNotice": "Druckdialog wird geöffnet — wählen Sie 'Als PDF speichern' zum Speichern.",
+      "timeoutNotice": "Zeitüberschreitung beim direkten Download. Druckbare Vorschau wird geöffnet.",
+      "standardTemplate": "Standardvorlage",
+      "printTitle": "Dokument drucken oder über Druckfunktion speichern",
+      "docTitle": "Inspektionsbericht-Dokument",
+      "officialDocTitle": "Offizielles PDF-Dokument",
+      "compilingTitle": "Offizieller PDF-Bericht wird kompiliert",
+      "compilingDesc": "Rendern hochauflösender Fotos, Vektor-Checklistendaten und Prüferabzeichnungen über die Chromium-Engine. Dies dauert einige Sekunden...",
+      "viewInstantPreview": "Sofortvorschau anzeigen",
+      "offlineTitle": "Offizieller PDF-Renderer offline",
+      "offlineDesc": "Der Chromium-PDF-Rendering-Dienst hat länger als erwartet gedauert oder ist derzeit offline. Sie können das vollständige interaktive Dokument in der Vorschau anzeigen oder direkt drucken / als PDF speichern.",
+      "openPreview": "Vorschau öffnen",
+      "printSavePdf": "Drucken / Als PDF speichern",
+      "auditTemplateLabel": "EC POWER Offizielle Prüfvorlage",
+      "photosEmbedded": "{{count}} Fotos eingebettet",
+      "tipEsc": "Tipp: Drücken Sie Esc zum Schließen",
+      "downloadFileName": "PDF herunterladen ({{file}})"
     }
   },
   "users": {
@@ -571,7 +622,32 @@
       "copyToken": "Platzhalter-Token kopieren",
       "insert": "Einfügen →",
       "tip": "Tipp: Bei Auswahl wird das Token gebunden und die Bezeichnung automatisch ausgefüllt"
-    }
+    },
+    "autocomplete": {
+      "sparkleHint": "Automatische Vorschläge aus dem Besichtigungsformular",
+      "toggleSuggestions": "Feldvorschläge ein-/ausblenden",
+      "suggestionsTitle": "Vorschläge aus dem Besichtigungsformular",
+      "labelPrefix": "Beschriftung:",
+      "keyboardHint": "↑↓ zum Navigieren, Enter zum Übernehmen",
+      "escHint": "Esc zum Schließen",
+      "labelPlaceholder": "z. B. Standortname, Besprechungsdatum, Heizraum...",
+      "contentPlaceholder": "Optionaler Beschreibungstext oder Anweisungen",
+      "contentSparkleHint": "Formularhinweise und Abschnittsuntertitel",
+      "placeholderSparkleHint": "Checklisten-Feld-Token (67+ verfügbar)"
+    },
+    "toasts": {
+      "loadedDraft": "Frühere Bearbeitungen geladen — klicken Sie auf Speichern, um sie zur aktiven Vorlage zu machen",
+      "elementRemoved": "Element entfernt",
+      "elementAdded": "{{label}} hinzugefügt",
+      "pageAdded": "Seite {{page}} hinzugefügt",
+      "templateSaved": "Vorlage erfolgreich gespeichert",
+      "templateSaveError": "Fehler beim Speichern der Vorlage",
+      "factoryReset": "Standardlayout geladen — speichern Sie es, um es zu aktivieren"
+    },
+    "pageLabel": "Seite",
+    "sectionLabel": "Abschnitt",
+    "defaultFindingsHeading": "Zusätzliche Inspektionsbefunde",
+    "elementFallback": "Element"
   },
   "shared": {
     "loadingTitle": "Standortbesuchsbericht wird geladen...",
@@ -601,7 +677,18 @@
     "collapseAll": "Alle einklappen",
     "downloadCardTitle": "Offiziellen Inspektions-PDF-Bericht herunterladen",
     "downloadCardDesc": "Zusammengestellte mehrteilige Prüfspezifikation mit geprüften technischen Tabellen, Notizen und Beweismedien.",
-    "downloadReportPdf": "Berichts-PDF herunterladen"
+    "downloadReportPdf": "Berichts-PDF herunterladen",
+    "missingToken": "Freigabetoken im Link fehlt.",
+    "defaultTechnician": "Zertifizierter Servicetechniker",
+    "evidenceMedia": "Nachweismedien",
+    "mediaCount": "{{count}} Dateien",
+    "progressRatio": "{{completed}} / {{total}} verifiziert ({{percent}}%)",
+    "notRecorded": "Nicht erfasst",
+    "noteLabel": "Hinweis:",
+    "attachedPhotos": "Angehängte Fotos ({{count}})",
+    "viewMedia": "Ansehen",
+    "downloadPdfError": "Der PDF-Bericht kann derzeit nicht erstellt werden. Bitte versuchen Sie es erneut.",
+    "footerText": "EC POWER Offizieller Inspektionsbegleiter • Verifiziert über Supabase & Cloudflare R2"
   },
   "callback": {
     "connectingGoogle": "Verbindung zu Google wird hergestellt...",
@@ -631,7 +718,21 @@
     "signOutSwitch": "Abmelden / Konto wechseln",
     "noticeTitle": "Authentifizierungshinweis",
     "tryAgain": "Erneut versuchen",
-    "backToSignIn": "Zurück zur Anmeldung"
+    "backToSignIn": "Zurück zur Anmeldung",
+    "errors": {
+      "submitFailed": "Registrierungsanfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "registrationFailed": "Registrierung fehlgeschlagen",
+      "googleCancelled": "Google-Authentifizierung wurde abgebrochen oder abgelehnt",
+      "noCredentials": "Keine Authentifizierungsdaten in der OAuth-Antwort gefunden",
+      "unableToComplete": "Authentifizierung konnte nicht abgeschlossen werden",
+      "verificationFailed": "Verifizierung fehlgeschlagen. Bitte melden Sie sich erneut an.",
+      "authFailed": "Authentifizierung fehlgeschlagen",
+      "specifyCompany": "Bitte geben Sie Ihr Unternehmen oder Ihre Dienstleisterorganisation an.",
+      "missingGoogleDetails": "Google-Kontodaten fehlen. Bitte melden Sie sich erneut an."
+    },
+    "statusReview": "Ihre Zugriffsanfrage wird derzeit noch von Ihrem Unternehmensadministrator geprüft.",
+    "statusApproved": "Ihr Konto wurde von Ihrem Administrator genehmigt! Bitte melden Sie sich an, um auf Ihr Dashboard zuzugreifen.",
+    "statusRejected": "Ihre Zugriffsanfrage wurde von einem Administrator abgelehnt."
   },
   "signup": {
     "createAccount": "Konto erstellen",
@@ -670,5 +771,53 @@
     "backToHome": "Zurück zur Startseite",
     "privacyLink": "Datenschutz",
     "copyright": "© EC POWER"
+  },
+  "checklist": {
+    "sections": {
+      "sec-meeting": {
+        "tag": "ABSCHNITT 1 — 1/9",
+        "title": "Besprechungskontext"
+      },
+      "sec-consumption": {
+        "tag": "ABSCHNITT 2 — 2/9",
+        "title": "Verbrauchsdaten (1-3 Jahre)"
+      },
+      "sec-efficiency": {
+        "tag": "ABSCHNITT 3 — 3/9",
+        "title": "Geplante Effizienzmaßnahmen"
+      },
+      "sec-path": {
+        "tag": "ABSCHNITT 4 — 4/9",
+        "title": "Allgemeiner Weg / Außenbereich zum Heizraum"
+      },
+      "sec-boiler-room": {
+        "tag": "ABSCHNITT 5",
+        "title": "Heiz- / Technikraum"
+      },
+      "sec-electric-room": {
+        "tag": "ABSCHNITT 6",
+        "title": "Elektrozählerraum"
+      },
+      "sec-gas-meter": {
+        "tag": "ABSCHNITT 7 — 7/9",
+        "title": "Hauptgaszähler-Standort"
+      },
+      "sec-adjacent": {
+        "tag": "ABSCHNITT 8 — 8/9",
+        "title": "Angrenzende Räume (bei Platzmangel)"
+      },
+      "sec-outdoors": {
+        "tag": "ABSCHNITT 9 — 9/9",
+        "title": "Außenbereich"
+      },
+      "sec-marketing": {
+        "tag": "ABSCHNITT 10",
+        "title": "Marketing & Social Media (mit Kundengenehmigung)"
+      },
+      "sec-notes": {
+        "tag": "ABSCHNITT 11",
+        "title": "Zusätzliche Notizen"
+      }
+    }
   }
 }

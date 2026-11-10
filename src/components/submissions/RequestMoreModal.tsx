@@ -11,14 +11,6 @@ export interface RequestMoreModalProps {
   onSubmit: (text: string) => void | Promise<void>;
 }
 
-const QUICK_PRESETS = [
-  "Clearer photo of nameplate / serial tag",
-  "Retake blurry photo with more light / flash",
-  "Take additional angle showing wider pipe run",
-  "Verify and record equipment model and serial number",
-  "Measure and note pipe diameter / connection sizing",
-];
-
 export function RequestMoreModal({
   isOpen,
   areaName,
@@ -28,6 +20,29 @@ export function RequestMoreModal({
   const { t } = useTranslation();
   const [requestText, setRequestText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const quickPresets = [
+    {
+      id: "clearerPhoto",
+      text: t("modals.requestMore.presets.clearerPhoto", "Clearer photo of nameplate / serial tag"),
+    },
+    {
+      id: "retakeBlurry",
+      text: t("modals.requestMore.presets.retakeBlurry", "Retake blurry photo with more light / flash"),
+    },
+    {
+      id: "widerAngle",
+      text: t("modals.requestMore.presets.widerAngle", "Take additional angle showing wider pipe run"),
+    },
+    {
+      id: "verifyModelSerial",
+      text: t("modals.requestMore.presets.verifyModelSerial", "Verify and record equipment model and serial number"),
+    },
+    {
+      id: "measurePipe",
+      text: t("modals.requestMore.presets.measurePipe", "Measure and note pipe diameter / connection sizing"),
+    },
+  ];
 
   if (!isOpen) return null;
 
@@ -103,14 +118,14 @@ export function RequestMoreModal({
               {t("modals.requestMore.quickPresetsLabel", "Quick Suggestion Presets:")}
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {QUICK_PRESETS.map((p) => (
+              {quickPresets.map((p) => (
                 <button
-                  key={p}
+                  key={p.id}
                   type="button"
-                  onClick={() => handleApplyPreset(p)}
+                  onClick={() => handleApplyPreset(p.text)}
                   className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[11px] text-slate-700 dark:text-zinc-300 transition-colors text-left cursor-pointer"
                 >
-                  + {p}
+                  + {p.text}
                 </button>
               ))}
             </div>
@@ -120,7 +135,11 @@ export function RequestMoreModal({
           <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 flex items-start gap-2.5">
             <AlertCircle size={15} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
-              This request will be displayed directly on the technician&apos;s mobile app on the &quot;{areaName}&quot; section, prompting them to provide additional photos or explanations.
+              {t(
+                "modals.requestMore.notice",
+                `This request will be displayed directly on the technician's mobile app on the "${areaName}" section, prompting them to provide additional photos or explanations.`,
+                { area: areaName }
+              )}
             </p>
           </div>
 

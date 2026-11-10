@@ -33,7 +33,15 @@ export function useSubmissions() {
   }, []);
 
   useEffect(() => {
-    loadSubmissions();
+    let isCancelled = false;
+    Promise.resolve().then(() => {
+      if (!isCancelled) {
+        loadSubmissions();
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
   }, [loadSubmissions]);
 
   // Status Tab Counts

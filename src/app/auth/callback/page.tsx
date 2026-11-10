@@ -26,9 +26,7 @@ function AuthCallbackContent() {
 
   const [isChecking, setIsChecking] = useState(false);
   const [approvalState, setApprovalState] = useState<"pending" | "approved" | "rejected">("pending");
-  const [statusMessage, setStatusMessage] = useState<string | null>(
-    "Your access request is still under review by your company administrator."
-  );
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const targetEmail =
     googleUser?.email ||
@@ -84,22 +82,40 @@ function AuthCallbackContent() {
         }
         setApprovalState("approved");
         setStatusMessage(
-          "Your account has been approved by your administrator! Please sign in to access your dashboard."
+          t(
+            "callback.statusApproved",
+            "Your account has been approved by your administrator! Please sign in to access your dashboard."
+          )
         );
         return;
       }
 
       if (result.status === "rejected") {
         setApprovalState("rejected");
-        setStatusMessage("Your access request was rejected by an administrator.");
+        setStatusMessage(
+          t(
+            "callback.statusRejected",
+            "Your access request was rejected by an administrator."
+          )
+        );
         return;
       }
 
       setApprovalState("pending");
-      setStatusMessage("Your access request is still under review by your company administrator.");
+      setStatusMessage(
+        t(
+          "callback.statusReview",
+          "Your access request is still under review by your company administrator."
+        )
+      );
     } catch {
       setApprovalState("pending");
-      setStatusMessage("Your access request is still under review by your company administrator.");
+      setStatusMessage(
+        t(
+          "callback.statusReview",
+          "Your access request is still under review by your company administrator."
+        )
+      );
     } finally {
       setIsChecking(false);
     }
@@ -344,19 +360,31 @@ function AuthCallbackContent() {
                 )}
 
                 {/* Status Message */}
-                {statusMessage && (
-                  <div
-                    className={`rounded-xl p-3.5 text-xs text-left leading-relaxed ${
-                      approvalState === "approved"
-                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                        : approvalState === "rejected"
-                        ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900"
-                        : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300"
-                    }`}
-                  >
-                    {statusMessage}
-                  </div>
-                )}
+                <div
+                  className={`rounded-xl p-3.5 text-xs text-left leading-relaxed ${
+                    approvalState === "approved"
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : approvalState === "rejected"
+                      ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900"
+                      : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300"
+                  }`}
+                >
+                  {statusMessage ||
+                    (approvalState === "approved"
+                      ? t(
+                          "callback.statusApproved",
+                          "Your account has been approved by your administrator! Please sign in to access your dashboard."
+                        )
+                      : approvalState === "rejected"
+                      ? t(
+                          "callback.statusRejected",
+                          "Your access request was rejected by an administrator."
+                        )
+                      : t(
+                          "callback.statusReview",
+                          "Your access request is still under review by your company administrator."
+                        ))}
+                </div>
 
                 {/* Actions */}
                 <div className="space-y-3 pt-2">

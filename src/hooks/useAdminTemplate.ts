@@ -3,10 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/admin.service";
+import { useTranslation } from "@/i18n";
 import type { PDFTemplate, TemplateElement, TemplatePage } from "@/types/admin";
 import { DEFAULT_EC_POWER_PDF_TEMPLATE } from "@/config/default-template.config";
 
 export function useAdminTemplate() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isElevatedAdmin = user?.role === "super_admin" || user?.role === "company_admin" || user?.role === "admin";
 
@@ -51,7 +53,12 @@ export function useAdminTemplate() {
           setTemplate(data);
         }
         if (unpublishedDraft) {
-          showToast("Loaded earlier edits — click Save to make them the active template");
+          showToast(
+            t(
+              "template.toasts.loadedDraft",
+              "Loaded earlier edits — click Save to make them the active template"
+            )
+          );
         }
       })
       .catch((e) => {
@@ -61,7 +68,7 @@ export function useAdminTemplate() {
     return () => {
       isMounted = false;
     };
-  }, [showToast]);
+  }, [showToast, t]);
 
   const pages =
     template.pages && template.pages.length > 0
@@ -109,9 +116,9 @@ export function useAdminTemplate() {
       const newPages = [...template.pages];
       newPages[activePageIndex] = { ...currentPage, elements: newElements };
       setTemplate((prev) => ({ ...prev, pages: newPages }));
-      showToast("Element removed");
+      showToast(t("template.toasts.elementRemoved", "Element removed"));
     },
-    [currentPage, activePageIndex, template.pages, showToast]
+    [currentPage, activePageIndex, template.pages, showToast, t]
   );
 
   const handleAddElement = useCallback(
@@ -121,51 +128,60 @@ export function useAdminTemplate() {
       const newPages = [...template.pages];
       newPages[activePageIndex] = { ...currentPage, elements: newElements };
       setTemplate((prev) => ({ ...prev, pages: newPages }));
-      showToast(`Added ${newElement.label || "Element"}`);
+      showToast(
+        t("template.toasts.elementAdded", "Added {{label}}", {
+          label: newElement.label || t("template.elementFallback", "Element"),
+        })
+      );
     },
-    [currentPage, activePageIndex, template.pages, showToast]
+    [currentPage, activePageIndex, template.pages, showToast, t]
   );
 
   const handleAddPage = useCallback(() => {
     const pageNum = template.pages.length + 1;
     const newPage: TemplatePage = {
       id: `page-${Date.now()}`,
-      title: `Page ${pageNum}`,
+      title: `${t("template.pageLabel", "Page")} ${pageNum}`,
       pageNumber: pageNum,
       elements: [
         {
           id: `el-heading-${Date.now()}`,
           type: "heading",
-          label: `Section ${pageNum}`,
-          content: "Additional Inspection Findings",
+          label: `${t("template.sectionLabel", "Section")} ${pageNum}`,
+          content: t("template.defaultFindingsHeading", "Additional Inspection Findings"),
           width: "full",
         },
       ],
     };
     setTemplate((prev) => ({ ...prev, pages: [...prev.pages, newPage] }));
     setActivePageIndex(template.pages.length);
-    showToast(`Added Page ${pageNum}`);
-  }, [template.pages.length, showToast]);
+    showToast(t("template.toasts.pageAdded", "Added Page {{page}}", { page: pageNum }));
+  }, [template.pages.length, showToast, t]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
       const saved = await AdminService.saveTemplate(template);
       setTemplate(saved);
-      showToast("Template saved successfully");
+      showToast(t("template.toasts.templateSaved", "Template saved successfully"));
     } catch {
-      showToast("Error saving template");
+      showToast(t("template.toasts.templateSaveError", "Error saving template"));
     } finally {
       setIsSaving(false);
     }
-  }, [template, showToast]);
+  }, [template, showToast, t]);
 
   const handleConfirmReset = useCallback(async () => {
     const restored = await AdminService.resetTemplate();
     setTemplate(restored);
     setActivePageIndex(0);
-    showToast("Factory layout loaded — save to make it active");
-  }, [showToast]);
+    showToast(
+      t(
+        "template.toasts.factoryReset",
+        "Factory layout loaded — save to make it active"
+      )
+    );
+  }, [showToast, t]);
 
   const handleZoomIn = useCallback(() => setZoomLevel((z) => Math.min(150, z + 15)), []);
   const handleZoomOut = useCallback(() => setZoomLevel((z) => Math.max(70, z - 15)), []);

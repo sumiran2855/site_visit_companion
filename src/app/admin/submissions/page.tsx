@@ -25,7 +25,7 @@ export default function SubmissionsPage() {
   } = useSubmissions();
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4">
+    <div className="space-y-6 max-w-screen-2xl mx-auto p-4 sm:px-6 lg:px-8">
       {/* Top Header & Search Bar (matches Reference Image 1) */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
