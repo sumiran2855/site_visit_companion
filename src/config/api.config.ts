@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api",
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://sitevisit-api.prod.ecpower.net/api",
   SUPABASE_URL: (
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     "https://loilxmrdnvwvfykfbztg.supabase.co"

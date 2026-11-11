@@ -69,7 +69,7 @@ export class SharedVisitService {
       throw new Error("Missing share identifier");
     }
 
-    const prodBackend = "https://site-visit-companion-backend.onrender.com/api";
+    const prodBackend = "https://sitevisit-api.prod.ecpower.net/api";
     const base = API_CONFIG.BASE_URL;
     const isLocal = base.includes("localhost") || base.includes("127.0.0.1");
     const candidateBases = Array.from(new Set([isLocal ? prodBackend : base, prodBackend]));

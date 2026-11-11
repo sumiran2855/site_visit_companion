@@ -1252,7 +1252,7 @@ export class PdfService {
   ): Promise<Blob | null> {
     const { visitId, shareToken } = opts;
     const base = API_CONFIG.BASE_URL;
-    const prodBackend = "https://site-visit-companion-backend.onrender.com/api";
+    const prodBackend = "https://sitevisit-api.prod.ecpower.net/api";
     const rawToken = shareToken ? null : TokenHelper.getToken();
     const isRealJwt = rawToken && !rawToken.startsWith("demo_");
     const authToken = isRealJwt ? rawToken : null;
