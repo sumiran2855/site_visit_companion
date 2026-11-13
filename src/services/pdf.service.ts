@@ -5,6 +5,7 @@ import type { PDFTemplate, TemplateElement } from "@/types/admin";
 import type { SiteSubmission } from "@/types/submission";
 import { DEFAULT_EC_POWER_PDF_TEMPLATE } from "@/config/default-template.config";
 import { CHECKLIST_SECTIONS_CONFIG } from "@/config/checklist.config";
+import { normalizeMediaUrl } from "@/utils/media.utils";
 
 const TEMPLATE_ENDPOINT = "/pdf-templates";
 const CACHE_KEY_TEMPLATE = "ecpower_cached_pdf_template";
@@ -26,6 +27,7 @@ export interface DownloadReportOptions {
   values?: Record<string, string>;
   notes?: Record<string, string>;
   photos?: Record<string, ReportPhotoItem[]>;
+  forceRetry?: boolean;
 }
 
 /**
@@ -34,74 +36,117 @@ export interface DownloadReportOptions {
  * Falls back to local template HTML compilation if backend is unavailable.
  */
 export class PdfService {
+  private static cachedActiveTemplate: PDFTemplate | null = null;
+  private static pendingTemplatePromise: Promise<PDFTemplate> | null = null;
+  private static failedPdfBlobVisits = new Set<string>();
+
   /**
-   * Fetches active template from backend, Supabase REST, or local cache
+   * Synchronously returns cached active template, localStorage template, or factory default.
+   * Useful for instant initial UI rendering without asynchronous layout shifts or flickering.
    */
-  public static async getActiveTemplate(): Promise<PDFTemplate> {
-    // 1. Try Backend API
-    const http = HttpClient.getInstance();
-    const candidateEndpoints = [
-      `${TEMPLATE_ENDPOINT}/default`,
-      `${TEMPLATE_ENDPOINT}/active`,
-      "/templates/default",
-      "/templates/active",
-    ];
-
-    for (const ep of candidateEndpoints) {
-      try {
-        const res = await http.get<any>(ep, { requiresAuth: false });
-        const resAny = res as any;
-        const candidate = resAny?.data || (resAny?.pages ? resAny : null);
-        if (candidate && Array.isArray(candidate.pages) && candidate.pages.length > 0) {
-          if (typeof window !== "undefined") {
-            window.localStorage.setItem(CACHE_KEY_TEMPLATE, JSON.stringify(candidate));
-          }
-          return candidate;
-        }
-      } catch {}
+  public static getCachedActiveTemplate(): PDFTemplate {
+    if (this.cachedActiveTemplate) {
+      return this.cachedActiveTemplate;
     }
-
-    // 2. Try Supabase REST API directly for saved template
-    try {
-      const sbUrl = `${API_CONFIG.SUPABASE_URL}/rest/v1/pdf_templates?select=*&is_default=eq.true`;
-      const sbRes = await fetch(sbUrl, {
-        headers: {
-          apikey: API_CONFIG.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${API_CONFIG.SUPABASE_ANON_KEY}`,
-        },
-      });
-      if (sbRes.ok) {
-        const sbData = await sbRes.json();
-        if (Array.isArray(sbData) && sbData[0]?.pages && Array.isArray(sbData[0].pages)) {
-          const parsed = {
-            ...DEFAULT_EC_POWER_PDF_TEMPLATE,
-            id: sbData[0].id,
-            name: sbData[0].name || "Standard EC POWER Field Report",
-            pages: sbData[0].pages,
-            updatedAt: sbData[0].updated_at || new Date().toISOString(),
-          };
-          if (typeof window !== "undefined") {
-            window.localStorage.setItem(CACHE_KEY_TEMPLATE, JSON.stringify(parsed));
-          }
-          return parsed;
-        }
-      }
-    } catch {}
-
-    // 3. Fallback to local storage
     if (typeof window !== "undefined") {
       const cached = window.localStorage.getItem(CACHE_KEY_TEMPLATE);
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
           if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+            this.cachedActiveTemplate = parsed;
             return parsed;
           }
         } catch {}
       }
     }
-
     return DEFAULT_EC_POWER_PDF_TEMPLATE;
+  }
+
+  /**
+   * Fetches active template from backend, Supabase REST, or local cache with request deduplication.
+   */
+  public static async getActiveTemplate(): Promise<PDFTemplate> {
+    if (this.pendingTemplatePromise) {
+      return this.pendingTemplatePromise;
+    }
+
+    this.pendingTemplatePromise = (async () => {
+      try {
+        // 1. Try Backend API
+        const http = HttpClient.getInstance();
+        const candidateEndpoints = [
+          `${TEMPLATE_ENDPOINT}/default`,
+          `${TEMPLATE_ENDPOINT}/active`,
+          "/templates/default",
+          "/templates/active",
+        ];
+
+        for (const ep of candidateEndpoints) {
+          try {
+            const res = await http.get<any>(ep, { requiresAuth: false });
+            const resAny = res as any;
+            const candidate = resAny?.data || (resAny?.pages ? resAny : null);
+            if (candidate && Array.isArray(candidate.pages) && candidate.pages.length > 0) {
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(CACHE_KEY_TEMPLATE, JSON.stringify(candidate));
+              }
+              this.cachedActiveTemplate = candidate;
+              return candidate;
+            }
+          } catch {}
+        }
+
+        // 2. Try Supabase REST API directly for saved template
+        try {
+          const sbUrl = `${API_CONFIG.SUPABASE_URL}/rest/v1/pdf_templates?select=*&is_default=eq.true`;
+          const sbRes = await fetch(sbUrl, {
+            headers: {
+              apikey: API_CONFIG.SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${API_CONFIG.SUPABASE_ANON_KEY}`,
+            },
+          });
+          if (sbRes.ok) {
+            const sbData = await sbRes.json();
+            if (Array.isArray(sbData) && sbData[0]?.pages && Array.isArray(sbData[0].pages)) {
+              const parsed = {
+                ...DEFAULT_EC_POWER_PDF_TEMPLATE,
+                id: sbData[0].id,
+                name: sbData[0].name || "Standard EC POWER Field Report",
+                pages: sbData[0].pages,
+                updatedAt: sbData[0].updated_at || new Date().toISOString(),
+              };
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(CACHE_KEY_TEMPLATE, JSON.stringify(parsed));
+              }
+              this.cachedActiveTemplate = parsed;
+              return parsed;
+            }
+          }
+        } catch {}
+
+        // 3. Fallback to local storage
+        if (typeof window !== "undefined") {
+          const cached = window.localStorage.getItem(CACHE_KEY_TEMPLATE);
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              if (parsed && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+                this.cachedActiveTemplate = parsed;
+                return parsed;
+              }
+            } catch {}
+          }
+        }
+
+        this.cachedActiveTemplate = DEFAULT_EC_POWER_PDF_TEMPLATE;
+        return DEFAULT_EC_POWER_PDF_TEMPLATE;
+      } finally {
+        this.pendingTemplatePromise = null;
+      }
+    })();
+
+    return this.pendingTemplatePromise;
   }
 
   public static async saveTemplate(template: PDFTemplate): Promise<PDFTemplate> {
@@ -114,6 +159,7 @@ export class PdfService {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(CACHE_KEY_TEMPLATE, JSON.stringify(toSave));
     }
+    this.cachedActiveTemplate = toSave;
 
     try {
       const res = await HttpClient.getInstance().post<PDFTemplate>(TEMPLATE_ENDPOINT, {
@@ -363,7 +409,7 @@ export class PdfService {
                   .map((p) => `
                     <div class="photo-card">
                       <div class="photo-image-wrapper">
-                        <img src="${p.remoteUrl || p.uri}" alt="${cleanStr(p.fileName)}" class="photo-image" loading="eager" />
+                        <img src="${normalizeMediaUrl(p.remoteUrl || p.uri)}" alt="${cleanStr(p.fileName)}" class="photo-image" loading="eager" onerror="this.onerror=null; this.classList.add('broken-img');" />
                       </div>
                       <div class="photo-meta">
                         <div class="photo-title">${cleanStr(p.fileName)}</div>
@@ -457,7 +503,7 @@ export class PdfService {
                                             .map(
                                               (p) => `
                                             <div class="inline-photo-card">
-                                              <img src="${p.remoteUrl || p.uri}" alt="${cleanStr(p.fileName)}" class="inline-photo-img" loading="eager" />
+                                              <img src="${normalizeMediaUrl(p.remoteUrl || p.uri)}" alt="${cleanStr(p.fileName)}" class="inline-photo-img" loading="eager" onerror="this.onerror=null; this.classList.add('broken-img');" />
                                               <div class="inline-photo-caption">${cleanStr(p.fileName)}</div>
                                             </div>
                                           `
@@ -787,6 +833,10 @@ export class PdfService {
             object-fit: cover;
             display: block;
           }
+          .photo-image.broken-img,
+          .inline-photo-img.broken-img {
+            display: none !important;
+          }
           .photo-meta {
             padding: 4px 6px;
             background-color: #FFFFFF;
@@ -1032,17 +1082,8 @@ export class PdfService {
             // Photo or video media object
             if (v && typeof v === "object") {
               const vObj = v as any;
-              let photoUrl = "";
-              if (vObj.storage_key) {
-                photoUrl = `/api/media/image?key=${encodeURIComponent(vObj.storage_key)}`;
-              } else if (vObj.url && !vObj.url.startsWith("file:///")) {
-                photoUrl = vObj.url;
-              } else if (vObj.url && vObj.url.startsWith("file:///")) {
-                const keyMatch = vObj.url.match(/(visit-media\/[^"'\s]+)/);
-                if (keyMatch) {
-                  photoUrl = `/api/media/image?key=${encodeURIComponent(keyMatch[1])}`;
-                }
-              }
+              const storageKey = vObj.storage_key || vObj.storageKey;
+              const photoUrl = normalizeMediaUrl(vObj.url, storageKey);
 
               if (photoUrl && (vObj.type === "photo" || !vObj.type)) {
                 const list = photos[k] || [];
@@ -1101,12 +1142,12 @@ export class PdfService {
             const storageKey = m.storage_key || m.storageKey;
             const fId = m.field_id || m.fieldId;
 
-            if (isPhoto && storageKey && fId) {
-              const photoUrl = `/api/media/image?key=${encodeURIComponent(storageKey)}`;
+            if (isPhoto && (storageKey || m.url) && fId) {
+              const photoUrl = normalizeMediaUrl(m.url, storageKey);
               const list = photos[fId] || [];
               if (!list.some((existing) => existing.uri === photoUrl)) {
                 list.push({
-                  id: String(m.id || storageKey),
+                  id: String(m.id || storageKey || photoUrl),
                   fileName: m.file_name || fId.replace(/_/g, " "),
                   uri: photoUrl,
                   remoteUrl: photoUrl,
@@ -1213,18 +1254,10 @@ export class PdfService {
         area.media.forEach((m) => {
           if (m.type === "photo") {
             const list = photos[m.fieldId] || [];
-            let photoUrl = m.url;
             const storageKey = (m as any).storageKey || (m as any).storage_key;
-            if (storageKey) {
-              photoUrl = `/api/media/image?key=${encodeURIComponent(storageKey)}`;
-            } else if (photoUrl && photoUrl.startsWith("file:///")) {
-              const keyMatch = photoUrl.match(/(visit-media\/[^"'\s]+)/);
-              if (keyMatch) {
-                photoUrl = `/api/media/image?key=${encodeURIComponent(keyMatch[1])}`;
-              }
-            }
+            const photoUrl = normalizeMediaUrl(m.url, storageKey);
 
-            if (!list.some((existing) => existing.uri === photoUrl)) {
+            if (photoUrl && !list.some((existing) => existing.uri === photoUrl)) {
               list.push({
                 id: m.id,
                 fileName: m.title || "Photo Evidence",
@@ -1250,7 +1283,12 @@ export class PdfService {
     opts: DownloadReportOptions,
     signal?: AbortSignal
   ): Promise<Blob | null> {
-    const { visitId, shareToken } = opts;
+    const { visitId, shareToken, forceRetry } = opts;
+    const cacheKey = shareToken || visitId;
+    if (!forceRetry && cacheKey && this.failedPdfBlobVisits.has(cacheKey)) {
+      return null;
+    }
+
     const base = API_CONFIG.BASE_URL;
     const prodBackend = "https://sitevisit-api.prod.ecpower.net/api";
     const rawToken = shareToken ? null : TokenHelper.getToken();
@@ -1268,18 +1306,17 @@ export class PdfService {
 
     if (shareToken) {
       endpoints.push(`${primaryBase}/public/shared/${shareToken}/export/report-pdf${tzQuery}`);
-      endpoints.push(`${prodBackend}/public/shared/${shareToken}/export/report-pdf${tzQuery}`);
-      if (visitId) {
-        endpoints.push(`${primaryBase}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
-        endpoints.push(`${prodBackend}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
+      if (primaryBase !== prodBackend) {
+        endpoints.push(`${prodBackend}/public/shared/${shareToken}/export/report-pdf${tzQuery}`);
       }
-    } else {
-      endpoints.push(`${primaryBase}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
-      endpoints.push(`${prodBackend}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
-      if (authToken) {
-        endpoints.push(`${primaryBase}/visits/${visitId}/export/report-pdf${tzQuery}`);
+    } else if (authToken && visitId) {
+      endpoints.push(`${primaryBase}/visits/${visitId}/export/report-pdf${tzQuery}`);
+      endpoints.push(`${primaryBase}/visits/${visitId}/export/print-pdf${tzQuery}`);
+      if (primaryBase !== prodBackend) {
         endpoints.push(`${prodBackend}/visits/${visitId}/export/report-pdf${tzQuery}`);
       }
+    } else if (visitId) {
+      endpoints.push(`${primaryBase}/public/visits/${visitId}/export/report-pdf${tzQuery}`);
     }
 
     const uniqueEndpoints = Array.from(new Set(endpoints));
@@ -1303,6 +1340,7 @@ export class PdfService {
 
         const blob = await res.blob();
         if (blob && blob.size >= 1000) {
+          if (cacheKey) this.failedPdfBlobVisits.delete(cacheKey);
           return new Blob([blob], { type: "application/pdf" });
         }
       } catch (err: any) {
@@ -1313,6 +1351,9 @@ export class PdfService {
       }
     }
 
+    if (cacheKey) {
+      this.failedPdfBlobVisits.add(cacheKey);
+    }
     return null;
   }
 

@@ -19,11 +19,13 @@ const BUCKET_NAME = process.env.R2_BUCKET_NAME || "ec-power-site-visit";
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
-  const key = searchParams.get("key");
+  const rawKey = searchParams.get("key");
 
-  if (!key) {
+  if (!rawKey) {
     return new NextResponse("Missing storage key parameter", { status: 400 });
   }
+
+  const key = decodeURIComponent(rawKey).split("?")[0].replace(/^\/+/, "");
 
   try {
     const command = new GetObjectCommand({
@@ -47,8 +49,9 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
       },
     });
-  } catch (err: any) {
-    console.error("[Media Proxy] Failed to fetch image from R2 for key:", key, err?.message);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[Media Proxy] Failed to fetch image from R2 for key:", key, errMsg);
     return new NextResponse("Image not found", { status: 404 });
   }
 }

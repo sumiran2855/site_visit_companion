@@ -6,6 +6,7 @@ import {
 } from '@/types/submission';
 import { HttpClient } from '@/lib/api/httpClient';
 import { API_CONFIG } from '@/config/api.config';
+import { normalizeMediaUrl } from '@/utils/media.utils';
 
 const CACHE_KEY_SUBMISSIONS = '@ecpower_admin_site_submissions_v2';
 
@@ -83,13 +84,9 @@ export class SubmissionService {
       if (area.media && area.media.length > 0) {
         area.media.forEach((m) => {
           const storageKey = (m as any).storageKey || (m as any).storage_key;
-          if (storageKey) {
-            m.url = `/api/media/image?key=${encodeURIComponent(storageKey)}`;
-          } else if (m.url && m.url.startsWith('file:///')) {
-            const keyMatch = m.url.match(/(visit-media\/[^"'\s]+)/);
-            if (keyMatch) {
-              m.url = `/api/media/image?key=${encodeURIComponent(keyMatch[1])}`;
-            }
+          m.url = normalizeMediaUrl(m.url, storageKey);
+          if (m.thumbnailUrl) {
+            m.thumbnailUrl = normalizeMediaUrl(m.thumbnailUrl, storageKey);
           }
         });
       }
@@ -100,11 +97,7 @@ export class SubmissionService {
         if (req.responsePhotos && req.responsePhotos.length > 0) {
           req.responsePhotos.forEach((p) => {
             const storageKey = (p as any).storageKey || (p as any).storage_key;
-            if (storageKey) {
-              p.url = `/api/media/image?key=${encodeURIComponent(storageKey)}`;
-            } else if (!p.url && ((p as any).remoteUrl || (p as any).uri)) {
-              p.url = (p as any).remoteUrl || (p as any).uri;
-            }
+            p.url = normalizeMediaUrl(p.url || (p as any).remoteUrl || (p as any).uri, storageKey);
           });
         }
       });
@@ -177,13 +170,10 @@ export class SubmissionService {
                   resolved: Boolean(r.resolved),
                   responsePhotos: (r.responsePhotos || []).map((p: any) => ({
                     ...p,
-                    url:
-                      p.url ||
-                      p.remoteUrl ||
-                      p.uri ||
-                      (p.storageKey
-                        ? `https://ec-power-site-visit.042c2a93d9bbcb294c87d69d053e7a6a.r2.cloudflarestorage.com/${p.storageKey}`
-                        : ''),
+                    url: normalizeMediaUrl(
+                      p.url || p.remoteUrl || p.uri,
+                      p.storageKey || p.storage_key
+                    ),
                   })),
                 }));
               }

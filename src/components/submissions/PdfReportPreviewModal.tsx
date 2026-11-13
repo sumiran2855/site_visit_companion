@@ -32,18 +32,21 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"preview" | "pdf">("preview");
   const [zoom, setZoom] = useState<number>(100);
+  const [activeTemplate, setActiveTemplate] = useState<PDFTemplate>(() =>
+    PdfService.getCachedActiveTemplate()
+  );
   const [htmlContent, setHtmlContent] = useState<string>("");
   const [iframeHeight, setIframeHeight] = useState<number>(1400);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
-  const [activeTemplate, setActiveTemplate] = useState<PDFTemplate | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pdfIframeRef = useRef<HTMLIFrameElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const loadedSubmissionIdRef = useRef<string | null>(null);
 
   // Sanitized site & file name
   const sanitizedSite =
@@ -55,21 +58,40 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
     try {
       const doc = iframeRef.current?.contentDocument;
       if (doc) {
-        const measured = Math.max(
-          doc.documentElement.scrollHeight,
-          doc.body.scrollHeight,
-          1200
-        );
-        setIframeHeight(measured + 60);
+        const updateHeight = () => {
+          try {
+            const measured = Math.max(
+              doc.documentElement.scrollHeight,
+              doc.body.scrollHeight,
+              1200
+            );
+            setIframeHeight(measured + 60);
+          } catch {}
+        };
+        updateHeight();
+        doc.querySelectorAll("img").forEach((img) => {
+          if (!img.complete) {
+            img.addEventListener("load", updateHeight, { once: true });
+            img.addEventListener("error", updateHeight, { once: true });
+          }
+        });
       }
     } catch {}
   };
 
   const handleClose = useCallback(() => {
+    loadedSubmissionIdRef.current = null;
     setZoom(100);
     setActiveTab("preview");
     setPdfBlob(null);
-    setPdfBlobUrl(null);
+    setPdfBlobUrl((prevUrl) => {
+      if (prevUrl) {
+        try {
+          window.URL.revokeObjectURL(prevUrl);
+        } catch {}
+      }
+      return null;
+    });
     setIsDownloading(false);
     setNotice(null);
     onClose();
@@ -77,9 +99,19 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
 
   // Compile and fetch on open
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !submission) return;
 
-    // 1. Instant HTML preview compilation with currently available data
+    // Prevent redundant re-compilation/fetching if already compiled for this submission
+    if (loadedSubmissionIdRef.current === submission.id && htmlContent) {
+      return;
+    }
+    loadedSubmissionIdRef.current = submission.id;
+
+    let isCancelled = false;
+    const currentTemplate = PdfService.getCachedActiveTemplate();
+    setActiveTemplate(currentTemplate);
+
+    // 1. Instant HTML preview compilation with currently available data and cached template
     const reportData = PdfService.extractReportData(submission);
     const instantHtml = PdfService.compileTemplateHtml({
       visitId: submission.id,
@@ -89,74 +121,50 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
       values: reportData.values,
       notes: reportData.notes,
       photos: reportData.photos,
+      template: currentTemplate,
     });
-    Promise.resolve().then(() => {
-      setHtmlContent(instantHtml);
-    });
+    setHtmlContent(instantHtml);
 
-    // 2. Fetch full raw checklist values from Supabase visit_records
-    PdfService.fetchRawChecklistValues(submission.id)
-      .then((raw) => {
-        if (raw && (Object.keys(raw.values).length > 0 || Object.keys(raw.photos).length > 0)) {
-          Object.assign(reportData.values, raw.values);
-          Object.assign(reportData.notes, raw.notes);
-          if (raw.photos) {
-            Object.entries(raw.photos).forEach(([fId, pList]) => {
-              if (pList && pList.length > 0) {
-                const existingList = reportData.photos[fId] || [];
-                pList.forEach((p) => {
-                  if (!existingList.some((e) => e.uri === p.uri)) {
-                    existingList.push(p);
-                  }
-                });
-                reportData.photos[fId] = existingList;
-              }
-            });
-          }
+    // 2. Fetch fresh active template and raw checklist values in parallel (consolidated single update)
+    Promise.all([
+      PdfService.getActiveTemplate().catch(() => null),
+      PdfService.fetchRawChecklistValues(submission.id).catch(() => null),
+    ]).then(([tmpl, raw]) => {
+      if (isCancelled) return;
 
-          const updatedHtml = PdfService.compileTemplateHtml({
-            visitId: submission.id,
-            siteName: submission.siteName,
-            companyName: submission.customer,
-            technicianName: submission.sentBy,
-            values: reportData.values,
-            notes: reportData.notes,
-            photos: reportData.photos,
-            template: activeTemplate || undefined,
+      let hasChanges = false;
+      let effectiveTemplate = currentTemplate;
+
+      if (tmpl && tmpl.id !== currentTemplate.id) {
+        effectiveTemplate = tmpl;
+        setActiveTemplate(tmpl);
+        hasChanges = true;
+      }
+
+      if (raw && (Object.keys(raw.values).length > 0 || Object.keys(raw.photos).length > 0)) {
+        Object.assign(reportData.values, raw.values);
+        Object.assign(reportData.notes, raw.notes);
+        if (raw.photos) {
+          Object.entries(raw.photos).forEach(([fId, pList]) => {
+            if (pList && pList.length > 0) {
+              const existingList = reportData.photos[fId] || [];
+              let addedPhoto = false;
+              pList.forEach((p) => {
+                if (!existingList.some((e) => e.uri === p.uri || e.id === p.id)) {
+                  existingList.push(p);
+                  addedPhoto = true;
+                }
+              });
+              reportData.photos[fId] = existingList;
+              if (addedPhoto) hasChanges = true;
+            }
           });
-          setHtmlContent(updatedHtml);
         }
-      })
-      .catch(() => {});
+        hasChanges = true;
+      }
 
-    // 3. Load active template from Supabase/Backend
-    PdfService.getActiveTemplate()
-      .then((tmpl) => {
-        if (tmpl) {
-          setActiveTemplate(tmpl);
-          const customHtml = PdfService.compileTemplateHtml({
-            visitId: submission.id,
-            siteName: submission.siteName,
-            companyName: submission.customer,
-            technicianName: submission.sentBy,
-            values: reportData.values,
-            notes: reportData.notes,
-            photos: reportData.photos,
-            template: tmpl,
-          });
-          setHtmlContent(customHtml);
-        }
-      })
-      .catch(() => {});
-
-    // 4. Start background generation of official high-res PDF binary
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    Promise.resolve().then(() => {
-      setIsGeneratingPdf(true);
-      return PdfService.fetchReportPdfBlob(
-        {
+      if (hasChanges) {
+        const compiledHtml = PdfService.compileTemplateHtml({
           visitId: submission.id,
           siteName: submission.siteName,
           companyName: submission.customer,
@@ -164,11 +172,31 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
           values: reportData.values,
           notes: reportData.notes,
           photos: reportData.photos,
-        },
-        controller.signal
-      );
-    })
+          template: effectiveTemplate,
+        });
+        setHtmlContent(compiledHtml);
+      }
+    });
+
+    // 3. Start background generation of official high-res PDF binary (once)
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setIsGeneratingPdf(true);
+
+    PdfService.fetchReportPdfBlob(
+      {
+        visitId: submission.id,
+        siteName: submission.siteName,
+        companyName: submission.customer,
+        technicianName: submission.sentBy,
+        values: reportData.values,
+        notes: reportData.notes,
+        photos: reportData.photos,
+      },
+      controller.signal
+    )
       .then((blob) => {
+        if (isCancelled) return;
         if (blob) {
           setPdfBlob(blob);
           const url = window.URL.createObjectURL(blob);
@@ -181,24 +209,22 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
         }
       })
       .finally(() => {
-        setIsGeneratingPdf(false);
+        if (!isCancelled) {
+          setIsGeneratingPdf(false);
+        }
       });
 
     // Cleanup when closing
     return () => {
+      isCancelled = true;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      setPdfBlobUrl((prevUrl) => {
-        if (prevUrl) {
-          try {
-            window.URL.revokeObjectURL(prevUrl);
-          } catch {}
-        }
-        return null;
-      });
     };
-  }, [isOpen, submission, activeTemplate]);
+    // Intentionally depend only on isOpen and submission?.id to prevent infinite loops
+    // caused by activeTemplate updates and periodic background submission polling.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, submission?.id]);
 
   // Keyboard shortcut for Escape & Body lock
   const handleKeyDown = useCallback(
@@ -227,13 +253,31 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
       if (iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.focus();
         iframeRef.current.contentWindow.print();
+        return;
       }
     } else if (pdfIframeRef.current?.contentWindow) {
       pdfIframeRef.current.contentWindow.focus();
       pdfIframeRef.current.contentWindow.print();
-    } else {
-      window.print();
+      return;
     }
+
+    if (htmlContent) {
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        setTimeout(() => {
+          try {
+            printWindow.focus();
+            printWindow.print();
+          } catch {}
+        }, 500);
+        return;
+      }
+    }
+
+    window.print();
   };
 
   const handleDownloadPdf = async () => {
@@ -247,7 +291,15 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
       return;
     }
 
-    // 2. If backend generation is currently in progress, wait for it or fetch
+    // 2. If background generation finished with no blob (backend offline), trigger print / save as PDF immediately
+    if (!isGeneratingPdf && !pdfBlob) {
+      setNotice(t("modals.pdfPreview.printFallbackNotice", "Opening print dialog — select 'Save as PDF' to save."));
+      handlePrint();
+      setTimeout(() => setNotice(null), 4000);
+      return;
+    }
+
+    // 3. If backend generation is currently in progress, wait for it or fetch
     setIsDownloading(true);
     setNotice(t("modals.pdfPreview.generatingNotice", "Generating high-resolution official PDF..."));
 
@@ -282,7 +334,7 @@ export const PdfReportPreviewModal: React.FC<PdfReportPreviewModalProps> = ({
       }
     } catch (err) {
       console.error("[PdfReportPreviewModal] Download error:", err);
-      setNotice(t("modals.pdfPreview.timeoutNotice", "Direct download timed out. Opening printable preview."));
+      setNotice(t("modals.pdfPreview.printFallbackNotice", "Opening print dialog — select 'Save as PDF' to save."));
       handlePrint();
     } finally {
       setIsDownloading(false);

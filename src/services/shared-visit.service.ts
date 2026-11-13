@@ -1,6 +1,7 @@
 import { API_CONFIG } from "@/config/api.config";
 import { CHECKLIST_SECTIONS_CONFIG } from "@/config/checklist.config";
 import { PdfService, type ReportPhotoItem } from "./pdf.service";
+import { normalizeMediaUrl } from "@/utils/media.utils";
 
 export interface SharedVisitPayload {
   visit: {
@@ -202,10 +203,10 @@ export class SharedVisitService {
         fieldId: m.field_id || m.fieldId || "general",
         type: m.type === "video" ? "video" : "photo",
         fileName: m.file_name || m.fileName || "media.jpg",
-        signedUrl:
+        signedUrl: normalizeMediaUrl(
+          m.url || "",
           m.storage_key || m.storageKey
-            ? `/api/media/image?key=${encodeURIComponent(m.storage_key || m.storageKey)}`
-            : m.url || "",
+        ),
         notes: m.notes ?? null,
       })
     );
