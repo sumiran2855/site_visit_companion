@@ -16,6 +16,20 @@ function AuthContent() {
   const { t } = useTranslation();
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash || "";
+      const search = window.location.search || "";
+      if (
+        hash.includes("access_token=") ||
+        hash.includes("error=") ||
+        search.includes("code=") ||
+        search.includes("error=")
+      ) {
+        router.replace(`${ROUTES.AUTH_CALLBACK}${search}${hash}`);
+        return;
+      }
+    }
+
     if (!isLoading && isAuthenticated && isAdmin) {
       router.replace(ROUTES.ADMIN);
     }

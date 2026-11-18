@@ -31,8 +31,18 @@ export class AuthService {
    * Generates the Supabase Google OAuth authorization URL
    */
   public getGoogleOAuthUrl(redirectTo?: string): string {
-    const fallbackOrigin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-    const redirectUri = redirectTo || `${fallbackOrigin}${ROUTES.AUTH_CALLBACK}`;
+    let origin = "http://localhost:3000";
+    if (typeof window !== "undefined" && window.location.origin) {
+      origin = window.location.origin;
+    } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+      origin = process.env.NEXT_PUBLIC_SITE_URL;
+    } else if (process.env.NEXT_PUBLIC_APP_URL) {
+      origin = process.env.NEXT_PUBLIC_APP_URL;
+    } else if (process.env.VERCEL_URL) {
+      origin = `https://${process.env.VERCEL_URL}`;
+    }
+    origin = origin.replace(/\/+$/, "");
+    const redirectUri = redirectTo || `${origin}${ROUTES.AUTH_CALLBACK}`;
     return `${API_CONFIG.SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUri)}`;
   }
 
