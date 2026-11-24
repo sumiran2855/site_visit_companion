@@ -1,15 +1,28 @@
 export type SubmissionStatus =
   | 'all'
   | 'completed'
+  | 'pending'
   | 'in_progress'
   | 'draft';
 
 export function normalizeSubmissionStatus(
-  status: unknown
-): 'completed' | 'in_progress' | 'draft' {
+  status: unknown,
+  areas?: SubmissionArea[]
+): 'completed' | 'pending' | 'in_progress' | 'draft' {
+  if (areas && areas.length > 0 && areas.every((a) => a.status === 'ok')) {
+    return 'completed';
+  }
   if (typeof status !== 'string') return 'draft';
   const clean = status.toLowerCase().trim();
   if (clean === 'completed' || clean === 'approved') return 'completed';
+  if (
+    clean === 'pending' ||
+    clean === 'waiting_for_customer' ||
+    clean === 'waiting_from_customer' ||
+    clean === 'more_requested'
+  ) {
+    return 'pending';
+  }
   if (clean === 'in_progress' || clean === 'in_review') return 'in_progress';
   return 'draft';
 }
@@ -75,7 +88,7 @@ export interface SiteSubmission {
   sentBy: string;
   sentAt: string; // ISO string
   formattedDate: string; // e.g. "Oct 21"
-  status: 'completed' | 'in_progress' | 'draft';
+  status: 'completed' | 'pending' | 'in_progress' | 'draft';
   mediaCount: {
     photos: number;
     videos: number;

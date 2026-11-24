@@ -26,6 +26,12 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
             {t("submissions.status.completed", "Completed")}
           </span>
         );
+      case "pending":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+            {t("submissions.status.pending", "Pending")}
+          </span>
+        );
       case "in_progress":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">

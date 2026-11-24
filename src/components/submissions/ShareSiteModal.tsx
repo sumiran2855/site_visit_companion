@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SiteSubmission } from "@/types/submission";
 import { HttpClient } from "@/lib/api/httpClient";
+import { TokenHelper } from "@/lib/helpers/token.helper";
 import { API_CONFIG } from "@/config/api.config";
 import { useTranslation } from "@/i18n";
 
@@ -60,13 +61,13 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
       // 2. Direct Supabase fallback: check existing active token in share_tokens table
       try {
         const sbUrl = API_CONFIG.SUPABASE_URL;
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+        const token = TokenHelper.getToken();
         const res = await fetch(
           `${sbUrl}/rest/v1/share_tokens?visit_id=eq.${encodeURIComponent(submission.id)}&order=created_at.desc&limit=1`,
           {
             headers: {
-              apikey: sbKey,
-              Authorization: `Bearer ${sbKey}`,
+              apikey: API_CONFIG.SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${token || API_CONFIG.SUPABASE_ANON_KEY}`,
             },
           }
         );
@@ -100,7 +101,7 @@ export const ShareSiteModal: React.FC<ShareSiteModalProps> = ({
   const origin =
     typeof window !== "undefined" && window.location.origin
       ? window.location.origin
-      : "https://site-visit-companion.vercel.app";
+      : process.env.NEXT_PUBLIC_SITE_URL || "https://site-visit-companion.vercel.app";
 
   const activeIdentifier = shareToken || submission.id;
   const shareUrl = `${origin}/shared/${activeIdentifier}`;

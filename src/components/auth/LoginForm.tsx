@@ -56,7 +56,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
         <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
           {t(
             "login.description.lead",
-            "Centralized administrative management for EC POWER Site Visit Companion. Authorized "
+            "Centralized administrative management for ECP Site Visit. Authorized "
           )}
           <strong>
             {t("login.description.superAdmins", "Super Admins")}

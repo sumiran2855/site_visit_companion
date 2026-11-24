@@ -5,12 +5,33 @@ import {
   SubmissionsFilterState,
 } from '@/types/submission';
 import { HttpClient } from '@/lib/api/httpClient';
+import { TokenHelper } from '@/lib/helpers/token.helper';
 import { API_CONFIG } from '@/config/api.config';
 import { normalizeMediaUrl } from '@/utils/media.utils';
 
 const CACHE_KEY_SUBMISSIONS = '@ecpower_admin_site_submissions_v2';
 
 export class SubmissionService {
+  /**
+   * Recalculates submission status based on its sections/areas and customer requests.
+   * - If all sections/areas are approved ('ok'), status is 'completed'.
+   * - If any section is not approved, status is 'pending'.
+   */
+  public static computeSubmissionStatus(
+    sub: Pick<SiteSubmission, 'areas' | 'customerRequests'>
+  ): 'completed' | 'pending' | 'in_progress' | 'draft' {
+    const areas = sub.areas || [];
+    const hasAreas = areas.length > 0;
+    const hasUnresolved = (sub.customerRequests || []).some((r) => !r.resolved);
+    const allAreasOk = hasAreas && !hasUnresolved && areas.every((a) => a.status === 'ok');
+
+    if (allAreasOk) {
+      return 'completed';
+    }
+
+    return 'pending';
+  }
+
   /**
    * Loads all real submissions from backend API (Supabase & Cloudflare R2),
    * storing and reading from cache only for real database submissions.
@@ -28,7 +49,46 @@ export class SubmissionService {
         // Clean real database submissions only and normalize status
         list = data
           .filter((s) => s && s.id && !s.id.startsWith('sub-00'))
-          .map((s) => ({ ...s, status: normalizeSubmissionStatus(s.status) }));
+          .map((s) => {
+            const rawStatus = String((s as any).status || '').toLowerCase().trim();
+            const rawReviewStatus = String(
+              (s as any).reviewStatus || (s as any).review_status || ''
+            ).toLowerCase().trim();
+            const hasPending = Boolean(
+              (s as any).hasPendingRequests ||
+              (s as any).has_pending_requests ||
+              ((s as any).pendingRequestsCount && (s as any).pendingRequestsCount > 0) ||
+              ((s as any).pending_requests_count && (s as any).pending_requests_count > 0) ||
+              (s.customerRequests && s.customerRequests.some((r: any) => !r.resolved))
+            );
+
+            const allApproved =
+              Array.isArray(s.areas) &&
+              s.areas.length > 0 &&
+              s.areas.every((a: any) => a?.status === 'ok');
+
+            let finalStatus: 'completed' | 'pending' | 'in_progress' | 'draft';
+            if (allApproved) {
+              finalStatus = 'completed';
+            } else if (
+              !hasPending &&
+              (rawReviewStatus === 'waiting_for_customer' ||
+                rawReviewStatus === 'waiting_from_customer' ||
+                rawReviewStatus === 'more_requested' ||
+                rawStatus === 'waiting_for_customer' ||
+                rawStatus === 'waiting_from_customer' ||
+                rawStatus === 'pending')
+            ) {
+              finalStatus = 'pending';
+            } else {
+              finalStatus = normalizeSubmissionStatus(s.status, s.areas);
+            }
+
+            return {
+              ...s,
+              status: finalStatus,
+            };
+          });
         this.saveLocalSubmissions(list);
       }
     } catch (err) {
@@ -38,7 +98,7 @@ export class SubmissionService {
     if (!list || list.length === 0) {
       list = this.getLocalSubmissions();
     } else {
-      list = list.map((s) => ({ ...s, status: normalizeSubmissionStatus(s.status) }));
+      list = list.map((s) => ({ ...s, status: normalizeSubmissionStatus(s.status, s.areas) }));
     }
 
     // Apply Filters
@@ -121,6 +181,7 @@ export class SubmissionService {
       );
       const data = res?.data || ((res as any)?.siteName ? (res as any) : null);
       if (data && data.id) {
+        data.status = this.computeSubmissionStatus(data);
         const sanitized = this.sanitizeMediaUrls(data);
         this.updateSingleLocalSubmission(sanitized);
         return sanitized;
@@ -131,8 +192,12 @@ export class SubmissionService {
 
     // Direct Supabase REST fallback if backend is unreachable
     try {
-      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
-      const headers = { apikey: sbKey, Authorization: `Bearer ${sbKey}` };
+      const token = TokenHelper.getToken();
+      const headers = {
+        apikey: API_CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token || API_CONFIG.SUPABASE_ANON_KEY}`,
+      };
+
       const [recordRes, mediaRes] = await Promise.all([
         fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/visit_records?visit_id=eq.${id}&select=*`, { headers }),
         fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/visit_media?visit_id=eq.${id}&select=*`, { headers }),
@@ -159,7 +224,7 @@ export class SubmissionService {
             cached.checklistValues = checklistValues;
             cached.rawSections = sections;
 
-            cached.status = normalizeSubmissionStatus(cached.status);
+            cached.status = this.computeSubmissionStatus(cached);
             if (record.service.review) {
               const rev = record.service.review;
               if (rev.internalNotes !== undefined) cached.internalNotes = rev.internalNotes;
@@ -198,7 +263,7 @@ export class SubmissionService {
                     area.customerNote = s?.requestedNote || 'Reviewer requested changes';
                     area.requestedNote = area.customerNote;
                   } else {
-                    area.status = 'ok';
+                    area.status = s?.status === 'ok' ? 'ok' : 'not_reviewed';
                     area.customerNote = undefined;
                     area.requestedNote = undefined;
                   }
@@ -215,12 +280,14 @@ export class SubmissionService {
                   if (hasUnresolved) {
                     area.status = 'more_requested';
                   } else {
-                    area.status = 'ok';
+                    area.status = area.status === 'ok' ? 'ok' : 'not_reviewed';
                     area.customerNote = undefined;
                     area.requestedNote = undefined;
                   }
                 });
               }
+
+              cached.status = this.computeSubmissionStatus(cached);
             }
 
             // If media records are available, update media URLs
@@ -250,7 +317,11 @@ export class SubmissionService {
 
     const list = this.getLocalSubmissions();
     const item = list.find((s) => s.id === id);
-    return item ? this.sanitizeMediaUrls(item) : null;
+    if (item) {
+      item.status = this.computeSubmissionStatus(item);
+      return this.sanitizeMediaUrls(item);
+    }
+    return null;
   }
 
   /**
@@ -279,6 +350,7 @@ export class SubmissionService {
       );
       if (res?.data) {
         sub = res.data;
+        sub.status = this.computeSubmissionStatus(sub);
         this.updateSingleLocalSubmission(sub);
       }
     } catch (err) {
@@ -314,6 +386,7 @@ export class SubmissionService {
       if (status === 'ok' && sub.customerRequests) {
         sub.customerRequests = sub.customerRequests.filter((r) => r.areaId !== areaId);
       }
+      sub.status = this.computeSubmissionStatus(sub);
       sub.updatedAt = new Date().toISOString();
       list[itemIndex] = sub;
       this.saveLocalSubmissions(list);
@@ -327,8 +400,10 @@ export class SubmissionService {
       );
       if (res?.data) {
         sub = res.data;
+        sub.status = this.computeSubmissionStatus(sub);
         this.updateSingleLocalSubmission(sub);
-      } else if (sub) {
+      }
+      if (sub) {
         await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
@@ -381,6 +456,7 @@ export class SubmissionService {
         area.customerNote = text;
       }
 
+      sub.status = 'pending';
       sub.updatedAt = new Date().toISOString();
       list[itemIndex] = sub;
       this.saveLocalSubmissions(list);
@@ -394,8 +470,10 @@ export class SubmissionService {
       );
       if (res?.data) {
         sub = res.data;
+        sub.status = this.computeSubmissionStatus(sub);
         this.updateSingleLocalSubmission(sub);
-      } else if (sub) {
+      }
+      if (sub) {
         await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
@@ -431,11 +509,14 @@ export class SubmissionService {
           if (remainingForArea.length === 0) {
             area.status = 'not_reviewed';
             area.customerNote = undefined;
+            area.requestedNote = undefined;
           } else {
             area.status = 'more_requested';
             area.customerNote = remainingForArea[remainingForArea.length - 1].text;
+            area.requestedNote = area.customerNote;
           }
         }
+        sub.status = this.computeSubmissionStatus(sub);
         sub.updatedAt = new Date().toISOString();
         list[itemIndex] = sub;
         this.saveLocalSubmissions(list);
@@ -450,8 +531,10 @@ export class SubmissionService {
       );
       if (res?.data) {
         sub = res.data;
+        sub.status = this.computeSubmissionStatus(sub);
         this.updateSingleLocalSubmission(sub);
-      } else if (sub) {
+      }
+      if (sub) {
         await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
@@ -489,8 +572,10 @@ export class SubmissionService {
       );
       if (res?.data) {
         sub = res.data;
+        sub.status = this.computeSubmissionStatus(sub);
         this.updateSingleLocalSubmission(sub);
-      } else if (sub) {
+      }
+      if (sub) {
         await this.syncReviewToSupabase(submissionId, sub);
       }
     } catch (err) {
@@ -570,7 +655,7 @@ export class SubmissionService {
     if (!updated || !updated.id || updated.id.startsWith('sub-00')) return;
     const cleanUpdated = {
       ...updated,
-      status: normalizeSubmissionStatus(updated.status),
+      status: normalizeSubmissionStatus(updated.status, updated.areas),
     };
     const list = this.getLocalSubmissions();
     const index = list.findIndex((s) => s.id === cleanUpdated.id);
@@ -585,11 +670,16 @@ export class SubmissionService {
   private static async syncReviewToSupabase(submissionId: string, sub: SiteSubmission): Promise<void> {
     try {
       const sbUrl = API_CONFIG.SUPABASE_URL;
-      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
-      if (!sbUrl || !sbKey) return;
+      const token = TokenHelper.getToken();
+      if (!sbUrl) return;
+
+      const headers = {
+        apikey: API_CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token || API_CONFIG.SUPABASE_ANON_KEY}`,
+      };
 
       const getRes = await fetch(`${sbUrl}/rest/v1/visit_records?visit_id=eq.${submissionId}&select=*`, {
-        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` },
+        headers,
       });
       if (!getRes.ok) return;
       const records = await getRes.json();
@@ -605,14 +695,33 @@ export class SubmissionService {
       const areaStatuses: Record<string, { status: string; requestedNote?: string }> = {};
       (sub.areas || []).forEach((a) => {
         areaStatuses[a.id] = {
-          status: a.status!,
+          status: a.status || 'not_reviewed',
           requestedNote: a.requestedNote || a.customerNote,
         };
       });
 
+      const hasUnresolved =
+        sub.customerRequests && sub.customerRequests.some((r) => !r.resolved);
+      const allApproved =
+        sub.areas && sub.areas.length > 0 && sub.areas.every((a) => a.status === 'ok');
+
+      let reviewStatusStr: string;
+      let visitStatusStr: 'completed' | 'pending' | 'in_progress' | 'draft';
+
+      if (hasUnresolved) {
+        reviewStatusStr = 'more_requested';
+        visitStatusStr = 'pending';
+      } else if (allApproved) {
+        reviewStatusStr = 'completed';
+        visitStatusStr = 'completed';
+      } else {
+        reviewStatusStr = 'pending';
+        visitStatusStr = 'pending';
+      }
+
       service.review = {
         ...(service.review || {}),
-        status: sub.customerRequests && sub.customerRequests.some((r) => !r.resolved) ? 'more_requested' : 'reviewed',
+        status: reviewStatusStr,
         customerRequests: sub.customerRequests || [],
         areaStatuses,
         internalNotes: sub.internalNotes || '',
@@ -622,8 +731,7 @@ export class SubmissionService {
       await fetch(`${sbUrl}/rest/v1/visit_records?visit_id=eq.${submissionId}`, {
         method: 'PATCH',
         headers: {
-          apikey: sbKey,
-          Authorization: `Bearer ${sbKey}`,
+          ...headers,
           'Content-Type': 'application/json',
           Prefer: 'return=minimal',
         },
@@ -632,6 +740,23 @@ export class SubmissionService {
           updated_at: new Date().toISOString(),
         }),
       });
+
+      // Also update visits table in Supabase so visits queries show the updated status
+      await fetch(`${sbUrl}/rest/v1/visits?id=eq.${submissionId}`, {
+        method: 'PATCH',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          status: visitStatusStr,
+          review_status: reviewStatusStr === 'more_requested' ? 'waiting_for_customer' : reviewStatusStr,
+          has_pending_requests: Boolean(hasUnresolved),
+          pending_requests_count: (sub.customerRequests || []).filter((r) => !r.resolved).length,
+          updated_at: new Date().toISOString(),
+        }),
+      }).catch(() => {});
     } catch (e) {
       console.warn('[SubmissionService] syncReviewToSupabase fallback error:', e);
     }
@@ -644,7 +769,7 @@ export class SubmissionService {
           .filter((s) => s && s.id && !s.id.startsWith('sub-00'))
           .map((s) => ({
             ...s,
-            status: normalizeSubmissionStatus(s.status),
+            status: normalizeSubmissionStatus(s.status, s.areas),
           }));
         localStorage.setItem(CACHE_KEY_SUBMISSIONS, JSON.stringify(cleanList));
       } catch (err) {

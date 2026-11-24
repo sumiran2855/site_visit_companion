@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Site Visit Checklist | EC POWER",
+  title: "ECP Site Visit",
   description:
-    "EC POWER Site Visit Checklist — Project intake, field survey documentation, cloud sync, and report generation.",
+    "ECP Site Visit Checklist — Project intake, field survey documentation, cloud sync, and report generation.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

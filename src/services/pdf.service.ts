@@ -1052,12 +1052,12 @@ export class PdfService {
 
     try {
       // 1. Try querying Supabase REST visit_records directly
-      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
+      const token = TokenHelper.getToken();
       const sbUrl = `${API_CONFIG.SUPABASE_URL}/rest/v1/visit_records?visit_id=eq.${visitId}&select=*`;
       const res = await fetch(sbUrl, {
         headers: {
-          apikey: sbKey,
-          Authorization: `Bearer ${sbKey}`,
+          apikey: API_CONFIG.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token || API_CONFIG.SUPABASE_ANON_KEY}`,
         },
       });
 
@@ -1127,8 +1127,8 @@ export class PdfService {
         const mediaUrl = `${API_CONFIG.SUPABASE_URL}/rest/v1/visit_media?visit_id=eq.${visitId}&select=*`;
         const mediaRes = await fetch(mediaUrl, {
           headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
+            apikey: API_CONFIG.SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${token || API_CONFIG.SUPABASE_ANON_KEY}`,
           },
         });
 
@@ -1290,7 +1290,7 @@ export class PdfService {
     }
 
     const base = API_CONFIG.BASE_URL;
-    const prodBackend = "https://sitevisit-api.prod.ecpower.net/api";
+    const prodBackend = process.env.NEXT_PUBLIC_API_URL || "https://sitevisit-api.prod.ecpower.net/api";
     const rawToken = shareToken ? null : TokenHelper.getToken();
     const isRealJwt = rawToken && !rawToken.startsWith("demo_");
     const authToken = isRealJwt ? rawToken : null;

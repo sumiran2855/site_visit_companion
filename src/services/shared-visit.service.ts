@@ -70,7 +70,7 @@ export class SharedVisitService {
       throw new Error("Missing share identifier");
     }
 
-    const prodBackend = "https://sitevisit-api.prod.ecpower.net/api";
+    const prodBackend = process.env.NEXT_PUBLIC_API_URL || "https://sitevisit-api.prod.ecpower.net/api";
     const base = API_CONFIG.BASE_URL;
     const isLocal = base.includes("localhost") || base.includes("127.0.0.1");
     const candidateBases = Array.from(new Set([isLocal ? prodBackend : base, prodBackend]));
@@ -112,11 +112,9 @@ export class SharedVisitService {
     cleanId: string
   ): Promise<SharedVisitPayload> {
     const sbUrl = API_CONFIG.SUPABASE_URL;
-    const sbKey =
-      API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
     const headers = {
-      apikey: sbKey,
-      Authorization: `Bearer ${sbKey}`,
+      apikey: API_CONFIG.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${API_CONFIG.SUPABASE_ANON_KEY}`,
     };
 
     let targetVisitId = cleanId;

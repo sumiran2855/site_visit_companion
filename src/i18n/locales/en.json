@@ -9,7 +9,7 @@
     "cardBadge": "Admin Portal",
     "title": "Sign in",
     "description": {
-      "lead": "Centralized administrative management for EC POWER Site Visit Companion. Authorized ",
+      "lead": "Centralized administrative management for ECP Site Visit. Authorized ",
       "superAdmins": "Super Admins",
       "tail": " only."
     },
@@ -198,6 +198,7 @@
     "countryAll": "Country: All",
     "filterPills": {
       "all": "All",
+      "pending": "Pending",
       "completed": "Completed",
       "in_progress": "In progress",
       "draft": "Drafts"
@@ -218,6 +219,7 @@
     },
     "status": {
       "completed": "Completed",
+      "pending": "Pending",
       "in_progress": "In progress",
       "draft": "Draft"
     }
@@ -251,6 +253,7 @@
     "additionalObservations": "Additional Observations",
     "status": {
       "completed": "Completed",
+      "pending": "Pending",
       "in_progress": "In Progress",
       "draft": "Draft"
     },
@@ -317,7 +320,7 @@
       "linkLabel": "Shareable Web Link",
       "copyTitle": "Copy link",
       "draftEmail": "Draft Email",
-      "emailSubject": "EC POWER Site Visit Inspection: {{siteName}}",
+      "emailSubject": "ECP Site Visit Inspection: {{siteName}}",
       "emailBody": "Hello,\n\nPlease find the read-only inspection report for {{siteName}} at the link below:\n\n{{url}}\n\nThis secure report includes technical audit specifications, verified checklist answers, and high-resolution photo evidence.\n\nBest regards,\nEC POWER Team"
     },
     "mediaViewer": {

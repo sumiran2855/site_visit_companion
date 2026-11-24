@@ -42,7 +42,7 @@ export function SignupForm({ onSwitchToSignin }: SignupFormProps) {
           {step === "account" ? t("signup.createAccount", "Create an account") : t("signup.tellUsCompany", "Tell us about your company")}
         </h1>
         <p className="text-sm font-medium text-slate-500 dark:text-zinc-400">
-          EC POWER Site Visit Checklist
+          ECP Site Visit
         </p>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 leading-relaxed pt-1">
           {step === "account"

@@ -1,5 +1,5 @@
-export const APP_NAME = "Site Visit Companion - Admin Portal";
-export const APP_DESCRIPTION = "Centralized administrative management for EC POWER Site Visit Companion.";
+export const APP_NAME = "ECP Site Visit - Admin Portal";
+export const APP_DESCRIPTION = "Centralized administrative management for ECP Site Visit.";
 
 export const ROUTES = {
   HOME: "/",

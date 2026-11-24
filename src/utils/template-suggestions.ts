@@ -201,7 +201,7 @@ export const buildTemplateSuggestions = (
         hint: secTag,
         sectionNumber: sec.number,
         sectionTitle: sec.title,
-        pairedContent: `Site Visit Checklist — ${sec.title}`,
+        pairedContent: `ECP Site Visit — ${sec.title}`,
         badge: "Header",
       });
     } else if (type === "autoflow_checklist") {
@@ -296,13 +296,13 @@ export const buildTemplateSuggestions = (
     contentSuggestions.push(
       {
         id: "cov_c1",
-        text: "Site Visit Checklist - Project Intake",
+        text: "ECP Site Visit - Project Intake",
         hint: "Standard Subtitle",
         badge: "Header",
       },
       {
         id: "cov_c2",
-        text: "Site Visit Checklist & Technical Assessment",
+        text: "ECP Site Visit & Technical Assessment",
         hint: "Formal Assessment",
         badge: "Header",
       },

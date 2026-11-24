@@ -6,13 +6,7 @@ export const API_CONFIG = {
   )
     .replace(/\/rest\/v1\/?$/, "")
     .replace(/\/+$/, ""),
-  SUPABASE_ANON_KEY:
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvaWx4bXJkbnZ3dmZ5a2ZienRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMjIwMzYsImV4cCI6MjEwNTc5ODAzNn0.7izYIfQVXFepva7PRUHrBrwHtS_hz7Ahnv69W9DcBuE",
-  SUPABASE_SERVICE_ROLE_KEY:
-    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvaWx4bXJkbnZ3dmZ5a2ZienRnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDIyMjAzNiwiZXhwIjoyMTA1Nzk4MDM2fQ.vmdGBR48B2nJp3u314XKlIa3quJfaq-N0iMlQaG0fRs",
+  SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   TIMEOUT_MS: 5000,
   STORAGE_KEYS: {
     AUTH_TOKEN: "ec_auth_token",

@@ -31,7 +31,7 @@ export class AuthService {
    * Generates the Supabase Google OAuth authorization URL
    */
   public getGoogleOAuthUrl(redirectTo?: string): string {
-    let origin = "http://localhost:3000";
+    let origin = "";
     if (typeof window !== "undefined" && window.location.origin) {
       origin = window.location.origin;
     } else if (process.env.NEXT_PUBLIC_SITE_URL) {
@@ -40,10 +40,30 @@ export class AuthService {
       origin = process.env.NEXT_PUBLIC_APP_URL;
     } else if (process.env.VERCEL_URL) {
       origin = `https://${process.env.VERCEL_URL}`;
+    } else {
+      origin = "http://localhost:3000";
     }
     origin = origin.replace(/\/+$/, "");
-    const redirectUri = redirectTo || `${origin}${ROUTES.AUTH_CALLBACK}`;
-    return `${API_CONFIG.SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUri)}`;
+
+    // Validate redirectTo to prevent Open Redirect vulnerabilities
+    let safeRedirect = `${origin}${ROUTES.AUTH_CALLBACK}`;
+    if (redirectTo) {
+      try {
+        if (redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
+          safeRedirect = `${origin}${redirectTo}`;
+        } else {
+          const parsed = new URL(redirectTo);
+          const currentOrigin = new URL(origin);
+          if (parsed.origin === currentOrigin.origin) {
+            safeRedirect = redirectTo;
+          }
+        }
+      } catch {
+        safeRedirect = `${origin}${ROUTES.AUTH_CALLBACK}`;
+      }
+    }
+
+    return `${API_CONFIG.SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(safeRedirect)}`;
   }
 
   /**

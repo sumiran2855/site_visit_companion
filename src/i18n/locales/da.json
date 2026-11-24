@@ -9,7 +9,7 @@
     "cardBadge": "Adminportal",
     "title": "Log ind",
     "description": {
-      "lead": "Centraliseret administrationsstyring for EC POWER Site Visit Companion. Kun for autoriserede ",
+      "lead": "Centraliseret administrationsstyring for ECP Site Visit. Kun for autoriserede ",
       "superAdmins": "Super-administratorer",
       "tail": "."
     },
@@ -198,6 +198,7 @@
     "countryAll": "Land: Alle",
     "filterPills": {
       "all": "Alle",
+      "pending": "Afventer",
       "completed": "Gennemført",
       "in_progress": "I gang",
       "draft": "Kladder"
@@ -218,6 +219,7 @@
     },
     "status": {
       "completed": "Gennemført",
+      "pending": "Afventer",
       "in_progress": "I gang",
       "draft": "Kladde"
     }
@@ -251,6 +253,7 @@
     "additionalObservations": "Yderligere observationer",
     "status": {
       "completed": "Gennemført",
+      "pending": "Afventer",
       "in_progress": "I gang",
       "draft": "Kladde"
     },

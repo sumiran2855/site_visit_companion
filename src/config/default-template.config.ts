@@ -146,7 +146,7 @@ export const DEFAULT_EC_POWER_PDF_TEMPLATE: PDFTemplate = {
           type: "text_block",
           label: "Report Disclaimer & Legal Notice",
           content:
-            "This report is an official engineering technical document generated via the EC POWER Site Visit Companion system. All inspected criteria and measurements have been collected and verified by authorized field technicians in accordance with standard XRGI installation guidelines.",
+            "This report is an official engineering technical document generated via the ECP Site Visit system. All inspected criteria and measurements have been collected and verified by authorized field technicians in accordance with standard XRGI installation guidelines.",
           width: "full",
           fontSize: "xs",
         },

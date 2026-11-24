@@ -22,7 +22,7 @@ export function useSubmissions() {
       const data = await SubmissionService.getSubmissions();
       const normalized = (data || []).map((s) => ({
         ...s,
-        status: normalizeSubmissionStatus(s.status),
+        status: normalizeSubmissionStatus(s.status, s.areas),
       }));
       setSubmissions(normalized);
     } catch (err) {
@@ -47,14 +47,17 @@ export function useSubmissions() {
   // Status Tab Counts
   const counts = useMemo(() => {
     const isCompleted = (s: SiteSubmission) =>
-      normalizeSubmissionStatus(s.status) === "completed";
+      normalizeSubmissionStatus(s.status, s.areas) === "completed";
+    const isPending = (s: SiteSubmission) =>
+      normalizeSubmissionStatus(s.status, s.areas) === "pending";
     const isInProgress = (s: SiteSubmission) =>
-      normalizeSubmissionStatus(s.status) === "in_progress";
+      normalizeSubmissionStatus(s.status, s.areas) === "in_progress";
     const isDraft = (s: SiteSubmission) =>
-      normalizeSubmissionStatus(s.status) === "draft";
+      normalizeSubmissionStatus(s.status, s.areas) === "draft";
 
     return {
       all: submissions.length,
+      pending: submissions.filter(isPending).length,
       completed: submissions.filter(isCompleted).length,
       in_progress: submissions.filter(isInProgress).length,
       draft: submissions.filter(isDraft).length,
@@ -84,7 +87,7 @@ export function useSubmissions() {
     return submissions.filter((s) => {
       // 1. Status Filter
       if (statusFilter !== "all") {
-        const itemStatus = normalizeSubmissionStatus(s.status);
+        const itemStatus = normalizeSubmissionStatus(s.status, s.areas);
         if (itemStatus !== statusFilter) {
           return false;
         }

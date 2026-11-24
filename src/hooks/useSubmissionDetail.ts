@@ -120,6 +120,24 @@ export function useSubmissionDetail(id: string) {
     return submission.areas.every((a) => a.status === "ok");
   }, [submission]);
 
+  const resolvedSubmission = useMemo<SiteSubmission | null>(() => {
+    if (!submission) return null;
+    const computedStatus =
+      allAreasOk &&
+      (!submission.customerRequests ||
+        !submission.customerRequests.some((r) => !r.resolved))
+        ? "completed"
+        : (submission.customerRequests &&
+           submission.customerRequests.some((r) => !r.resolved))
+        ? "pending"
+        : submission.status;
+
+    if (submission.status !== computedStatus) {
+      return { ...submission, status: computedStatus };
+    }
+    return submission;
+  }, [submission, allAreasOk]);
+
   // Handlers
   const handleSelectArea = useCallback((areaId: string) => {
     setActiveAreaId(areaId);
@@ -279,7 +297,7 @@ export function useSubmissionDetail(id: string) {
   }, [activeMedia, allMedia]);
 
   return {
-    submission,
+    submission: resolvedSubmission,
     isLoading,
     activeArea,
     activeAreaId,

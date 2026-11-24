@@ -9,7 +9,7 @@
     "cardBadge": "Admin-Portal",
     "title": "Anmelden",
     "description": {
-      "lead": "Zentrales Verwaltungsmanagement für EC POWER Site Visit Companion. Nur für autorisierte ",
+      "lead": "Zentrales Verwaltungsmanagement für ECP Site Visit. Nur für autorisierte ",
       "superAdmins": "Super-Admins",
       "tail": "."
     },
@@ -198,6 +198,7 @@
     "countryAll": "Land: Alle",
     "filterPills": {
       "all": "Alle",
+      "pending": "Ausstehend",
       "completed": "Abgeschlossen",
       "in_progress": "In Bearbeitung",
       "draft": "Entwürfe"
@@ -218,6 +219,7 @@
     },
     "status": {
       "completed": "Abgeschlossen",
+      "pending": "Ausstehend",
       "in_progress": "In Bearbeitung",
       "draft": "Entwurf"
     }
@@ -251,6 +253,7 @@
     "additionalObservations": "Zusätzliche Beobachtungen",
     "status": {
       "completed": "Abgeschlossen",
+      "pending": "Ausstehend",
       "in_progress": "In Bearbeitung",
       "draft": "Entwurf"
     },

@@ -9,7 +9,7 @@
     "cardBadge": "Portal administratora",
     "title": "Zaloguj się",
     "description": {
-      "lead": "Scentralizowane zarządzanie administracyjne dla EC POWER Site Visit Companion. Wyłącznie dla autoryzowanych ",
+      "lead": "Scentralizowane zarządzanie administracyjne dla ECP Site Visit. Wyłącznie dla autoryzowanych ",
       "superAdmins": "Super Administratorów",
       "tail": "."
     },
@@ -198,6 +198,7 @@
     "countryAll": "Kraj: Wszystkie",
     "filterPills": {
       "all": "Wszystkie",
+      "pending": "Oczekujące",
       "completed": "Ukończone",
       "in_progress": "W toku",
       "draft": "Wersje robocze"
@@ -218,6 +219,7 @@
     },
     "status": {
       "completed": "Ukończone",
+      "pending": "Oczekujące",
       "in_progress": "W toku",
       "draft": "Wersja robocza"
     }
@@ -251,6 +253,7 @@
     "additionalObservations": "Dodatkowe obserwacje",
     "status": {
       "completed": "Ukończone",
+      "pending": "Oczekujące",
       "in_progress": "W toku",
       "draft": "Wersja robocza"
     },

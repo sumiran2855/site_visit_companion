@@ -1,5 +1,6 @@
 import { API_CONFIG } from "@/config/api.config";
 import { HttpClient } from "@/lib/api/httpClient";
+import { TokenHelper } from "@/lib/helpers/token.helper";
 import { DEFAULT_EC_POWER_PDF_TEMPLATE } from "@/config/default-template.config";
 import type { User, UserRole, UserProfile } from "@/types/auth";
 import type {
@@ -41,6 +42,16 @@ const isMockId = (id?: string | null): boolean => {
   if (!id) return false;
   return id.startsWith("req-00") || id.startsWith("usr-00") || id.startsWith("comp-00");
 };
+
+function getSupabaseHeaders(extraHeaders?: Record<string, string>): Record<string, string> {
+  const token = TokenHelper.getToken();
+  const authHeader = token ? `Bearer ${token}` : `Bearer ${API_CONFIG.SUPABASE_ANON_KEY}`;
+  return {
+    apikey: API_CONFIG.SUPABASE_ANON_KEY,
+    Authorization: authHeader,
+    ...(extraHeaders || {}),
+  };
+}
 
 export function mapProfileToUser(profile: UserProfile | any, companyName?: string): User {
   const p = profile as any;
@@ -167,14 +178,10 @@ export class AdminService {
     if (requests.length === 0) {
       // Direct Supabase REST fallback
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         const res = await fetch(
           `${API_CONFIG.SUPABASE_URL}/rest/v1/signup_requests?status=eq.pending&order=created_at.desc`,
           {
-            headers: {
-              apikey: sbKey,
-              Authorization: `Bearer ${sbKey}`,
-            },
+            headers: getSupabaseHeaders(),
           }
         );
         if (res.ok) {
@@ -261,13 +268,10 @@ export class AdminService {
 
     if (!approvedUser) {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
-        const headers = {
-          apikey: sbKey,
-          Authorization: `Bearer ${sbKey}`,
+        const headers = getSupabaseHeaders({
           "Content-Type": "application/json",
           Prefer: "return=representation",
-        };
+        });
         // 1. Update signup_requests
         const sRes = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/signup_requests?id=eq.${requestId}`, {
           method: "PATCH",
@@ -381,15 +385,12 @@ export class AdminService {
       await http.post(API_CONFIG.ENDPOINTS.ADMIN.REJECT_REQUEST(requestId));
     } catch {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/signup_requests?id=eq.${requestId}`, {
           method: "PATCH",
-          headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
+          headers: getSupabaseHeaders({
             "Content-Type": "application/json",
             Prefer: "return=representation",
-          },
+          }),
           body: JSON.stringify({ status: "rejected", updated_at: new Date().toISOString() }),
         });
         const rows = (await res.json().catch(() => [])) as Array<Record<string, unknown>>;
@@ -398,11 +399,9 @@ export class AdminService {
             `${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(String(rows[0].email))}`,
             {
               method: "PATCH",
-              headers: {
-                apikey: sbKey,
-                Authorization: `Bearer ${sbKey}`,
+              headers: getSupabaseHeaders({
                 "Content-Type": "application/json",
-              },
+              }),
               body: JSON.stringify({ approval_status: "rejected", updated_at: new Date().toISOString() }),
             }
           ).catch(() => {});
@@ -465,14 +464,10 @@ export class AdminService {
     if (membersList.length === 0) {
       // Direct Supabase REST fallback: only query approved profiles
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         const res = await fetch(
           `${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?approval_status=eq.approved&order=created_at.desc`,
           {
-            headers: {
-              apikey: sbKey,
-              Authorization: `Bearer ${sbKey}`,
-            },
+            headers: getSupabaseHeaders(),
           }
         );
         if (res.ok) {
@@ -574,13 +569,10 @@ export class AdminService {
       await http.patch(API_CONFIG.ENDPOINTS.ADMIN.MOVE_COMPANY(userId), { companyId });
     } catch {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
-        const headers = {
-          apikey: sbKey,
-          Authorization: `Bearer ${sbKey}`,
+        const headers = getSupabaseHeaders({
           "Content-Type": "application/json",
           Prefer: "return=representation",
-        };
+        });
         // 1. Update profile's company_id
         const pRes = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
           method: "PATCH",
@@ -657,13 +649,9 @@ export class AdminService {
       await http.delete(API_CONFIG.ENDPOINTS.ADMIN.PURGE_USER(userId));
     } catch {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
           method: "DELETE",
-          headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
-          },
+          headers: getSupabaseHeaders(),
         });
       } catch {}
     }
@@ -711,9 +699,8 @@ export class AdminService {
 
     // Direct Supabase REST fallback for companies
     try {
-      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
       const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies?select=*&order=name.asc`, {
-        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` },
+        headers: getSupabaseHeaders(),
       });
       if (res.ok) {
         const rows = (await res.json()) as Array<Record<string, unknown>>;
@@ -754,7 +741,43 @@ export class AdminService {
       const res = await http.get<any>(API_CONFIG.ENDPOINTS.VISITS.LIST);
       const data = res?.data || (Array.isArray(res) ? res : null);
       if (Array.isArray(data) && data.length > 0) {
-        visits = data.filter((v) => !isMockId(v.id));
+        visits = data
+          .filter((v) => !isMockId(v.id))
+          .map((v) => {
+            let reviewStatus = v.reviewStatus || v.review_status;
+            let status = v.status;
+            const hasPending = Boolean(
+              v.hasPendingRequests ??
+                v.has_pending_requests ??
+                (Number(v.pendingRequestsCount ?? v.pending_requests_count ?? 0) > 0)
+            );
+
+            if (
+              !hasPending &&
+              (reviewStatus === "waiting_for_customer" ||
+                reviewStatus === "waiting_from_customer" ||
+                reviewStatus === "more_requested")
+            ) {
+              reviewStatus =
+                status === "completed" || v.completionPercentage === 100
+                  ? "completed"
+                  : "pending";
+            }
+
+            if (
+              status === "waiting_for_customer" ||
+              status === "waiting_from_customer" ||
+              status === "more_requested"
+            ) {
+              status = v.completionPercentage === 100 ? "completed" : "pending";
+            }
+
+            return {
+              ...v,
+              reviewStatus,
+              status,
+            };
+          });
         setStorageItem(CACHE_KEY_VISITS, JSON.stringify(visits));
         return visits;
       }
@@ -764,30 +787,62 @@ export class AdminService {
 
     // Direct Supabase REST fallback
     try {
-      const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
       const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/visits?select=*&order=created_at.desc`, {
-        headers: {
-          apikey: sbKey,
-          Authorization: `Bearer ${sbKey}`,
-        },
+        headers: getSupabaseHeaders(),
       });
       if (res.ok) {
         const rows = (await res.json()) as Array<Record<string, unknown>>;
         if (Array.isArray(rows) && rows.length > 0) {
           const cleanRows = rows.filter((v) => !isMockId(String(v.id)));
-          visits = cleanRows.map((v) => ({
-            id: String(v.id),
-            siteName: String(v.site_name || v.siteName || ""),
-            companyId: (v.company_id || v.companyId || null) as string | null,
-            companyName: (v.company_name || v.companyName || null) as string | null,
-            ownerId: (v.owner_id || v.ownerId || null) as string | null,
-            status: String(v.status || "draft"),
-            completedFields: Number(v.completed_fields ?? v.completedFields ?? 0),
-            totalFields: Number(v.total_fields ?? v.totalFields ?? 67),
-            completionPercentage: Number(v.completion_percentage ?? v.completionPercentage ?? 0),
-            createdAt: String(v.created_at || v.createdAt || new Date().toISOString()),
-            updatedAt: String(v.updated_at || v.updatedAt || new Date().toISOString()),
-          }));
+          visits = cleanRows.map((v) => {
+            let reviewStatus = (v.review_status || v.reviewStatus) as string | undefined;
+            let status = String(v.status || "draft");
+            const hasPending = Boolean(
+              v.has_pending_requests ??
+                v.hasPendingRequests ??
+                (Number(v.pending_requests_count ?? v.pendingRequestsCount ?? 0) > 0)
+            );
+
+            if (
+              !hasPending &&
+              (reviewStatus === "waiting_for_customer" ||
+                reviewStatus === "waiting_from_customer" ||
+                reviewStatus === "more_requested")
+            ) {
+              reviewStatus =
+                status === "completed" || Number(v.completion_percentage ?? v.completionPercentage ?? 0) === 100
+                  ? "completed"
+                  : "pending";
+            }
+
+            if (
+              status === "waiting_for_customer" ||
+              status === "waiting_from_customer" ||
+              status === "more_requested"
+            ) {
+              status =
+                Number(v.completion_percentage ?? v.completionPercentage ?? 0) === 100
+                  ? "completed"
+                  : "pending";
+            }
+
+            return {
+              id: String(v.id),
+              siteName: String(v.site_name || v.siteName || ""),
+              companyId: (v.company_id || v.companyId || null) as string | null,
+              companyName: (v.company_name || v.companyName || null) as string | null,
+              ownerId: (v.owner_id || v.ownerId || null) as string | null,
+              status,
+              reviewStatus,
+              hasPendingRequests: hasPending,
+              pendingRequestsCount: Number(v.pending_requests_count ?? v.pendingRequestsCount ?? 0),
+              completedFields: Number(v.completed_fields ?? v.completedFields ?? 0),
+              totalFields: Number(v.total_fields ?? v.totalFields ?? 67),
+              completionPercentage: Number(v.completion_percentage ?? v.completionPercentage ?? 0),
+              createdAt: String(v.created_at || v.createdAt || new Date().toISOString()),
+              updatedAt: String(v.updated_at || v.updatedAt || new Date().toISOString()),
+            };
+          });
           setStorageItem(CACHE_KEY_VISITS, JSON.stringify(visits));
           return visits;
         }
@@ -896,7 +951,6 @@ export class AdminService {
     // Direct Supabase REST fallback
     if (!created) {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         const newId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `comp-${Date.now()}`;
         const newRow = {
           id: newId,
@@ -910,12 +964,10 @@ export class AdminService {
 
         const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies`, {
           method: "POST",
-          headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
+          headers: getSupabaseHeaders({
             "Content-Type": "application/json",
             Prefer: "return=representation",
-          },
+          }),
           body: JSON.stringify(newRow),
         });
 
@@ -976,7 +1028,6 @@ export class AdminService {
 
     if (!updated) {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         const updateBody: Record<string, unknown> = {
           updated_at: new Date().toISOString(),
         };
@@ -986,12 +1037,10 @@ export class AdminService {
 
         const res = await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${id}`, {
           method: "PATCH",
-          headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
+          headers: getSupabaseHeaders({
             "Content-Type": "application/json",
             Prefer: "return=representation",
-          },
+          }),
           body: JSON.stringify(updateBody),
         });
 
@@ -1036,13 +1085,9 @@ export class AdminService {
       await http.delete(API_CONFIG.ENDPOINTS.COMPANIES.DELETE(id));
     } catch {
       try {
-        const sbKey = API_CONFIG.SUPABASE_SERVICE_ROLE_KEY || API_CONFIG.SUPABASE_ANON_KEY;
         await fetch(`${API_CONFIG.SUPABASE_URL}/rest/v1/companies?id=eq.${id}`, {
           method: "DELETE",
-          headers: {
-            apikey: sbKey,
-            Authorization: `Bearer ${sbKey}`,
-          },
+          headers: getSupabaseHeaders(),
         });
       } catch {}
     }

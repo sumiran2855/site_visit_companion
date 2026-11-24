@@ -9,6 +9,7 @@ export interface SubmissionsFilterPillsProps {
   onChange: (status: SubmissionStatus) => void;
   counts: {
     all: number;
+    pending?: number;
     completed: number;
     in_progress: number;
     draft: number;
@@ -24,6 +25,7 @@ export const SubmissionsFilterPills: React.FC<SubmissionsFilterPillsProps> = ({
 
   const tabs: { id: SubmissionStatus; label: string; count?: number }[] = [
     { id: "all", label: t("submissions.filterPills.all", "All"), count: counts.all },
+    { id: "pending", label: t("submissions.filterPills.pending", "Pending"), count: counts.pending },
     { id: "completed", label: t("submissions.filterPills.completed", "Completed"), count: counts.completed },
     { id: "in_progress", label: t("submissions.filterPills.in_progress", "In progress"), count: counts.in_progress },
     { id: "draft", label: t("submissions.filterPills.draft", "Drafts"), count: counts.draft },
